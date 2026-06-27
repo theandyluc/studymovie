@@ -204,7 +204,7 @@ playlist_items (
 |--------|-------|-----------|
 | WEB-01 | `/` login | Google OAuth, chung tài khoản với extension. |
 | WEB-02 | `/dashboard` | Streak, đồ thị giờ học tuần/tháng, "hôm nay X/Y phút" + progress bar. |
-| WEB-03 | `/vocabulary` (list) | Toàn bộ từ đã lưu, mỗi từ có checkbox; nút Flashcard / Test EN→VI / Test VI→EN (chỉ từ đã tick). |
+| WEB-03 | `/vocabulary` (list) | Toàn bộ từ đã lưu (word/IPA/nghĩa/example/🔊), **xóa** từng từ; nút Flashcard / Quiz EN→VI / Quiz VI→EN — **học TẤT CẢ từ, không tick chọn**. |
 | WEB-04 | `/vocabulary` (flashcard) | Thẻ: từ + IPA + nghĩa + 🔊, swipe trái/phải (ref UI: langswipe). |
 | WEB-05 | `/vocabulary` (quiz) | 1 từ + 4 đáp án (3 sai random từ vocab của chính user), 2 chiều EN→VI và VI→EN. |
 | WEB-06 | `/playlist` | Paste link YouTube, todo list (thumbnail+tên), nút Học (mở tab + auto-start timer extension), tick done, xóa từng video. |
@@ -236,7 +236,7 @@ Cài extension → bấm icon → "Đăng nhập Google" → OAuth → backend t
 Mở video → extension check hạn (còn) → hiện dual subtitle → user bấm Start timer → click từ lạ → popup nghĩa/IPA/audio → Lưu (ghi `vocabulary`) → xem xong bấm Stop → ghi `study_sessions`.
 
 **Flow 3 — Ôn tập (web)**
-Vào `studymovie.com` → dashboard xem streak/giờ → `/vocabulary` tick từ → Flashcard swipe / Quiz 2 chiều → `/playlist` quản lý video tuần → `/leaderboard` xem thứ hạng.
+Vào `studymovie.com` → dashboard xem streak/giờ → `/vocabulary` (xem/xóa từ) → Flashcard / Quiz 2 chiều (học tất cả từ) → `/playlist` quản lý video tuần → `/leaderboard` xem thứ hạng.
 
 **Flow 4 — Hết trial → Thanh toán**
 Vào YouTube sau 24h → extension check (hết hạn) → ẩn sub + nút Nâng cấp → `/upgrade` → quét VietQR (nội dung CK có mã user) → chuyển khoản → SePay webhook bắn về `/api/sepay-webhook` → match mã → `paid_until` cập nhật → lần check kế tiếp extension chạy lại.
