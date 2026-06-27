@@ -75,7 +75,11 @@ function renderUser(me: Me): void {
     return sp as HTMLElement;
   })();
 
-  const row = div("row");
+  // Khối avatar+email click được → mở Dashboard trên web.
+  const row = div("row clickable");
+  row.setAttribute("role", "button");
+  row.title = "Mở Dashboard";
+  row.addEventListener("click", () => openTab(`${SITE_URL}/dashboard`));
   row.appendChild(avatar);
   const info = div("");
   info.appendChild(div("email", me.user.email ?? name));

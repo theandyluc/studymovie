@@ -13,6 +13,7 @@
         --muted: #71717a;
         --border: #e4e4e7;
         --surface: #ffffff;
+        --surface-muted: #f4f4f5;
         --radius: 0.5rem;
         --danger: #dc2626;
       }
@@ -28,6 +29,8 @@
       .title { font-size: 16px; font-weight: 700; color: var(--primary); margin: 0 0 4px; }
       .muted { color: var(--muted); font-size: 13px; }
       .row { display: flex; align-items: center; gap: 10px; margin: 10px 0; }
+      .row.clickable { cursor: pointer; border-radius: var(--radius); padding: 6px; margin: 4px -6px; transition: background 0.12s; }
+      .row.clickable:hover { background: var(--surface-muted); }
       .avatar { width: 36px; height: 36px; border-radius: 999px; object-fit: cover; background: var(--primary); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; }
       .email { font-size: 14px; font-weight: 500; word-break: break-all; }
       .status { font-size: 13px; margin: 8px 0; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius); }
