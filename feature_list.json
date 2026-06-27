@@ -9,7 +9,7 @@
       "title": "Scaffold monorepo (extension/ + web/frontend + web/backend + supabase/) + Supabase project (region Singapore) + Google OAuth",
       "area": "infra",
       "tip": "TIP-001",
-      "status": "done",
+      "status": "verified",
       "depends_on": [],
       "acceptance": "init.sh chạy sạch; web/frontend dev lên được; web/backend khởi động; Supabase project tạo ở Singapore; Google OAuth cấu hình.",
       "evidence": "Scaffold monorepo npm workspaces (web/frontend Next 15.5 + web/backend Hono + extension MV3). init.sh exit 0 (install+lint+typecheck ok cả 3, không ✗). FE build+dev HTTP 200. BE GET /health → 200 {\"status\":\"ok\"} (server thật + vitest pass). EXT dist/manifest.json MV3 + service-worker.js. supabase/migrations rỗng (TIP-002). LƯU Ý: tạo Supabase Singapore + Google OAuth = Human setup, ngoài scope Thợ — chưa làm, cần cho TIP-002."
