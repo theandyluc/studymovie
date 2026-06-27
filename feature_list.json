@@ -39,7 +39,7 @@
       "title": "Login Google (web) + nền tảng auth/design base",
       "area": "frontend",
       "tip": "TIP-003",
-      "status": "done",
+      "status": "verified",
       "depends_on": ["INF-01", "BE-02"],
       "acceptance": "Login Google OAuth; session lưu; protected route redirect; logout; backend verify JWT (/api/me) + CORS chỉ origin frontend.",
       "evidence": "FE: design tokens tập trung Tailwind v4 @theme (globals.css, placeholder) + app shell (Header user/logout + nav) + UI primitives (Button/Card/Avatar/Spinner). Auth: lib/supabaseClient (PKCE, anon), apiClient (Bearer), useUser, app/page login Google, app/auth/callback exchangeCodeForSession, app/dashboard protected (AuthGuard), logout. BE: env loader root .env, requireAuth (getUser), GET /api/me, CORS origin SITE_URL. Verify: init.sh exit 0 (lint+typecheck 3 pkg), FE build 4 routes, BE 3 test pass, verify_auth.mjs 6/6 PASS (401/200/đúng user/profile/CORS). AC-3/4/5 (Google login thật) = manual browser test bởi Homeowner sau khi thêm 2 biến NEXT_PUBLIC_SUPABASE_*.",
