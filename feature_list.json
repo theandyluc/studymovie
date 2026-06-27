@@ -19,20 +19,20 @@
       "title": "Data layer: toàn bộ schema + RLS + import từ điển EN-VI",
       "area": "backend",
       "tip": "TIP-002",
-      "status": "todo",
+      "status": "done",
       "depends_on": ["INF-01"],
       "acceptance": "Migration chạy sạch; bảng profiles/subscriptions/vocabulary/study_sessions/playlist_items/dictionary tồn tại; RLS theo user; từ điển import xong.",
-      "evidence": ""
+      "evidence": "2 migration (20260627000001_init_schema, 20260627000002_rpc) push lên cloud ojsdchkwfzhmzvmwlgmo (Singapore) qua supabase CLI. Introspect xác nhận đủ 6 bảng + constraints (status CHECK, vocabulary UNIQUE(user_id,word), FK), RLS bật cả 6 bảng, policy theo auth.uid()=user_id (profiles=id), dictionary read-only authenticated. Trigger on_auth_user_created → profiles+subscriptions(trial,+24h) verify PASS. BE-06: import từ điển EN-VI FVDP (© Hồ Ngọc Đức, free, cần credit) qua supabase/seed/import_dictionary.mjs → dictionary 103,401 dòng. verify_rpc.mjs 13/13 PASS."
     },
     {
       "id": "BE-03",
       "title": "RPC core: dashboard/streak/leaderboard/today_minutes/lookup_word",
       "area": "backend",
       "tip": "TIP-003",
-      "status": "todo",
+      "status": "done",
       "depends_on": ["BE-02"],
       "acceptance": "Mỗi RPC trả đúng dữ liệu; lookup_word lemmatize + tra từ điển; leaderboard/streak compute-on-read theo tuần ISO.",
-      "evidence": ""
+      "evidence": "Triển khai trong TIP-002 (migration 20260627000002_rpc.sql). lookup_word (lemmatize -s/-es/-ies/-ed/-ing+e/doubled → tra dictionary), today_minutes(p_user_id) guard chính chủ/service_role, get_dashboard (streak Duolingo UTC+7 + today_met + week[7]/month[30]), get_leaderboard_weekly (tuần ISO, compute-on-read, append caller). Tất cả SECURITY DEFINER. verify_rpc.mjs: streak=3/today_met/today_minutes=35/guard chặn user khác/leaderboard caller/lookup_word đều PASS. Chờ Chủ thầu duyệt → verified."
     },
     {
       "id": "WEB-03",

@@ -7,14 +7,32 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** GĐ1 — scaffold xong (TIP-001 done)
+- **Giai đoạn hiện tại:** GĐ1 — data layer xong (TIP-002 done: BE-02 + BE-03 + BE-06)
 - **Feature đang làm:** (chưa bắt đầu TIP tiếp theo)
-- **Next:** TIP-002 (BE-02) — data layer: schema + RLS + seed + import từ điển EN-VI. **Cần Human setup trước:** Supabase project (Singapore) + Google OAuth + điền `.env`.
-- **Blocker:** Chờ Human tạo Supabase project (Singapore) + Google OAuth credentials cho TIP-002. Vẫn còn: khách chốt streak hiển thị khi "hôm nay chưa đạt".
+- **Next:** TIP-004 (WEB-03/04/05) — web /vocabulary list + flashcard + quiz (theo Task Graph). Backend Hono endpoint nghiệp vụ sẽ gọi các RPC đã có.
+- **Blocker / cần làm:** (1) ⚠️ **ĐỔI mật khẩu DB Supabase** — đã lộ trong chat khi push TIP-002 (rotate trước/khi handover). (2) Khách chốt UI streak khi "hôm nay chưa đạt" (logic backend đã có cờ `today_met`).
 
 ---
 
 ## Session log
+
+### Session 2 — TIP-002 Data layer (2026-06-27)
+- **TIP/Feature:** TIP-002 — BE-02 (schema+RLS) + BE-03 (RPC core) + BE-06 (import từ điển).
+- **Đã làm:**
+  - Supabase CLI (devDep `supabase`) + `supabase init` → `supabase/config.toml`.
+  - `supabase/migrations/20260627000001_init_schema.sql`: 6 bảng (Blueprint mục 3) + RLS cả 6 bảng + policy auth.uid()=user_id (profiles=id) + dictionary read-only authenticated + GRANT + trigger `on_auth_user_created` (auth.users → profiles + subscriptions trial +24h).
+  - `supabase/migrations/20260627000002_rpc.sql`: lookup_word (lemmatize), today_minutes(p_user_id), get_dashboard (streak Duolingo UTC+7 + today_met + week/month), get_leaderboard_weekly (tuần ISO compute-on-read). SECURITY DEFINER + guard.
+  - `supabase/seed/import_dictionary.mjs` (FVDP © Hồ Ngọc Đức, free, cần credit) + `supabase/seed/verify_rpc.mjs` (seed test + verify, tự dọn user tạm).
+  - Deps: thêm `supabase` + `@supabase/supabase-js` (root devDep). `pg` chỉ cài `--no-save` để introspect, KHÔNG commit.
+- **Verification:**
+  - `supabase db push` qua session pooler aws-1-ap-southeast-1 (port 5432) → 2 migration applied OK (exit 0).
+  - Introspect (pg): 6 bảng, RLS cả 6, policy/constraint/FK đúng, 5 function SECURITY DEFINER.
+  - `import_dictionary.mjs` → dictionary **103,401 dòng**.
+  - `verify_rpc.mjs` → **13/13 PASS** (trigger, streak=3, today_met, today_minutes=35, guard, leaderboard, lookup_word, RLS isolation). User tạm đã xoá.
+- **Còn dở / chưa verify:** Backend Hono CHƯA có endpoint nghiệp vụ (đúng scope — chỉ /health). BE-03 chờ Chủ thầu duyệt → `verified`.
+- **Deviation:** (1) minhqnd/dictionary repo rỗng → dùng FVDP qua mirror manhminno (ghi credit). (2) Áp migration bằng `supabase db push --db-url` (session pooler) thay vì `supabase link` (link cần `supabase login` tương tác — không chạy được trong shell non-interactive; MCP Supabase chưa có access token). Migration history remote đã cập nhật → `db push` sau khi link vẫn in-sync. (3) Mật khẩu DB nhận qua chat (không qua terminal như TIP) → KHÔNG ghi vào file; cần rotate.
+- **Cách resume:** `./init.sh` → migrations đã ở cloud. Chạy lại verify: `node --env-file=.env supabase/seed/verify_rpc.mjs`. Re-import: `node --env-file=.env supabase/seed/import_dictionary.mjs`.
+- **Commit:** feat(db): TIP-002 schema + RLS + RPC + dictionary import.
 
 ### Session 1 — TIP-001 Scaffold monorepo (2026-06-27)
 - **TIP/Feature:** TIP-001 — INF-01 scaffold monorepo (npm workspaces).

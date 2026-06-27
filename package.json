@@ -16,5 +16,9 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "build": "npm run build --workspaces --if-present",
     "test": "npm run test --workspaces --if-present"
+  },
+  "devDependencies": {
+    "@supabase/supabase-js": "^2.108.2",
+    "supabase": "^2.108.0"
   }
 }
