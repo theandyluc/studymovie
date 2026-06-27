@@ -25,11 +25,12 @@ Hai điểm P0 trước đây đã được chốt. Đây là nền tảng kiế
 **Ràng buộc đã biết — phải ghi vào Contract / báo khách:**
 1. **`tlang` chỉ dịch được khi video có caption gốc** (manual hoặc auto-ASR). Video không bật phụ đề → không có dòng VI. Đây là giới hạn từ YouTube, không phải lỗi sản phẩm.
 2. **Endpoint `timedtext` là API không chính thức** của YouTube → rủi ro **bảo trì**: YouTube có thể đổi backend/áp rate limit (HTTP 429). Gọi từ client (IP từng user) giúp phân tán rate limit. Cần fallback khi fail.
-3. **Từ điển mã nguồn mở thường theo giấy phép CC BY-SA** → phải **ghi credit nguồn từ điển** trong app. Điều kiện nhẹ, báo khách trước.
+3. **Nguồn từ điển thực tế = FVDP (GPL v2)** → phải **ghi credit + license + link nguồn** trong app (trang About/Settings). GPL không cấm dùng thương mại; giữ data tách biệt trong DB (không nhúng vào source) để giảm rủi ro copyleft. **Báo khách rõ về license GPL khi bàn giao.**
 
-**Nguồn từ điển ưu tiên:**
-- `minhqnd/dictionary` — có bản tải SQLite offline (`dictionary.db`), kèm IPA + ví dụ + đồng nghĩa, CC BY-SA 4.0 (dùng được cả thương mại, cần ghi công). Phù hợp nhất.
-- Dự phòng: `undertheseanlp/dictionary` (GPL-3.0 — copyleft mạnh hơn, cân nhắc).
+**Nguồn từ điển (ĐÃ DÙNG ở TIP-002):**
+- **Free Vietnamese Dictionary Project (FVDP), © Hồ Ngọc Đức** — EN-VI, 103.401 mục, license **GNU GPL v2**. Lấy qua mirror GitHub (`manhminno/English-Vietnamese-Dictionary`). Đã import full vào bảng `dictionary`.
+- License GPL v2: được dùng thương mại + phân phối lại; phải kèm credit + license + nguồn. Data tách biệt trong DB (không nhúng source) → rủi ro copyleft thấp.
+- (Nguồn ưu tiên ban đầu `minhqnd/dictionary` SQLite — repo rỗng, không dùng được.)
 
 ---
 
@@ -83,7 +84,7 @@ Sản phẩm = **3 khối** dùng chung 1 tài khoản Google + 1 database.
 | Database | **Supabase** (Postgres + Auth + RLS) | Auth Google sẵn, RLS bảo mật theo user. Rẻ, deploy nhanh. |
 | Auth | **Supabase Auth — Google OAuth provider** | Chung 1 tài khoản cho cả extension + web (brief yêu cầu). |
 | Phụ đề VI (cả câu) | **YouTube auto-translate** (`timedtext` + `tlang=vi`) | Dịch sẵn, miễn phí, gọi từ client. Phụ thuộc video có caption gốc + endpoint không chính thức (rủi ro bảo trì). |
-| Nghĩa từ + IPA + ví dụ | **Từ điển EN-VI mã nguồn mở nhúng** (`minhqnd/dictionary` SQLite → import vào Postgres) | Tra cứu offline, $0, ổn định, nghĩa chuẩn cho học từ. Cần ghi credit nguồn (CC BY-SA). |
+| Nghĩa từ + IPA + ví dụ | **Từ điển EN-VI nhúng — FVDP © Hồ Ngọc Đức** (import vào bảng `dictionary`, 103k mục) | Tra cứu offline, $0, ổn định. License **GPL v2** → ghi credit + nguồn trong app. |
 | Audio phát âm | **Free Dictionary API** (`api.dictionaryapi.dev`) | Miễn phí, file audio + IPA tiếng Anh. Bổ sung nếu từ điển nhúng thiếu audio. |
 | Thanh toán | **VietQR (generate QR động) + SePay webhook** | Brief yêu cầu. Tự động unlock khi nhận tiền. |
 | Hosting | Web App → **Vercel**; Extension → **Chrome Web Store** | Brief yêu cầu. |
@@ -170,7 +171,7 @@ playlist_items (
 
 **RPC quan trọng (SECURITY DEFINER, có guard):**
 - `get_leaderboard_weekly()` → top users theo `SUM(duration_sec)` trong tuần ISO hiện tại, join `profiles` (nickname + avatar). Luôn append dòng của caller dù không trong top.
-- `get_dashboard(user_id)` → streak (số ngày liên tiếp đạt `daily_commit_minutes`), phút hôm nay, mảng giờ học theo tuần/tháng.
+- `get_dashboard()` → dùng `auth.uid()` (KHÔNG nhận tham số user_id — tránh giả mạo xem dashboard người khác). Trả streak (Duolingo, UTC+7) + cờ `today_met` + phút hôm nay + mảng giờ học tuần/tháng.
 - `today_minutes(user_id)` → phút đã học hôm nay (extension gọi để hiển thị).
 - `lookup_word(p_word)` → nhận từ user click, lemmatize, tra bảng `dictionary`, trả nghĩa + IPA + ví dụ. Đọc public (không cần là dữ liệu của user).
 
@@ -427,7 +428,7 @@ Mỗi TIP khi tạo sẽ có đủ: Gherkin acceptance criteria, priority P0/P1/
 | YouTube đổi DOM → vỡ subtitle injection | 🟡 TB | Ưu tiên `timedtext` thay vì scrape DOM player; selector phòng thủ; flag bảo trì. |
 | MV3 service worker bị kill giữa session | 🟡 TB | Timer tính theo timestamp (`started_at` lưu storage/DB), không đếm interval. |
 | Leaderboard/streak "reset hàng tuần" hiểu nhầm thành xoá data | 🟡 TB | Chốt: compute-on-read theo tuần ISO, **không** cron, **không** xoá. |
-| Giấy phép từ điển (CC BY-SA) yêu cầu ghi credit | 🟢 Thấp | Thêm dòng credit nguồn từ điển trong app. Báo khách. |
+| Giấy phép từ điển FVDP là **GPL v2** (copyleft) | 🟡 TB | Data tách biệt trong DB (không nhúng source); ghi credit + license + nguồn trong app; báo khách rõ. Cân nhắc đổi nguồn license dễ hơn nếu khách yêu cầu đóng nguồn tuyệt đối. |
 | Transfer ownership lúc bàn giao (Cách B) phức tạp / sót key | 🟡 TB | DB định nghĩa bằng migration; chuẩn bị `.env.example` + `HANDOVER.md` sớm; chọn region Singapore từ đầu (mục 9). |
 | Gian lận trial bằng chỉnh giờ máy | 🟢 Thấp | Check hạn ở backend theo `now()` server. |
 | Chrome Web Store review reject | 🟢 Thấp | Manifest đúng chuẩn, mô tả quyền rõ; hỗ trợ submit ở GĐ4. |
