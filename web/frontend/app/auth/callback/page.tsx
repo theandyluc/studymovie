@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabaseClient";
 import { PageLoading } from "@/components/ui/Spinner";
@@ -10,15 +10,34 @@ import { Button } from "@/components/ui/Button";
 export default function AuthCallbackPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  // Chặn double-invoke của React StrictMode (dev): code PKCE chỉ dùng được 1 lần,
+  // lần exchange thứ 2 sẽ thiếu code_verifier (đã bị xoá) -> lỗi.
+  const ran = useRef(false);
 
   useEffect(() => {
+    if (ran.current) return;
+    ran.current = true;
+
     const run = async () => {
       const sb = getSupabase();
       if (!sb) {
         setError("Chưa cấu hình Supabase env.");
         return;
       }
-      const { error: exErr } = await sb.auth.exchangeCodeForSession(window.location.href);
+      const params = new URLSearchParams(window.location.search);
+      const oauthErr = params.get("error_description") ?? params.get("error");
+      if (oauthErr) {
+        setError(oauthErr);
+        return;
+      }
+      const code = params.get("code");
+      if (!code) {
+        setError("Thiếu mã 'code' trong URL callback.");
+        return;
+      }
+      // ⚠️ Truyền ĐÚNG mã code (không phải cả URL) — đây là root cause của
+      // "invalid flow state": auth_code phải khớp flow state trên server.
+      const { error: exErr } = await sb.auth.exchangeCodeForSession(code);
       if (exErr) {
         setError(exErr.message);
         return;
