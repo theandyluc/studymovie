@@ -54,6 +54,8 @@ try {
   ok("AC-6 /api/me CÓ token -> 200", r200.status === 200, `status=${r200.status}`);
   ok("AC-6 /api/me trả đúng user", body?.user?.id === userId, `me.id=${(body?.user?.id ?? "∅").slice(0, 8)}…`);
   ok("AC-6 /api/me kèm profile (trigger)", !!body?.profile && body.profile.id === userId, `profile.nickname=${body?.profile?.nickname}`);
+  ok("AC-7 /api/me kèm subscription (trial)", !!body?.subscription && body.subscription.status === "trial", `status=${body?.subscription?.status}`);
+  ok("AC-7 is_active server-side (trial mới -> true)", body?.is_active === true, `is_active=${body?.is_active}`);
 
   // CORS: preflight từ origin lạ không được phép
   const rCors = await fetch(`${backend}/api/me`, {

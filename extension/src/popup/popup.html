@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>StudyMovie</title>
+    <style>
+      /* ⚠️ PLACEHOLDER tokens — đồng bộ tinh thần với web, thay theo Figma sau. */
+      :root {
+        --primary: #4f46e5;
+        --primary-hover: #4338ca;
+        --fg: #18181b;
+        --muted: #71717a;
+        --border: #e4e4e7;
+        --surface: #ffffff;
+        --radius: 0.5rem;
+        --danger: #dc2626;
+      }
+      * { box-sizing: border-box; }
+      body {
+        width: 320px;
+        margin: 0;
+        padding: 16px;
+        font-family: ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+        color: var(--fg);
+        background: var(--surface);
+      }
+      .title { font-size: 16px; font-weight: 700; color: var(--primary); margin: 0 0 4px; }
+      .muted { color: var(--muted); font-size: 13px; }
+      .row { display: flex; align-items: center; gap: 10px; margin: 10px 0; }
+      .avatar { width: 36px; height: 36px; border-radius: 999px; object-fit: cover; background: var(--primary); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; }
+      .email { font-size: 14px; font-weight: 500; word-break: break-all; }
+      .status { font-size: 13px; margin: 8px 0; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius); }
+      .status.expired { color: var(--danger); border-color: var(--danger); }
+      .btn { width: 100%; border: 0; border-radius: var(--radius); padding: 9px 12px; font-size: 14px; font-weight: 500; cursor: pointer; background: var(--primary); color: #fff; margin-top: 8px; }
+      .btn:hover { background: var(--primary-hover); }
+      .btn.ghost { background: transparent; color: var(--fg); border: 1px solid var(--border); }
+    </style>
+  </head>
+  <body>
+    <div id="app"><p class="muted">Đang tải…</p></div>
+    <script src="popup.js"></script>
+  </body>
+</html>

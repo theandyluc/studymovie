@@ -3,10 +3,20 @@
   "name": "StudyMovie",
   "version": "0.0.1",
   "description": "Học tiếng Anh qua YouTube với phụ đề song ngữ + ôn từ vựng.",
-  "permissions": ["storage", "activeTab"],
-  "host_permissions": ["*://*.youtube.com/*"],
+  "permissions": ["storage", "tabs", "scripting"],
+  "host_permissions": ["*://*.youtube.com/*", "http://localhost:3000/*"],
   "background": {
-    "service_worker": "background/service-worker.js",
-    "type": "module"
-  }
+    "service_worker": "background/service-worker.js"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "StudyMovie"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://localhost:3000/*"],
+      "js": ["content/auth-bridge.js"],
+      "run_at": "document_idle"
+    }
+  ]
 }

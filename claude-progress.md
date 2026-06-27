@@ -7,14 +7,31 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** GĐ1 — web auth foundation xong (TIP-003 done: WEB-01)
+- **Giai đoạn hiện tại:** GĐ2 — extension foundation xong (TIP-004 done: EXT-05-06-07)
 - **Feature đang làm:** (chưa bắt đầu TIP tiếp theo)
-- **Next:** TIP-004 (WEB-03/04/05) — web /vocabulary list + flashcard + quiz. Cắm vào app shell + auth + apiClient + UI primitives đã có; backend thêm endpoint gọi RPC.
-- **Blocker / cần làm:** (1) ⚠️ **Homeowner thêm `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY`** vào root `.env` (= SUPABASE_URL/ANON_KEY) → rồi test login Google qua browser (AC-3/4/5). (2) ⚠️ **ĐỔI mật khẩu DB Supabase** (lộ ở TIP-002). (3) Khách chốt UI streak khi "hôm nay chưa đạt" (backend đã có cờ `today_met`).
+- **Next:** TIP-005 — extension content YouTube: dual subtitle (EXT-01) / click-từ popup tra nghĩa (EXT-02) / timer (EXT-03) / settings (EXT-04). Cắm vào nền tảng auth + apiExt + supabaseExt đã có.
+- **Blocker / cần làm:** (1) ⚠️ **Homeowner test extension trên Chrome thật** (load unpacked `extension/dist/` → login → nhận session → trạng thái trial). (2) ⚠️ **ĐỔI mật khẩu DB Supabase** (lộ ở TIP-002). (3) Production: thêm domain `https://studymovie.com/*` vào manifest host_permissions + content_scripts matches (hiện chỉ localhost:3000). (4) Khách chốt UI streak "hôm nay chưa đạt".
 
 ---
 
 ## Session log
+
+### Session 4 — TIP-004 Extension MV3 foundation + shared-session auth + trial check (2026-06-27)
+- **TIP/Feature:** TIP-004 — EXT-05-06-07 (login shared session, trạng thái subscription, upgrade redirect).
+- **Đã làm:**
+  - **Manifest MV3** nâng cấp: permissions storage/tabs/scripting, host youtube + localhost:3000; background SW + popup + content auth-bridge.
+  - **Build** `extension/build.mjs`: esbuild bundle 3 entry (IIFE) + copy manifest/popup.html + inline env build-time (anon/site/backend, có chốt chặn KHÔNG service_role).
+  - **Shared-session auth:** `content/auth-bridge.ts` (poll localStorage web `sb-<ref>-auth-token` → sendMessage), `background/service-worker.ts` (setSession vào chrome.storage qua `supabaseExt`), `lib/supabaseExt.ts` (chrome.storage adapter + autoRefreshToken, anon), `lib/apiExt.ts` (Bearer + getSession auto-refresh), `lib/env.ts`.
+  - **Popup** `popup.html`+`popup.ts` (vanilla TS): chưa login→nút mở web; đã login→avatar+email (EXT-05)+trạng thái sub (EXT-06)+nút Nâng cấp khi hết hạn (EXT-07)+logout; tự cập nhật qua `chrome.storage.onChanged`.
+  - **Backend:** `/api/me` trả thêm `subscription` + `is_active` (tính server-side theo now()). `/upgrade` placeholder (web).
+- **Verification:**
+  - `init.sh` exit 0 (lint+typecheck cả 3). Extension `npm run build` → dist hợp lệ (manifest MV3, background/content/popup + popup.html).
+  - **AC-8:** service_role KHÔNG có trong bundle dist (anon có — đúng). 
+  - BE `vitest` 3 pass. `verify_auth.mjs` **8/8 PASS** (401/200/profile/subscription trial/`is_active=true` server-side/CORS).
+- **Còn dở / chưa verify (Homeowner test Chrome):** AC-1 load unpacked, AC-2 bridge nhận session sau login web, AC-3 hiển thị trạng thái, AC-4 nút Nâng cấp, AC-5 token refresh, AC-6 logout. (Logic đã build sạch; cần Chrome thật.)
+- **Deviation:** (1) Sửa `feature_list` EXT-05-06-07 tip TIP-007→TIP-004 cho khớp thực tế. (2) Content YouTube (check hạn mỗi lần vào YouTube + ẩn sub) để TIP-005 — TIP-004 làm nền tảng + popup + server-side check.
+- **Cách resume:** Homeowner: `chrome://extensions` → Developer mode → Load unpacked `extension/dist/` (sau `npm run build --prefix extension`). Backend + frontend chạy dev. Đăng nhập web → kiểm popup extension.
+- **Commit:** feat(ext): TIP-004 MV3 foundation + shared-session auth + trial check.
 
 ### Session 3 — TIP-003 Web auth foundation + design base (2026-06-27)
 - **TIP/Feature:** TIP-003 — WEB-01 (login Google) + nền tảng auth/design cho mọi trang web.
