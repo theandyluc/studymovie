@@ -8,3 +8,15 @@ describe("GET /health", () => {
     await expect(res.json()).resolves.toEqual({ status: "ok" });
   });
 });
+
+describe("GET /api/me (protected)", () => {
+  it("returns 401 when no Authorization header", async () => {
+    const res = await app.request("/api/me");
+    expect(res.status).toBe(401);
+  });
+
+  it("returns 401 with malformed Authorization header", async () => {
+    const res = await app.request("/api/me", { headers: { Authorization: "Token abc" } });
+    expect(res.status).toBe(401);
+  });
+});

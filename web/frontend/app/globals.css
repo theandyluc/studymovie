@@ -1,1 +1,43 @@
 @import "tailwindcss";
+
+/* ============================================================
+   DESIGN TOKENS — ⚠️ PLACEHOLDER. Sẽ THAY theo Figma của khách.
+   Toàn bộ màu / font / radius / shadow tập trung tại ĐÂY (Tailwind v4 @theme
+   + CSS variables). KHÔNG hardcode màu/spacing rải rác trong component —
+   reskin = chỉnh các token bên dưới là đủ.
+   ============================================================ */
+@theme {
+  /* Màu thương hiệu (tạm) */
+  --color-primary: #4f46e5;
+  --color-primary-hover: #4338ca;
+  --color-primary-foreground: #ffffff;
+  --color-accent: #f59e0b;
+
+  /* Bề mặt / chữ / viền */
+  --color-surface: #ffffff;
+  --color-surface-muted: #f4f4f5;
+  --color-border: #e4e4e7;
+  --color-foreground: #18181b;
+  --color-muted-foreground: #71717a;
+
+  /* Typography */
+  --font-heading: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-body: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* Bo góc */
+  --radius-btn: 0.5rem;
+  --radius-card: 0.75rem;
+
+  /* Đổ bóng */
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  background-color: var(--color-surface-muted);
+  color: var(--color-foreground);
+  font-family: var(--font-body);
+}

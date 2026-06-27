@@ -6,5 +6,12 @@ export default tseslint.config(
   {
     files: ["**/*.{ts,tsx}"],
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
+    rules: {
+      // Cho phép tham số/biến mở đầu bằng "_" là chủ ý không dùng (vd callback _event).
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrors: "none" },
+      ],
+    },
   }
 );

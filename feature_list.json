@@ -35,6 +35,17 @@
       "evidence": "Triển khai trong TIP-002 (migration 20260627000002_rpc.sql). lookup_word (lemmatize -s/-es/-ies/-ed/-ing+e/doubled → tra dictionary), today_minutes(p_user_id) guard chính chủ/service_role, get_dashboard (streak Duolingo UTC+7 + today_met + week[7]/month[30]), get_leaderboard_weekly (tuần ISO, compute-on-read, append caller). Tất cả SECURITY DEFINER. verify_rpc.mjs: streak=3/today_met/today_minutes=35/guard chặn user khác/leaderboard caller/lookup_word đều PASS. Chờ Chủ thầu duyệt → verified."
     },
     {
+      "id": "WEB-01",
+      "title": "Login Google (web) + nền tảng auth/design base",
+      "area": "frontend",
+      "tip": "TIP-003",
+      "status": "done",
+      "depends_on": ["INF-01", "BE-02"],
+      "acceptance": "Login Google OAuth; session lưu; protected route redirect; logout; backend verify JWT (/api/me) + CORS chỉ origin frontend.",
+      "evidence": "FE: design tokens tập trung Tailwind v4 @theme (globals.css, placeholder) + app shell (Header user/logout + nav) + UI primitives (Button/Card/Avatar/Spinner). Auth: lib/supabaseClient (PKCE, anon), apiClient (Bearer), useUser, app/page login Google, app/auth/callback exchangeCodeForSession, app/dashboard protected (AuthGuard), logout. BE: env loader root .env, requireAuth (getUser), GET /api/me, CORS origin SITE_URL. Verify: init.sh exit 0 (lint+typecheck 3 pkg), FE build 4 routes, BE 3 test pass, verify_auth.mjs 6/6 PASS (401/200/đúng user/profile/CORS). AC-3/4/5 (Google login thật) = manual browser test bởi Homeowner sau khi thêm 2 biến NEXT_PUBLIC_SUPABASE_*.",
+      "human_note": "Cần Homeowner thêm NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY vào root .env (= SUPABASE_URL/ANON_KEY) rồi test login Google qua browser."
+    },
+    {
       "id": "WEB-03",
       "title": "Trang vocabulary: list + checkbox + 3 nút (flashcard/test EN-VI/test VI-EN)",
       "area": "frontend",

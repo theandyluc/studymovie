@@ -7,14 +7,32 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** GĐ1 — data layer xong (TIP-002 done: BE-02 + BE-03 + BE-06)
+- **Giai đoạn hiện tại:** GĐ1 — web auth foundation xong (TIP-003 done: WEB-01)
 - **Feature đang làm:** (chưa bắt đầu TIP tiếp theo)
-- **Next:** TIP-004 (WEB-03/04/05) — web /vocabulary list + flashcard + quiz (theo Task Graph). Backend Hono endpoint nghiệp vụ sẽ gọi các RPC đã có.
-- **Blocker / cần làm:** (1) ⚠️ **ĐỔI mật khẩu DB Supabase** — đã lộ trong chat khi push TIP-002 (rotate trước/khi handover). (2) Khách chốt UI streak khi "hôm nay chưa đạt" (logic backend đã có cờ `today_met`).
+- **Next:** TIP-004 (WEB-03/04/05) — web /vocabulary list + flashcard + quiz. Cắm vào app shell + auth + apiClient + UI primitives đã có; backend thêm endpoint gọi RPC.
+- **Blocker / cần làm:** (1) ⚠️ **Homeowner thêm `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY`** vào root `.env` (= SUPABASE_URL/ANON_KEY) → rồi test login Google qua browser (AC-3/4/5). (2) ⚠️ **ĐỔI mật khẩu DB Supabase** (lộ ở TIP-002). (3) Khách chốt UI streak khi "hôm nay chưa đạt" (backend đã có cờ `today_met`).
 
 ---
 
 ## Session log
+
+### Session 3 — TIP-003 Web auth foundation + design base (2026-06-27)
+- **TIP/Feature:** TIP-003 — WEB-01 (login Google) + nền tảng auth/design cho mọi trang web.
+- **Đã làm:**
+  - **Design base (Hướng B):** tokens tập trung Tailwind v4 `@theme` trong `app/globals.css` (màu/font/radius/shadow — đánh dấu PLACEHOLDER, reskin theo Figma). App shell: `app/layout.tsx` + `components/Header.tsx` (logo, nav placeholder, avatar+tên+Đăng xuất). UI primitives `components/ui/` (Button/Card/Avatar/Spinner).
+  - **Auth FE:** `lib/supabaseClient.ts` (browser, anon, PKCE, singleton), `lib/apiClient.ts` (gắn Bearer), `hooks/useUser.ts`, `app/page.tsx` login Google, `app/auth/callback` exchangeCodeForSession, `app/dashboard` protected (`components/AuthGuard.tsx`), logout.
+  - **Auth BE:** `src/env.ts` (nạp root .env), `src/lib/supabase.ts` (service client), `src/middleware/auth.ts` (`requireAuth` → `getUser(token)`), `src/api/me.ts` (`GET /api/me`), CORS chỉ `SITE_URL` trong `src/app.ts`.
+  - **Env:** thêm `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` vào `.env.example`; frontend nạp root `.env` qua `next.config.mjs`. Deps: `@supabase/supabase-js` cho cả 2 workspace.
+- **Verification:**
+  - `init.sh` exit 0 — lint+typecheck sạch cả 3 package.
+  - FE `next build` OK (4 routes: / · /auth/callback · /dashboard · /_not-found).
+  - BE `vitest` 3 pass (health + /api/me 401 × 2).
+  - `verify_auth.mjs` (server thật + user tạm): **6/6 PASS** — /api/me 401 (không/sai token), 200 + đúng user + profile, CORS chặn origin lạ. User tạm đã xoá.
+  - AC-7: client KHÔNG dùng service_role (chỉ NEXT_PUBLIC_*); `.env` không track.
+- **Còn dở / chưa verify (cần Homeowner):** AC-3/4/5 — login Google THẬT qua browser: cần Homeowner (1) thêm 2 biến `NEXT_PUBLIC_SUPABASE_*` vào root `.env`, (2) đăng nhập thật. Logic protected-redirect/logout đã code + build OK.
+- **Deviation:** Frontend nạp root `.env` qua `next.config.mjs` (thay vì để 2 biến ở `web/frontend/.env.local`) để giữ MỘT nguồn `.env` duy nhất.
+- **Cách resume:** Homeowner thêm 2 biến NEXT_PUBLIC → `npm run dev` (frontend + backend) → login Google. Tiếp TIP-004.
+- **Commit:** feat(web): TIP-003 auth foundation + design base.
 
 ### Session 2 — TIP-002 Data layer (2026-06-27)
 - **TIP/Feature:** TIP-002 — BE-02 (schema+RLS) + BE-03 (RPC core) + BE-06 (import từ điển).
