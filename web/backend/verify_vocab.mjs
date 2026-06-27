@@ -64,6 +64,27 @@ try {
   // kiểm DB có đúng 1 dòng + example đúng
   const { data: rows } = await admin.from("vocabulary").select("*").eq("user_id", userId).eq("word", "running");
   ok("AC-5 DB có đúng 1 dòng vocab + example", Array.isArray(rows) && rows.length === 1 && rows[0].example === payload.example, `count=${rows?.length}`);
+  const runId = rows?.[0]?.id;
+
+  // GET danh sách (chứa running)
+  const lst = await (await fetch(`${backend}/api/vocabulary`, { headers: auth })).json();
+  ok("AC-8 GET /api/vocabulary chứa từ", Array.isArray(lst.items) && lst.items.some((i) => i.id === runId), `count=${lst.items?.length}`);
+
+  // GET 401 không token
+  const l401 = await fetch(`${backend}/api/vocabulary`);
+  ok("AC-8 GET /api/vocabulary KHÔNG token -> 401", l401.status === 401, `status=${l401.status}`);
+
+  // DELETE id giả -> deleted=false (không xóa của user khác / không tồn tại)
+  const delFake = await (await fetch(`${backend}/api/vocabulary/00000000-0000-0000-0000-000000000000`, { method: "DELETE", headers: auth })).json();
+  ok("AC-8 DELETE id lạ -> deleted=false", delFake.deleted === false, `deleted=${delFake.deleted}`);
+
+  // DELETE running -> deleted=true
+  const del = await (await fetch(`${backend}/api/vocabulary/${runId}`, { method: "DELETE", headers: auth })).json();
+  ok("AC-2 DELETE /api/vocabulary/:id -> deleted=true", del.deleted === true, `deleted=${del.deleted}`);
+
+  // GET lại không còn
+  const lst2 = await (await fetch(`${backend}/api/vocabulary`, { headers: auth })).json();
+  ok("AC-2 sau xóa, list không còn từ", Array.isArray(lst2.items) && !lst2.items.some((i) => i.id === runId), `count=${lst2.items?.length}`);
 } catch (e) {
   ok("FATAL", false, e.message);
 } finally {

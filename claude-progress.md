@@ -7,14 +7,31 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** GĐ2 — extension subtitle + lookup + settings xong (TIP-005 done: EXT-01/02/04)
+- **Giai đoạn hiện tại:** GĐ2 — web vocabulary xong (TIP-006 done: WEB-03/04/05)
 - **Feature đang làm:** (chưa bắt đầu TIP tiếp theo)
-- **Next:** TIP-006 — extension timer Start/Pause/Stop → study_sessions (EXT-03) + nối nút Học từ playlist. (Hoặc web vocabulary/dashboard tùy Task Graph — giờ bảng vocabulary đã có từ thật để dựng.)
+- **Next:** TIP tiếp theo — web /dashboard (WEB-02 streak+đồ thị) + /settings + /leaderboard, hoặc extension timer EXT-03 (tùy Task Graph Chủ thầu).
 - **Blocker / cần làm:** (1) ⚠️ **Homeowner test extension trên Chrome thật** (load unpacked `extension/dist/` → login → nhận session → trạng thái trial). (2) ⚠️ **ĐỔI mật khẩu DB Supabase** (lộ ở TIP-002). (3) Production: thêm domain `https://studymovie.com/*` vào manifest host_permissions + content_scripts matches (hiện chỉ localhost:3000). (4) Khách chốt UI streak "hôm nay chưa đạt".
 
 ---
 
 ## Session log
+
+### Session 6 — TIP-006 Web Vocabulary (list + xóa + flashcard + quiz) (2026-06-27)
+- **TIP/Feature:** TIP-006 — WEB-03 (list+xóa), WEB-04 (flashcard), WEB-05 (quiz 2 chiều). Thiết kế chốt: học TẤT CẢ từ (không tick) + cho xóa.
+- **Đã làm:**
+  - **Backend:** `GET /api/vocabulary` (list user, desc), `DELETE /api/vocabulary/:id` (chỉ của user — eq user_id). Wire `app.ts`.
+  - **`lib/vocabulary.ts`** (logic tách khỏi UI): fetchVocab, deleteVocab, quizableItems, buildQuiz (en2vi/vi2en, 3 distractor random distinct từ vocab user, max 20), shuffle.
+  - **`app/vocabulary/page.tsx`**: list (word/IPA/nghĩa/example/🔊) + Xóa (confirm + optimistic) + 3 nút điều hướng + empty state. Bật nav 'Từ vựng' trong Header.
+  - **`app/vocabulary/flashcard`**: lật thẻ, Trước/Sau, đếm vị trí, audio, empty state.
+  - **`app/vocabulary/quiz`**: en2vi/vi2en (đọc mode từ query qua window.location — tránh Suspense), 4 đáp án, chấm điểm + kết quả, <4 từ → chặn có thông báo (AC-7).
+- **Verification:**
+  - `init.sh` exit 0 (lint+typecheck cả 3). FE build OK — route /vocabulary, /vocabulary/flashcard, /vocabulary/quiz prerender sạch.
+  - **`verify_vocab.mjs` 10/10 PASS** (lookup, save, dup, list chứa từ, GET 401, DELETE id lạ→false, DELETE thật→true, list sau xóa rỗng).
+  - **AC-9:** frontend không dùng service_role (chỉ NEXT_PUBLIC + apiClient anon).
+- **Còn dở / chưa verify (Homeowner test browser):** AC-1..7 UI (list/xóa/flashcard/quiz) — cần đăng nhập + dev server; quiz cần ≥4 từ.
+- **Deviation:** Sửa `feature_list` WEB-03/04/05 tip TIP-004→TIP-006 + acceptance bỏ 'tick' theo thiết kế chốt (Blueprint v1.4 đã cập nhật).
+- **Cách resume:** `npm run dev` backend+frontend → đăng nhập → /vocabulary. Quiz cần ≥4 từ (lưu thêm qua extension nếu thiếu).
+- **Commit:** feat(web): TIP-006 vocabulary list + flashcard + quiz.
 
 ### Session 5 — TIP-005 Dual subtitle + click-word lookup + settings (2026-06-27)
 - **TIP/Feature:** TIP-005 — EXT-01 (phụ đề song ngữ), EXT-02 (click-từ tra/lưu), EXT-04 (settings).

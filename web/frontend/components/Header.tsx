@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 // Nav placeholder — các trang sẽ làm ở TIP sau (tạm disabled trừ Dashboard).
 const NAV: { href: string; label: string; enabled: boolean }[] = [
   { href: "/dashboard", label: "Dashboard", enabled: true },
-  { href: "#", label: "Từ vựng", enabled: false },
+  { href: "/vocabulary", label: "Từ vựng", enabled: true },
   { href: "#", label: "Playlist", enabled: false },
   { href: "#", label: "Bảng xếp hạng", enabled: false },
   { href: "#", label: "Cài đặt", enabled: false },

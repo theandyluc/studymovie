@@ -4,7 +4,7 @@ import { SITE_URL } from "./env.js";
 import { requireAuth } from "./middleware/auth.js";
 import { getMe } from "./api/me.js";
 import { getLookup } from "./api/lookup.js";
-import { postVocabulary } from "./api/vocabulary.js";
+import { postVocabulary, getVocabulary, deleteVocabulary } from "./api/vocabulary.js";
 
 /**
  * Backend API service — DÙNG CHUNG cho web frontend + extension.
@@ -38,5 +38,7 @@ app.get("/health", (c) => c.json({ status: "ok" }));
 app.get("/api/me", requireAuth, getMe);
 app.get("/api/lookup", requireAuth, getLookup); // EXT-02: tra nghĩa
 app.post("/api/vocabulary", requireAuth, postVocabulary); // EXT-02: lưu từ
+app.get("/api/vocabulary", requireAuth, getVocabulary); // WEB-03: danh sách
+app.delete("/api/vocabulary/:id", requireAuth, deleteVocabulary); // WEB-03: xóa
 
 export default app;

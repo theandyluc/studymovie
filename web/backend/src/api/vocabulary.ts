@@ -46,3 +46,31 @@ export async function postVocabulary(c: Context) {
   // ignoreDuplicates: nếu đã có -> không insert -> data null.
   return c.json({ saved: true, duplicate: data === null, item: data });
 }
+
+// TIP-006 — GET /api/vocabulary: danh sách từ của user (mới nhất trước).
+export async function getVocabulary(c: Context) {
+  const user = c.get("user");
+  const { data, error } = await getServiceClient()
+    .from("vocabulary")
+    .select("id, word, lemma, ipa, meaning_vi, example, audio_url, created_at")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
+  if (error) return c.json({ error: error.message }, 500);
+  return c.json({ items: data ?? [] });
+}
+
+// TIP-006 — DELETE /api/vocabulary/:id: chỉ xóa từ của chính user.
+export async function deleteVocabulary(c: Context) {
+  const user = c.get("user");
+  const id = c.req.param("id");
+  if (!id) return c.json({ error: "missing id" }, 400);
+
+  const { error, count } = await getServiceClient()
+    .from("vocabulary")
+    .delete({ count: "exact" })
+    .eq("id", id)
+    .eq("user_id", user.id); // chốt chặn: không xóa được của user khác
+  if (error) return c.json({ error: error.message }, 500);
+
+  return c.json({ deleted: (count ?? 0) > 0 });
+}
