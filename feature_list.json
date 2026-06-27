@@ -1,0 +1,198 @@
+{
+  "project": "StudyMovie",
+  "blueprint": "StudyMovie-Blueprint.md (v1.4)",
+  "status_legend": ["todo", "in_progress", "done", "verified", "blocked"],
+  "build_order_note": "Web (frontend+backend) trước Extension. Bám Task Graph trong Blueprint mục 7.",
+  "features": [
+    {
+      "id": "INF-01",
+      "title": "Scaffold monorepo (extension/ + web/frontend + web/backend + supabase/) + Supabase project (region Singapore) + Google OAuth",
+      "area": "infra",
+      "tip": "TIP-001",
+      "status": "todo",
+      "depends_on": [],
+      "acceptance": "init.sh chạy sạch; web/frontend dev lên được; web/backend khởi động; Supabase project tạo ở Singapore; Google OAuth cấu hình.",
+      "evidence": ""
+    },
+    {
+      "id": "BE-02",
+      "title": "Data layer: toàn bộ schema + RLS + import từ điển EN-VI",
+      "area": "backend",
+      "tip": "TIP-002",
+      "status": "todo",
+      "depends_on": ["INF-01"],
+      "acceptance": "Migration chạy sạch; bảng profiles/subscriptions/vocabulary/study_sessions/playlist_items/dictionary tồn tại; RLS theo user; từ điển import xong.",
+      "evidence": ""
+    },
+    {
+      "id": "BE-03",
+      "title": "RPC core: dashboard/streak/leaderboard/today_minutes/lookup_word",
+      "area": "backend",
+      "tip": "TIP-003",
+      "status": "todo",
+      "depends_on": ["BE-02"],
+      "acceptance": "Mỗi RPC trả đúng dữ liệu; lookup_word lemmatize + tra từ điển; leaderboard/streak compute-on-read theo tuần ISO.",
+      "evidence": ""
+    },
+    {
+      "id": "WEB-03",
+      "title": "Trang vocabulary: list + checkbox + 3 nút (flashcard/test EN-VI/test VI-EN)",
+      "area": "frontend",
+      "tip": "TIP-004",
+      "status": "todo",
+      "depends_on": ["BE-03"],
+      "acceptance": "Hiện toàn bộ từ đã lưu; tick chọn; nút điều hướng chỉ lấy từ đã tick.",
+      "evidence": ""
+    },
+    {
+      "id": "WEB-04",
+      "title": "Flashcard: thẻ từ+IPA+nghĩa+audio, swipe trái/phải",
+      "area": "frontend",
+      "tip": "TIP-004",
+      "status": "todo",
+      "depends_on": ["WEB-03"],
+      "acceptance": "Swipe chuyển thẻ; phát âm hoạt động; chỉ từ đã tick.",
+      "evidence": ""
+    },
+    {
+      "id": "WEB-05",
+      "title": "Quiz trắc nghiệm 2 chiều (EN-VI / VI-EN), 3 đáp án sai random từ vocab user",
+      "area": "frontend",
+      "tip": "TIP-004",
+      "status": "todo",
+      "depends_on": ["WEB-03"],
+      "acceptance": "4 đáp án; 3 sai random từ vocab của chính user; 2 chế độ chiều.",
+      "evidence": ""
+    },
+    {
+      "id": "WEB-02",
+      "title": "Dashboard: streak + biểu đồ giờ tuần/tháng + hôm nay X/Y phút + progress bar",
+      "area": "frontend",
+      "tip": "TIP-005",
+      "status": "todo",
+      "depends_on": ["BE-03"],
+      "acceptance": "Streak đúng theo logic (đạt daily_commit liên tiếp); biểu đồ tuần/tháng; progress bar hôm nay.",
+      "evidence": ""
+    },
+    {
+      "id": "WEB-09",
+      "title": "Settings: đổi nickname, set phút cam kết/ngày, xem hạn subscription, logout",
+      "area": "frontend",
+      "tip": "TIP-005",
+      "status": "todo",
+      "depends_on": ["BE-03"],
+      "acceptance": "Lưu nickname + commit_minutes; hiển thị paid_until; logout hoạt động.",
+      "evidence": ""
+    },
+    {
+      "id": "WEB-07",
+      "title": "Leaderboard: top theo giờ tuần, reset thứ 2 (compute-on-read), huy chương, pin user hiện tại",
+      "area": "frontend",
+      "tip": "TIP-005",
+      "status": "todo",
+      "depends_on": ["BE-03"],
+      "acceptance": "Top theo SUM(duration) tuần ISO; 🥇🥈🥉; dòng user hiện tại luôn hiện ở cuối.",
+      "evidence": ""
+    },
+    {
+      "id": "WEB-06",
+      "title": "Playlist tuần: paste link, todo list thumbnail+tên, nút Học (auto-start timer), tick done, xóa",
+      "area": "frontend",
+      "tip": "TIP-006",
+      "status": "todo",
+      "depends_on": ["BE-03"],
+      "acceptance": "Thêm/xóa video; thumbnail+title; tick done; nút Học mở tab + tín hiệu auto-start timer extension.",
+      "evidence": ""
+    },
+    {
+      "id": "EXT-05-06-07",
+      "title": "Extension scaffold MV3 + auth session dùng chung + trial 24h + check hạn → upgrade redirect",
+      "area": "extension",
+      "tip": "TIP-007",
+      "status": "todo",
+      "depends_on": ["BE-01", "BE-03"],
+      "acceptance": "Login Google chung tài khoản; trial 24h tạo khi đăng ký; mỗi lần vào YouTube check hạn server-side; hết hạn ẩn sub + nút Nâng cấp → /upgrade.",
+      "evidence": ""
+    },
+    {
+      "id": "EXT-01",
+      "title": "Dual subtitle EN/VI trên YouTube (tlang=vi), ẩn sub gốc, fallback khi không có caption",
+      "area": "extension",
+      "tip": "TIP-008",
+      "status": "todo",
+      "depends_on": ["EXT-05-06-07"],
+      "acceptance": "Hiện 2 dòng đồng bộ currentTime; lấy VI qua tlang=vi từ client; video không caption → chỉ EN, không vỡ.",
+      "evidence": ""
+    },
+    {
+      "id": "EXT-02",
+      "title": "Click từ → popup (từ/IPA/audio/nghĩa VI/Lưu); lemmatize + lookup_word; lưu kèm câu ngữ cảnh",
+      "area": "extension",
+      "tip": "TIP-009",
+      "status": "todo",
+      "depends_on": ["EXT-01", "BE-03"],
+      "acceptance": "Click 1 từ → lemmatize → lookup_word trả nghĩa+IPA; audio từ Free Dictionary; Lưu ghi vocabulary kèm example. KHÔNG dịch câu.",
+      "evidence": ""
+    },
+    {
+      "id": "EXT-04",
+      "title": "Settings popup: toggle sub, chế độ hiển thị, font size ±, màu chữ, background",
+      "area": "extension",
+      "tip": "TIP-009",
+      "status": "todo",
+      "depends_on": ["EXT-01"],
+      "acceptance": "Tất cả tùy chọn lưu chrome.storage và áp dụng realtime lên overlay.",
+      "evidence": ""
+    },
+    {
+      "id": "EXT-03",
+      "title": "Timer Start/Pause/Stop → study_sessions; hiển thị phút hôm nay; nối nút Học từ playlist",
+      "area": "extension",
+      "tip": "TIP-010",
+      "status": "todo",
+      "depends_on": ["EXT-05-06-07", "WEB-06"],
+      "acceptance": "Stop tạo study_sessions (duration tính server-side theo timestamp); phút hôm nay đúng; nút Học từ playlist auto-start.",
+      "evidence": ""
+    },
+    {
+      "id": "BE-05",
+      "title": "VietQR động theo user (nội dung CK có mã định danh) + trang /upgrade",
+      "area": "backend",
+      "tip": "TIP-011",
+      "status": "todo",
+      "depends_on": ["BE-02"],
+      "acceptance": "QR generate đúng mã user; trang /upgrade hiện QR + text + copy.",
+      "evidence": ""
+    },
+    {
+      "id": "BE-04",
+      "title": "SePay webhook auto-unlock subscription",
+      "area": "backend",
+      "tip": "TIP-012",
+      "status": "todo",
+      "depends_on": ["BE-05"],
+      "acceptance": "Webhook verify + match nội dung CK → cập nhật paid_until, status=active; test sandbox end-to-end.",
+      "evidence": ""
+    },
+    {
+      "id": "QA-01",
+      "title": "QA Tier 1+2 + gstack /qa (browser thật) + /cso security audit, sửa lỗi",
+      "area": "qa",
+      "tip": "TIP-013",
+      "status": "todo",
+      "depends_on": ["EXT-03", "BE-04"],
+      "acceptance": "Các flow chính qua /qa không lỗi; /cso không còn finding nghiêm trọng; regression test cho mỗi fix.",
+      "evidence": ""
+    },
+    {
+      "id": "INF-02",
+      "title": "Đóng gói extension (Chrome Web Store) + deploy frontend/backend Vercel + .env.example + HANDOVER.md + transfer ownership",
+      "area": "infra",
+      "tip": "TIP-014",
+      "status": "todo",
+      "depends_on": ["QA-01"],
+      "acceptance": "Extension đóng gói submit; web deploy chạy; .env.example + HANDOVER.md đầy đủ; checklist handover (Blueprint mục 9) pass.",
+      "evidence": ""
+    }
+  ]
+}

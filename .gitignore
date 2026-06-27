@@ -1,0 +1,49 @@
+# --- Dependencies ---
+node_modules/
+.pnp
+.pnp.js
+
+# --- Env / secrets (KHÔNG commit) ---
+.env
+.env.local
+.env.*.local
+*.pem
+
+# --- Next.js / build ---
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+
+# --- Chrome Extension build ---
+extension/dist/
+extension/*.zip
+*.crx
+*.pub
+
+# --- Supabase ---
+supabase/.branches/
+supabase/.temp/
+**/.supabase/
+
+# --- Logs ---
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# --- Editor / OS ---
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Test / coverage ---
+coverage/
+.nyc_output/
+
+# --- Vercel ---
+.vercel
