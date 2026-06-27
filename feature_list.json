@@ -120,7 +120,7 @@
       "title": "Extension scaffold MV3 + auth session dùng chung + trial 24h + check hạn → upgrade redirect",
       "area": "extension",
       "tip": "TIP-004",
-      "status": "done",
+      "status": "verified",
       "depends_on": ["BE-01", "BE-03"],
       "acceptance": "Login Google chung tài khoản; trial 24h tạo khi đăng ký; mỗi lần vào YouTube check hạn server-side; hết hạn ẩn sub + nút Nâng cấp → /upgrade.",
       "evidence": "Extension MV3 nâng cấp: manifest (storage/tabs/scripting + host youtube+localhost), build esbuild 3 entry (background/content/popup) → dist. Shared-session auth: content/auth-bridge đọc localStorage web (sb-<ref>-auth-token) → background setSession vào chrome.storage (supabaseExt, autoRefresh, CHỈ anon). Popup: chưa login→nút mở web; đã login→avatar+email (EXT-05) + trạng thái sub (EXT-06: trial còn X giờ/active/expired) + nút Nâng cấp khi hết hạn (EXT-07)→/upgrade; logout. Backend /api/me trả subscription + is_active tính server-side theo now(). /upgrade placeholder. Verify: init.sh exit 0, extension build dist hợp lệ MV3, AC-8 service_role KHÔNG có trong bundle (anon có), verify_auth.mjs 8/8 PASS (401/200/profile/subscription trial/is_active=true/CORS). LƯU Ý: 'check hạn mỗi lần vào YouTube' + ẩn sub = phần content YouTube ở TIP-005 (TIP này làm nền tảng + popup + server-side check). AC-1..6 (load unpacked + login/refresh/logout) = Homeowner test trên Chrome thật."
