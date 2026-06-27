@@ -174,10 +174,12 @@ playlist_items (
 - `today_minutes(user_id)` → phút đã học hôm nay (extension gọi để hiển thị).
 - `lookup_word(p_word)` → nhận từ user click, lemmatize, tra bảng `dictionary`, trả nghĩa + IPA + ví dụ. Đọc public (không cần là dữ liệu của user).
 
-**Logic streak (chốt rõ để Thợ khỏi đoán):**
-- Một ngày "đạt" = tổng `duration_sec` trong ngày (theo timezone user, mặc định Asia/Ho_Chi_Minh) ≥ `daily_commit_minutes × 60`.
-- Streak = số ngày liên tiếp tính lùi từ hôm nay mà mỗi ngày đều "đạt".
-- Nếu hôm nay chưa đạt nhưng hôm qua đạt → streak vẫn tính tới hôm qua, chưa reset (chỉ reset khi qua hết ngày mà không đạt). **Cần xác nhận với khách: hôm nay chưa đạt thì hiển thị streak = mấy?** (đề xuất: giữ streak của chuỗi tới hôm qua, gắn nhãn "chưa đạt hôm nay").
+**Logic streak (CHỐT — chuẩn Duolingo, Thợ không được đoán khác):**
+- "Ngày" tính theo timezone **Asia/Ho_Chi_Minh (UTC+7)** cho toàn hệ thống (không per-user).
+- Một ngày "đạt" = tổng `duration_sec` trong ngày đó ≥ `daily_commit_minutes × 60`.
+- **Streak = số ngày liên tiếp đã đạt, tính tới hôm qua.** Hôm nay đạt → streak +1 ngay lúc đạt.
+- **Hôm nay CHƯA đạt → streak giữ nguyên con số** (không +1, không reset). Hiển thị kèm nhãn/biểu tượng "chưa đạt hôm nay" (vd ngọn lửa xám), đạt rồi thì sáng lên.
+- **Reset về 0 chỉ khi một ngày trôi qua hoàn toàn mà không đạt** (sang ngày mới, ngày trước đó bị bỏ lỡ).
 
 ---
 
@@ -471,9 +473,9 @@ Mỗi TIP khi tạo sẽ có đủ: Gherkin acceptance criteria, priority P0/P1/
 Đã chốt:
 - [x] **D-1** Phụ đề VI = YouTube `tlang=vi`
 - [x] **D-2** Nghĩa từ = từ điển EN-VI nhúng (tra cứu từng từ)
+- [x] **Streak** = chuẩn Duolingo, timezone UTC+7 (mục 3)
 
 Còn cần để sang bước tạo TIP:
-- [ ] **Streak khi "hôm nay chưa đạt"** hiển thị thế nào — khách chốt (đề xuất: giữ chuỗi tới hôm qua, gắn nhãn "chưa đạt hôm nay")
-- [ ] Human reply **"APPROVED"** Blueprint v1.1
+- [ ] Human reply **"APPROVED"** Blueprint v1.4
 
 Sau khi đủ, mình sẽ generate Task Graph + từng TIP (Gherkin AC) để giao Thợ.
