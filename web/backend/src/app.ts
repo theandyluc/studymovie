@@ -11,11 +11,19 @@ import { getMe } from "./api/me.js";
  */
 export const app = new Hono();
 
-// CORS: CHỈ cho origin frontend (KHÔNG mở '*'); cho header Authorization.
+// CORS: cho web frontend (SITE_URL) + popup/background extension (chrome-extension://<id>,
+// id thay đổi mỗi lần load unpacked nên phản chiếu theo scheme). KHÔNG mở '*'.
+function allowedOrigin(origin: string | undefined): string | null {
+  if (!origin) return SITE_URL; // request không có Origin (server-to-server) — vô hại
+  if (origin === SITE_URL) return origin;
+  if (origin.startsWith("chrome-extension://")) return origin;
+  return null; // chặn mọi origin khác
+}
+
 app.use(
   "*",
   cors({
-    origin: SITE_URL,
+    origin: (origin) => allowedOrigin(origin),
     allowHeaders: ["Authorization", "Content-Type"],
     allowMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
   })
