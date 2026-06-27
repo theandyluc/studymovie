@@ -50,6 +50,7 @@ await esbuild.build({
   entryPoints: [
     "src/background/service-worker.ts",
     "src/content/auth-bridge.ts",
+    "src/content/youtube.ts",
     "src/popup/popup.ts",
   ],
   outbase: "src",

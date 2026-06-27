@@ -3,6 +3,8 @@ import { cors } from "hono/cors";
 import { SITE_URL } from "./env.js";
 import { requireAuth } from "./middleware/auth.js";
 import { getMe } from "./api/me.js";
+import { getLookup } from "./api/lookup.js";
+import { postVocabulary } from "./api/vocabulary.js";
 
 /**
  * Backend API service — DÙNG CHUNG cho web frontend + extension.
@@ -34,5 +36,7 @@ app.get("/health", (c) => c.json({ status: "ok" }));
 
 // Protected (cần Bearer token hợp lệ)
 app.get("/api/me", requireAuth, getMe);
+app.get("/api/lookup", requireAuth, getLookup); // EXT-02: tra nghĩa
+app.post("/api/vocabulary", requireAuth, postVocabulary); // EXT-02: lưu từ
 
 export default app;

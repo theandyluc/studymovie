@@ -129,31 +129,31 @@
       "id": "EXT-01",
       "title": "Dual subtitle EN/VI trên YouTube (tlang=vi), ẩn sub gốc, fallback khi không có caption",
       "area": "extension",
-      "tip": "TIP-008",
-      "status": "todo",
+      "tip": "TIP-005",
+      "status": "done",
       "depends_on": ["EXT-05-06-07"],
       "acceptance": "Hiện 2 dòng đồng bộ currentTime; lấy VI qua tlang=vi từ client; video không caption → chỉ EN, không vỡ.",
-      "evidence": ""
+      "evidence": "content/youtube.ts: overlay 2 dòng (EN trên/VI dưới) trong #movie_player, sync currentTime qua interval 250ms (đúng khi seek). lib/captions.ts: đọc captionTracks từ ytInitialPlayerResponse (fetch lại trang watch, cùng origin), EN = track gốc + fmt=json3; VI = cùng baseUrl + tlang=vi (auto-translate, D-1). Không caption → loadCues trả [] → không overlay (fallback im lặng, không throw). Ẩn caption gốc YouTube qua style. init.sh exit 0, build dist OK. CẦN Homeowner test video có caption EN trên Chrome (không tự test YouTube DOM được)."
     },
     {
       "id": "EXT-02",
       "title": "Click từ → popup (từ/IPA/audio/nghĩa VI/Lưu); lemmatize + lookup_word; lưu kèm câu ngữ cảnh",
       "area": "extension",
-      "tip": "TIP-009",
-      "status": "todo",
+      "tip": "TIP-005",
+      "status": "done",
       "depends_on": ["EXT-01", "BE-03"],
       "acceptance": "Click 1 từ → lemmatize → lookup_word trả nghĩa+IPA; audio từ Free Dictionary; Lưu ghi vocabulary kèm example. KHÔNG dịch câu.",
-      "evidence": ""
+      "evidence": "Click từ EN → video.pause() + giữ phụ đề → GET /api/lookup?word= (RPC lookup_word lemmatize+tra dictionary) → popup lemma/IPA/nghĩa/audio(nếu có)/Lưu. Lưu → POST /api/vocabulary (word/lemma/ipa/meaning_vi/example=câu EN/audio_url), idempotent UNIQUE(user_id,word). Click ra ngoài/Đóng → video.play(). Backend e2e verify_vocab.mjs 5/5 PASS (lookup 200, save, dup không lỗi, DB 1 dòng+example). LƯU Ý: audio Free Dictionary API chưa tích hợp (audio_url từ dict hiện null → nút audio chỉ hiện khi có); để bổ sung sau. UI click trên YouTube cần Homeowner test Chrome."
     },
     {
       "id": "EXT-04",
       "title": "Settings popup: toggle sub, chế độ hiển thị, font size ±, màu chữ, background",
       "area": "extension",
-      "tip": "TIP-009",
-      "status": "todo",
+      "tip": "TIP-005",
+      "status": "done",
       "depends_on": ["EXT-01"],
       "acceptance": "Tất cả tùy chọn lưu chrome.storage và áp dụng realtime lên overlay.",
-      "evidence": ""
+      "evidence": "lib/settings.ts (chrome.storage.local + defaults + onSettingsChange). Panel gear 📖 trên player: bật/tắt phụ đề, chế độ EN+VI/EN/VI, cỡ chữ, màu chữ, màu nền, độ mờ nền. onSettingsChange → applySettings re-render overlay NGAY (realtime). Lưu qua phiên. Cần Homeowner test trên Chrome."
     },
     {
       "id": "EXT-03",

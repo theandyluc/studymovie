@@ -17,6 +17,11 @@
       "matches": ["http://localhost:3000/*"],
       "js": ["content/auth-bridge.js"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://*.youtube.com/*"],
+      "js": ["content/youtube.js"],
+      "run_at": "document_idle"
     }
   ]
 }

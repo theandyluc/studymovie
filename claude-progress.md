@@ -7,14 +7,31 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** GĐ2 — extension foundation xong (TIP-004 done: EXT-05-06-07)
+- **Giai đoạn hiện tại:** GĐ2 — extension subtitle + lookup + settings xong (TIP-005 done: EXT-01/02/04)
 - **Feature đang làm:** (chưa bắt đầu TIP tiếp theo)
-- **Next:** TIP-005 — extension content YouTube: dual subtitle (EXT-01) / click-từ popup tra nghĩa (EXT-02) / timer (EXT-03) / settings (EXT-04). Cắm vào nền tảng auth + apiExt + supabaseExt đã có.
+- **Next:** TIP-006 — extension timer Start/Pause/Stop → study_sessions (EXT-03) + nối nút Học từ playlist. (Hoặc web vocabulary/dashboard tùy Task Graph — giờ bảng vocabulary đã có từ thật để dựng.)
 - **Blocker / cần làm:** (1) ⚠️ **Homeowner test extension trên Chrome thật** (load unpacked `extension/dist/` → login → nhận session → trạng thái trial). (2) ⚠️ **ĐỔI mật khẩu DB Supabase** (lộ ở TIP-002). (3) Production: thêm domain `https://studymovie.com/*` vào manifest host_permissions + content_scripts matches (hiện chỉ localhost:3000). (4) Khách chốt UI streak "hôm nay chưa đạt".
 
 ---
 
 ## Session log
+
+### Session 5 — TIP-005 Dual subtitle + click-word lookup + settings (2026-06-27)
+- **TIP/Feature:** TIP-005 — EXT-01 (phụ đề song ngữ), EXT-02 (click-từ tra/lưu), EXT-04 (settings).
+- **Đã làm:**
+  - **Backend:** `GET /api/lookup?word=` (RPC lookup_word), `POST /api/vocabulary` (upsert idempotent UNIQUE user_id,word) — protected, CORS đã cho chrome-extension.
+  - **Extension `lib/captions.ts`:** đọc captionTracks từ `ytInitialPlayerResponse` (fetch lại trang watch cùng origin) → EN track gốc + `fmt=json3`; VI = cùng baseUrl + `tlang=vi` (auto-translate, D-1). Brace-matching extractor an toàn. Không caption → trả [] (fallback).
+  - **Extension `lib/settings.ts`:** chrome.storage.local + defaults + onSettingsChange.
+  - **Extension `content/youtube.ts`:** overlay 2 dòng EN/VI trong #movie_player, sync currentTime (interval 250ms), re-init khi đổi video (yt-navigate-finish + poll). Click từ EN → pause + giữ phụ đề → lookup popup (lemma/IPA/nghĩa/audio/Lưu) → POST vocabulary (example=câu EN) → click ngoài/Đóng → play. Gear 📖 → panel settings realtime (bật/tắt, mode, cỡ chữ, màu chữ, màu/độ mờ nền). Ẩn caption gốc YouTube.
+  - Manifest + build.mjs: thêm content script youtube (`*://*.youtube.com/*`).
+- **Verification (tự test được):**
+  - `init.sh` exit 0 (lint+typecheck cả 3). Extension build dist OK (thêm youtube.js).
+  - **Backend e2e `verify_vocab.mjs` 5/5 PASS** (lookup('running') 200, save vocab+example, lưu trùng không lỗi duplicate=true, DB đúng 1 dòng, 401 không token).
+  - **AC-8:** service_role KHÔNG có trong bundle dist.
+- **Còn dở / chưa verify (Homeowner test Chrome):** AC-1/2/3 (overlay song ngữ + fallback + tlang=vi), AC-4 (click pause+popup), AC-6 (settings realtime) — cần video YouTube có caption EN. Không tự test YouTube DOM/timedtext ở môi trường Thợ.
+- **Deviation / rủi ro:** (1) tip EXT-01/02/04 sửa TIP-008/009→TIP-005 cho khớp. (2) Audio Free Dictionary API CHƯA tích hợp (audio_url từ dict null → nút audio chỉ hiện khi có) — bổ sung sau. (3) ⚠️ YouTube timedtext/ytInitialPlayerResponse là endpoint không chính thức, có thể đổi/chặn (Blueprint mục 0 đã ghi) — nếu Homeowner test thấy không lấy được caption, cần điều tra phương án (player API nội bộ). (4) youtube.js bundle ~772KB (kèm supabase-js) — chấp nhận, có thể tối giản sau.
+- **Cách resume:** `npm run build --prefix extension` → reload extension → mở video YouTube có CC tiếng Anh (vd TED) → kiểm overlay/click/settings. Backend+frontend dev chạy.
+- **Commit:** feat(ext): TIP-005 dual subtitle + click-word lookup + settings.
 
 ### Session 4 — TIP-004 Extension MV3 foundation + shared-session auth + trial check (2026-06-27)
 - **TIP/Feature:** TIP-004 — EXT-05-06-07 (login shared session, trạng thái subscription, upgrade redirect).
