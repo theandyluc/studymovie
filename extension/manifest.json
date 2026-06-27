@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "StudyMovie",
+  "version": "0.0.1",
+  "description": "Học tiếng Anh qua YouTube với phụ đề song ngữ + ôn từ vựng.",
+  "permissions": ["storage", "activeTab"],
+  "host_permissions": ["*://*.youtube.com/*"],
+  "background": {
+    "service_worker": "background/service-worker.js",
+    "type": "module"
+  }
+}

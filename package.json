@@ -1,0 +1,20 @@
+{
+  "name": "studymovie",
+  "version": "0.0.1",
+  "private": true,
+  "description": "StudyMovie monorepo — Chrome Extension (MV3) + Web (Next.js) + Backend API (Hono) + Supabase.",
+  "workspaces": [
+    "web/frontend",
+    "web/backend",
+    "extension"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
+  }
+}
