@@ -51,6 +51,7 @@ await esbuild.build({
     "src/background/service-worker.ts",
     "src/content/auth-bridge.ts",
     "src/content/youtube.ts",
+    "src/content/yt-intercept.ts",
     "src/popup/popup.ts",
   ],
   outbase: "src",

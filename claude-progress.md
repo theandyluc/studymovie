@@ -32,6 +32,11 @@
 - **Deviation / rủi ro:** (1) tip EXT-01/02/04 sửa TIP-008/009→TIP-005 cho khớp. (2) Audio Free Dictionary API CHƯA tích hợp (audio_url từ dict null → nút audio chỉ hiện khi có) — bổ sung sau. (3) ⚠️ YouTube timedtext/ytInitialPlayerResponse là endpoint không chính thức, có thể đổi/chặn (Blueprint mục 0 đã ghi) — nếu Homeowner test thấy không lấy được caption, cần điều tra phương án (player API nội bộ). (4) youtube.js bundle ~772KB (kèm supabase-js) — chấp nhận, có thể tối giản sau.
 - **Cách resume:** `npm run build --prefix extension` → reload extension → mở video YouTube có CC tiếng Anh (vd TED) → kiểm overlay/click/settings. Backend+frontend dev chạy.
 - **Commit:** feat(ext): TIP-005 dual subtitle + click-word lookup + settings.
+- **Debug (cùng ngày, sau test Chrome — 3 vòng):**
+  1. **Caption rỗng:** timedtext baseUrl từ ytInitialPlayerResponse THIẾU chữ ký (`pot`) → 0 byte. Fix: `content/yt-intercept.ts` (MAIN world, document_start) hook fetch/XHR bắt **URL đã ký player tự gọi** → fetch json3 EN + `tlang=vi` VI → postMessage cue sang content. (`captions.ts` rút còn helper parse.)
+  2. **Click-từ "Failed to fetch":** content (origin youtube.com) bị CORS chặn. Fix (Cách 2 chuẩn MV3): route qua **background SW** (`SM_API` → apiExt origin chrome-extension đã được CORS); **CORS backend giữ chặt**. Lợi phụ: youtube.js 769KB→15KB.
+  3. **SPA đổi video không cập nhật:** race do dựa `yt-navigate-finish`. Fix: message-driven theo `videoId` + poll `location` xoá stale, dựng lại overlay vào `#movie_player` hiện tại.
+  - Đã test Chrome: phụ đề EN/VI, click/lookup/lưu/resume, settings realtime, SPA đổi video — tất cả OK.
 
 ### Session 4 — TIP-004 Extension MV3 foundation + shared-session auth + trial check (2026-06-27)
 - **TIP/Feature:** TIP-004 — EXT-05-06-07 (login shared session, trạng thái subscription, upgrade redirect).

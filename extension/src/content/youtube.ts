@@ -1,9 +1,32 @@
-// TIP-005 — Content script trang watch YouTube: overlay phụ đề song ngữ (EXT-01),
-// click-từ tra nghĩa + lưu (EXT-02), panel settings realtime (EXT-04).
-// Mọi tương tác DOM player đều có guard — KHÔNG throw khi YouTube đổi cấu trúc.
-import { loadCues, type Cue } from "../lib/captions";
+// TIP-005 — Content script (ISOLATED) trang watch YouTube.
+// Nhận cue (EN/VI) từ interceptor MAIN-world qua window.postMessage (URL caption ĐÃ KÝ),
+// dựng overlay 2 dòng (EXT-01), click-từ tra nghĩa + lưu (EXT-02), settings realtime (EXT-04).
+// Mọi tương tác DOM player có guard — không throw khi YouTube đổi cấu trúc.
+import { type Cue } from "../lib/captions";
 import { getSettings, onSettingsChange, setSettings, type Settings } from "../lib/settings";
-import { apiExt } from "../lib/apiExt";
+
+// Gọi backend QUA background SW (content script ở origin youtube.com bị CORS chặn;
+// background dùng origin chrome-extension đã nằm trong allowlist). CORS backend giữ chặt.
+interface ApiResp {
+  ok: boolean;
+  data?: unknown;
+  error?: string;
+}
+function callApi<T>(method: string, path: string, body?: unknown): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    chrome.runtime.sendMessage({ type: "SM_API", method, path, body }, (resp: ApiResp | undefined) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+        return;
+      }
+      if (!resp?.ok) {
+        reject(new Error(resp?.error ?? "API error"));
+        return;
+      }
+      resolve(resp.data as T);
+    });
+  });
+}
 
 interface Sense {
   pos: string | null;
@@ -31,12 +54,17 @@ let settings: Settings = {
   bgOpacity: 0.6,
 };
 let cues: Cue[] = [];
-let currentVideoId = "";
 let activeIndex = -1;
 let popupOpen = false;
 let pausedByPopup = false;
+let currentVid = "";
 
-const getVideoId = (): string => new URLSearchParams(location.search).get("v") ?? "";
+const SM_DEBUG = false; // bật để xem log chẩn đoán caption/SPA
+const dbg = (...a: unknown[]): void => {
+  if (SM_DEBUG) console.log("[StudyMovie/content]", ...a);
+};
+const locVideoId = (): string => new URLSearchParams(location.search).get("v") ?? "";
+
 const getPlayer = (): HTMLElement | null =>
   (document.querySelector("#movie_player") as HTMLElement | null) ??
   (document.querySelector(".html5-video-player") as HTMLElement | null);
@@ -51,7 +79,6 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`;
 }
 
-// Ẩn caption gốc của YouTube để không chồng 2 lớp.
 function ensureHideNativeStyle(): void {
   let s = document.getElementById("studymovie-hide-native");
   if (!s) {
@@ -73,10 +100,10 @@ function removeOverlay(): void {
   activeIndex = -1;
 }
 
-function buildOverlay(): HTMLDivElement | null {
+function buildOverlay(): void {
   const player = getPlayer();
-  if (!player) return null;
-  removeOverlay();
+  if (!player) return;
+  if (document.getElementById(ID)) return;
   const box = document.createElement("div");
   box.id = ID;
   Object.assign(box.style, {
@@ -89,7 +116,7 @@ function buildOverlay(): HTMLDivElement | null {
     zIndex: "60",
   } as Partial<CSSStyleDeclaration>);
   player.appendChild(box);
-  return box;
+  activeIndex = -1;
 }
 
 function applyLineStyle(el: HTMLElement): void {
@@ -149,8 +176,7 @@ function renderCue(idx: number): void {
 
 function syncTick(): void {
   const video = getVideo();
-  const box = document.getElementById(ID);
-  if (!video || !box) return;
+  if (!video || !document.getElementById(ID)) return;
   if (popupOpen) return; // giữ phụ đề đứng yên khi popup mở
   const t = video.currentTime;
   let idx = -1;
@@ -185,12 +211,28 @@ function meaningSummary(result: LookupResult | null): string {
     .join("; ");
 }
 
+function mkBtn(label: string, onClick: () => void, ghost = false): HTMLButtonElement {
+  const b = document.createElement("button");
+  b.textContent = label;
+  Object.assign(b.style, {
+    border: ghost ? "1px solid #e4e4e7" : "0",
+    background: ghost ? "transparent" : "#4f46e5",
+    color: ghost ? "#18181b" : "#ffffff",
+    borderRadius: "6px",
+    padding: "6px 12px",
+    fontSize: "13px",
+    cursor: "pointer",
+    marginTop: "6px",
+  } as Partial<CSSStyleDeclaration>);
+  b.addEventListener("click", onClick);
+  return b;
+}
+
 async function onWordClick(word: string, surface: string, sentence: string): Promise<void> {
   if (!word) return;
   const player = getPlayer();
   if (!player) return;
 
-  // Pause + giữ phụ đề.
   const video = getVideo();
   if (video && !video.paused) {
     video.pause();
@@ -225,7 +267,7 @@ async function onWordClick(word: string, surface: string, sentence: string): Pro
 
   let result: LookupResult | null = null;
   try {
-    const res = await apiExt<LookupResponse>(`/api/lookup?word=${encodeURIComponent(word)}`);
+    const res = await callApi<LookupResponse>("GET", `/api/lookup?word=${encodeURIComponent(word)}`);
     result = res.result;
   } catch (e) {
     pop.textContent = `Lỗi tra nghĩa: ${e instanceof Error ? e.message : String(e)}`;
@@ -260,14 +302,16 @@ async function onWordClick(word: string, surface: string, sentence: string): Pro
     pop.appendChild(list);
 
     if (result.audio_url) {
-      const audioBtn = mkBtn("🔊 Phát âm", () => {
-        try {
-          void new Audio(result?.audio_url ?? "").play();
-        } catch {
-          /* ignore */
-        }
-      });
-      pop.appendChild(audioBtn);
+      const audioUrl = result.audio_url;
+      pop.appendChild(
+        mkBtn("🔊 Phát âm", () => {
+          try {
+            void new Audio(audioUrl).play();
+          } catch {
+            /* ignore */
+          }
+        })
+      );
     }
   } else {
     const none = document.createElement("div");
@@ -280,16 +324,13 @@ async function onWordClick(word: string, surface: string, sentence: string): Pro
     saveBtn.disabled = true;
     saveBtn.textContent = "Đang lưu…";
     try {
-      const r = await apiExt<{ saved: boolean; duplicate: boolean }>("/api/vocabulary", {
-        method: "POST",
-        body: JSON.stringify({
-          word,
-          lemma: result?.lemma ?? word,
-          ipa: result?.ipa ?? null,
-          meaning_vi: meaningSummary(result),
-          example: sentence,
-          audio_url: result?.audio_url ?? null,
-        }),
+      const r = await callApi<{ saved: boolean; duplicate: boolean }>("POST", "/api/vocabulary", {
+        word,
+        lemma: result?.lemma ?? word,
+        ipa: result?.ipa ?? null,
+        meaning_vi: meaningSummary(result),
+        example: sentence,
+        audio_url: result?.audio_url ?? null,
       });
       saveBtn.textContent = r.duplicate ? "Đã lưu trước đó ✓" : "Đã lưu ✓";
     } catch (e) {
@@ -300,23 +341,6 @@ async function onWordClick(word: string, surface: string, sentence: string): Pro
   saveBtn.style.marginRight = "6px";
   pop.appendChild(saveBtn);
   pop.appendChild(mkBtn("Đóng", () => closeWordPopup(true), true));
-}
-
-function mkBtn(label: string, onClick: () => void, ghost = false): HTMLButtonElement {
-  const b = document.createElement("button");
-  b.textContent = label;
-  Object.assign(b.style, {
-    border: ghost ? "1px solid #e4e4e7" : "0",
-    background: ghost ? "transparent" : "#4f46e5",
-    color: ghost ? "#18181b" : "#ffffff",
-    borderRadius: "6px",
-    padding: "6px 12px",
-    fontSize: "13px",
-    cursor: "pointer",
-    marginTop: "6px",
-  } as Partial<CSSStyleDeclaration>);
-  b.addEventListener("click", onClick);
-  return b;
 }
 
 // Click ra ngoài popup -> đóng + chạy tiếp.
@@ -446,39 +470,29 @@ function toggleSettingsPanel(): void {
 function applySettings(): void {
   ensureHideNativeStyle();
   if (!settings.enabled) {
-    document.getElementById(ID)?.remove();
-    activeIndex = -1;
-  } else if (!document.getElementById(ID) && cues.length) {
+    removeOverlay();
+  } else if (cues.length) {
     buildOverlay();
+    buildGear();
     activeIndex = -1;
-  } else {
     renderCue(activeIndex);
   }
 }
 
-// ---- Init + điều hướng SPA ----
-async function loadForCurrentVideo(): Promise<void> {
-  const id = getVideoId();
-  if (!id) {
-    removeOverlay();
-    currentVideoId = "";
-    return;
-  }
-  if (id === currentVideoId && document.getElementById(ID)) return;
-  currentVideoId = id;
-  cues = [];
-  removeOverlay();
-  try {
-    cues = await loadCues(id);
-  } catch {
-    cues = [];
-  }
+// ---- Nhận cue từ interceptor (MAIN world) ----
+function onMessage(e: MessageEvent): void {
+  if (e.source !== window) return;
+  const d = e.data as { __sm?: string; cues?: Cue[]; videoId?: string } | null;
+  if (d?.__sm !== "SM_CUES" || !Array.isArray(d.cues)) return;
+  dbg("nhận cue", d.cues.length, "video=", d.videoId);
+  cues = d.cues;
+  currentVid = d.videoId ?? locVideoId();
+  activeIndex = -1;
   ensureHideNativeStyle();
-  if (cues.length && settings.enabled) {
+  removeOverlay(); // dựng lại để gắn vào #movie_player hiện tại (YouTube có thể thay DOM player)
+  if (settings.enabled && cues.length) {
     buildOverlay();
     buildGear();
-  } else if (!cues.length) {
-    console.debug("[StudyMovie] video không có caption — bỏ qua overlay (fallback).");
   }
 }
 
@@ -489,14 +503,21 @@ async function init(): Promise<void> {
     applySettings();
   });
 
-  // vòng lặp đồng bộ + theo dõi đổi video (SPA).
+  window.addEventListener("message", onMessage);
   setInterval(syncTick, 250);
-  setInterval(() => {
-    if (getVideoId() && getVideoId() !== currentVideoId) void loadForCurrentVideo();
-  }, 800);
-  document.addEventListener("yt-navigate-finish", () => void loadForCurrentVideo());
 
-  await loadForCurrentVideo();
+  // SPA: KHÔNG dựa vào yt-navigate-finish (dễ race với lúc cue tới). Thay vào đó:
+  // poll location — khi đổi sang video khác thì xoá overlay stale; cue video mới
+  // sẽ tới qua SM_CUES (interceptor) và dựng lại overlay.
+  setInterval(() => {
+    const v = locVideoId();
+    if (v !== currentVid) {
+      dbg("location đổi video:", v, "(đang có cue video:", currentVid, ") -> xoá overlay stale");
+      currentVid = v;
+      cues = [];
+      removeOverlay();
+    }
+  }, 500);
 }
 
 void init();
