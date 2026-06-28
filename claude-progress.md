@@ -7,14 +7,32 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** GĐ2 — web vocabulary xong (TIP-006 done: WEB-03/04/05)
+- **Giai đoạn hiện tại:** GĐ2 — web dashboard/settings/leaderboard xong (TIP-007 done: WEB-02/07/09)
 - **Feature đang làm:** (chưa bắt đầu TIP tiếp theo)
-- **Next:** TIP tiếp theo — web /dashboard (WEB-02 streak+đồ thị) + /settings + /leaderboard, hoặc extension timer EXT-03 (tùy Task Graph Chủ thầu).
+- **Next:** còn lại theo Task Graph — extension timer EXT-03 (study_sessions, sinh dữ liệu giờ cho dashboard/leaderboard), web /playlist (WEB-06), /upgrade thật (WEB-08, VietQR+SePay BE-04/05).
 - **Blocker / cần làm:** (1) ⚠️ **Homeowner test extension trên Chrome thật** (load unpacked `extension/dist/` → login → nhận session → trạng thái trial). (2) ⚠️ **ĐỔI mật khẩu DB Supabase** (lộ ở TIP-002). (3) Production: thêm domain `https://studymovie.com/*` vào manifest host_permissions + content_scripts matches (hiện chỉ localhost:3000). (4) Khách chốt UI streak "hôm nay chưa đạt".
 
 ---
 
 ## Session log
+
+### Session 7 — TIP-007 Dashboard + Settings + Leaderboard (2026-06-27)
+- **TIP/Feature:** TIP-007 — WEB-02 (dashboard), WEB-09 (settings), WEB-07 (leaderboard). KHÔNG sửa RPC (chỉ gọi).
+- **Đã làm:**
+  - **Backend:** `getUserClient(token)` (anon + Authorization header → RPC có auth.uid; service_role không có); middleware lưu `token`. Endpoint: `GET /api/dashboard` (rpc get_dashboard), `GET /api/leaderboard` (rpc get_leaderboard_weekly), `GET`+`PATCH /api/profile` (nickname/daily_commit_minutes). Wire app.ts.
+  - **`lib/account.ts`**: types + fetchers (dashboard/leaderboard/profile/me) + subscriptionText.
+  - **`app/dashboard`** (thay placeholder TIP-003): streak (lửa sáng/xám theo today_met) + progress X/Y + biểu đồ cột tuần/tháng (CSS div, KHÔNG thêm chart lib) + zero-state.
+  - **`app/settings`**: đổi nickname + phút cam kết (PATCH), xem subscription (read), Đăng xuất, **credit từ điển FVDP GPL v2 + link** (bắt buộc license).
+  - **`app/leaderboard`**: top tuần ISO + avatar + nickname + giờ, 🥇🥈🥉, highlight 'bạn', ghim caller ngoài top, ghi chú reset thứ Hai.
+  - Bật nav Dashboard/Bảng xếp hạng/Cài đặt trong Header.
+- **Verification:**
+  - `init.sh` exit 0 (lint+typecheck 3 pkg). FE build OK — route /dashboard, /leaderboard, /settings prerender.
+  - **`verify_account.mjs` 9/9 PASS** (401; dashboard streak=1/met/min=35/week7/month30; profile GET/PATCH/reload; leaderboard 2 user B>A + caller).
+  - **AC-7:** RPC/migrations (supabase/) KHÔNG đụng; frontend không service_role.
+- **Còn dở / chưa verify (Homeowner browser):** UI dashboard/settings/leaderboard. Leaderboard cần >1 user để thấy xếp hạng (verify đã chứng minh logic bằng 2 user tạm).
+- **Deviation:** (1) Phải thêm `getUserClient` (JWT user) vì RPC dùng auth.uid — service_role không gọi được. (2) Biểu đồ bằng CSS div (không thêm thư viện). (3) Sửa feature_list WEB-02/07/09 tip TIP-005→TIP-007.
+- **Cách resume:** `npm run dev` backend+frontend → đăng nhập → /dashboard, /settings, /leaderboard. Dashboard/leaderboard cần study_sessions (sinh qua extension timer EXT-03 — TIP sau).
+- **Commit:** feat(web): TIP-007 dashboard + settings + leaderboard.
 
 ### Session 6 — TIP-006 Web Vocabulary (list + xóa + flashcard + quiz) (2026-06-27)
 - **TIP/Feature:** TIP-006 — WEB-03 (list+xóa), WEB-04 (flashcard), WEB-05 (quiz 2 chiều). Thiết kế chốt: học TẤT CẢ từ (không tick) + cho xóa.

@@ -11,8 +11,8 @@ const NAV: { href: string; label: string; enabled: boolean }[] = [
   { href: "/dashboard", label: "Dashboard", enabled: true },
   { href: "/vocabulary", label: "Từ vựng", enabled: true },
   { href: "#", label: "Playlist", enabled: false },
-  { href: "#", label: "Bảng xếp hạng", enabled: false },
-  { href: "#", label: "Cài đặt", enabled: false },
+  { href: "/leaderboard", label: "Bảng xếp hạng", enabled: true },
+  { href: "/settings", label: "Cài đặt", enabled: true },
 ];
 
 export function Header() {

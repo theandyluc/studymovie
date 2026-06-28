@@ -79,31 +79,31 @@
       "id": "WEB-02",
       "title": "Dashboard: streak + biểu đồ giờ tuần/tháng + hôm nay X/Y phút + progress bar",
       "area": "frontend",
-      "tip": "TIP-005",
-      "status": "todo",
+      "tip": "TIP-007",
+      "status": "done",
       "depends_on": ["BE-03"],
       "acceptance": "Streak đúng theo logic (đạt daily_commit liên tiếp); biểu đồ tuần/tháng; progress bar hôm nay.",
-      "evidence": ""
+      "evidence": "app/dashboard (thay placeholder TIP-003): GET /api/dashboard (RPC get_dashboard qua getUserClient). Streak + lửa sáng/xám theo today_met, progress X/Y phút + bar, biểu đồ cột giờ tuần(7)/tháng(30) bằng CSS div (no chart lib), zero-state. verify_account.mjs PASS (streak=1/met/min=35/week7/month30). UI cần Homeowner test browser."
     },
     {
       "id": "WEB-09",
       "title": "Settings: đổi nickname, set phút cam kết/ngày, xem hạn subscription, logout",
       "area": "frontend",
-      "tip": "TIP-005",
-      "status": "todo",
+      "tip": "TIP-007",
+      "status": "done",
       "depends_on": ["BE-03"],
       "acceptance": "Lưu nickname + commit_minutes; hiển thị paid_until; logout hoạt động.",
-      "evidence": ""
+      "evidence": "app/settings: GET/PATCH /api/profile (nickname + daily_commit_minutes), trạng thái subscription (read từ /api/me), Đăng xuất, CREDIT từ điển FVDP © Hồ Ngọc Đức (GPL v2) + link nguồn (bắt buộc license). verify_account.mjs PASS (profile GET/PATCH/reload). UI cần Homeowner test browser."
     },
     {
       "id": "WEB-07",
       "title": "Leaderboard: top theo giờ tuần, reset thứ 2 (compute-on-read), huy chương, pin user hiện tại",
       "area": "frontend",
-      "tip": "TIP-005",
-      "status": "todo",
+      "tip": "TIP-007",
+      "status": "done",
       "depends_on": ["BE-03"],
       "acceptance": "Top theo SUM(duration) tuần ISO; 🥇🥈🥉; dòng user hiện tại luôn hiện ở cuối.",
-      "evidence": ""
+      "evidence": "app/leaderboard: GET /api/leaderboard (RPC get_leaderboard_weekly), top tuần ISO + avatar + nickname + giờ, 🥇🥈🥉 top 3, highlight 'bạn' theo user_id, ghim caller nếu ngoài top, ghi chú reset thứ Hai. verify_account.mjs PASS (2 user xếp hạng đúng B>A, caller hiển thị). UI cần Homeowner test browser (>1 user)."
     },
     {
       "id": "WEB-06",

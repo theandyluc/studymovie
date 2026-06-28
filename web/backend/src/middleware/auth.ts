@@ -8,6 +8,7 @@ import { getServiceClient } from "../lib/supabase.js";
 declare module "hono" {
   interface ContextVariableMap {
     user: User;
+    token: string;
   }
 }
 
@@ -22,5 +23,6 @@ export const requireAuth: MiddlewareHandler = async (c, next) => {
     return c.json({ error: "invalid token" }, 401);
   }
   c.set("user", data.user);
+  c.set("token", m[1]); // dùng cho getUserClient (RPC cần auth.uid)
   await next();
 };

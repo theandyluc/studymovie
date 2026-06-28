@@ -5,6 +5,9 @@ import { requireAuth } from "./middleware/auth.js";
 import { getMe } from "./api/me.js";
 import { getLookup } from "./api/lookup.js";
 import { postVocabulary, getVocabulary, deleteVocabulary } from "./api/vocabulary.js";
+import { getDashboard } from "./api/dashboard.js";
+import { getLeaderboard } from "./api/leaderboard.js";
+import { getProfile, patchProfile } from "./api/profile.js";
 
 /**
  * Backend API service — DÙNG CHUNG cho web frontend + extension.
@@ -40,5 +43,9 @@ app.get("/api/lookup", requireAuth, getLookup); // EXT-02: tra nghĩa
 app.post("/api/vocabulary", requireAuth, postVocabulary); // EXT-02: lưu từ
 app.get("/api/vocabulary", requireAuth, getVocabulary); // WEB-03: danh sách
 app.delete("/api/vocabulary/:id", requireAuth, deleteVocabulary); // WEB-03: xóa
+app.get("/api/dashboard", requireAuth, getDashboard); // WEB-02
+app.get("/api/leaderboard", requireAuth, getLeaderboard); // WEB-07
+app.get("/api/profile", requireAuth, getProfile); // WEB-09
+app.patch("/api/profile", requireAuth, patchProfile); // WEB-09
 
 export default app;
