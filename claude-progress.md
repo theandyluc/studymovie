@@ -16,6 +16,14 @@
 
 ## Session log
 
+### Session 8 — TIP-008 Điều tra nguồn từ điển Wiktionary (KHÔNG swap) (2026-06-28)
+- **TIP/Feature:** TIP-008 — điều tra đổi nguồn dictionary FVDP → Wiktionary (CC BY-SA). 2 giai đoạn, chốt chặn trước khi swap.
+- **Đã làm (Giai đoạn 1 — chỉ điều tra, KHÔNG swap):** stream-count mẫu 9.52% (300MB giữa file) của kaikki.org Wiktextract English (3.15GB), trích cặp EN→VI từ `translations[code=vi]`.
+- **Kết quả:** chỉ ~0.043% entry có nghĩa VI → ngoại suy **≈ 620 từ EN-VI toàn file** (mẫu 59/138.008). Chất lượng lệch về danh từ riêng + lẫn nhiễu (vd `appealable→cặc` sai bậy).
+- **Quyết định (Chủ thầu duyệt):** Wiktionary EN→VI (~620) **kém xa FVDP (103.401)** cả lượng lẫn chất → **GIỮ FVDP, KHÔNG swap.** Không đổi data, không đổi credit (vẫn FVDP GPL v2).
+- **Thay đổi repo:** KHÔNG (chỉ chạy đếm trong scratchpad, đã dọn). Bảng dictionary nguyên 103.401 mục FVDP. Schema/RPC/credit giữ nguyên.
+- **Lưu ý môi trường:** kaikki tải ~0.3–0.6 MB/s nên dùng mẫu + ngoại suy theo tỉ lệ byte (không tải full 3.15GB).
+
 ### Session 7 — TIP-007 Dashboard + Settings + Leaderboard (2026-06-27)
 - **TIP/Feature:** TIP-007 — WEB-02 (dashboard), WEB-09 (settings), WEB-07 (leaderboard). KHÔNG sửa RPC (chỉ gọi).
 - **Đã làm:**
