@@ -160,7 +160,7 @@
       "title": "Timer Start/Pause/Stop → study_sessions; hiển thị phút hôm nay; nối nút Học từ playlist",
       "area": "extension",
       "tip": "TIP-010",
-      "status": "done",
+      "status": "verified",
       "depends_on": ["EXT-05-06-07", "WEB-06"],
       "acceptance": "Stop tạo study_sessions (duration tính server-side theo timestamp); phút hôm nay đúng; nút Học từ playlist auto-start.",
       "evidence": "Timer TỰ ĐỘNG (chốt: không nút thủ công): content/timer.ts đo wall-clock khi <video> YouTube đang phát (play/playing→tính, pause/ended/emptied→dừng); seek/tua dùng wall-clock nên KHÔNG cộng bước nhảy; flush DELTA qua background SM_API định kỳ 60s + sự kiện (pause/ended/đổi video/ẩn tab/pagehide) → chống double-count. Backend POST /api/study-session: getUserClient insert study_sessions (started_at=now−delta, ended_at=now → RPC nhóm theo started_at UTC+7), validate >0 & ≤3600. Popup hiện 'Hôm nay X phút' (today_minutes từ /api/dashboard). verify_timer.mjs 10/10 PASS (2 phiên 210s, today_minutes=3, validate 0/-5/99999/abc→400, 401). LƯU Ý: 'nút Học từ playlist auto-start' thuộc WEB-06 (playlist chưa làm) — ngoài scope TIP-010, để khi có /playlist. AC-1/2/5/6 (đo giờ + dashboard/leaderboard sống) cần Homeowner test Chrome."

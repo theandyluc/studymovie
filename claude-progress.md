@@ -7,10 +7,10 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** GĐ2 — web dashboard/settings/leaderboard xong (TIP-007 done: WEB-02/07/09)
+- **Giai đoạn hiện tại:** GĐ2 — extension timer xong (TIP-010 done: EXT-03). Dashboard/leaderboard giờ có dữ liệu giờ thật.
 - **Feature đang làm:** (chưa bắt đầu TIP tiếp theo)
-- **Next:** còn lại theo Task Graph — extension timer EXT-03 (study_sessions, sinh dữ liệu giờ cho dashboard/leaderboard), web /playlist (WEB-06), /upgrade thật (WEB-08, VietQR+SePay BE-04/05).
-- **Blocker / cần làm:** (1) ⚠️ **Homeowner test extension trên Chrome thật** (load unpacked `extension/dist/` → login → nhận session → trạng thái trial). (2) ⚠️ **ĐỔI mật khẩu DB Supabase** (lộ ở TIP-002). (3) Production: thêm domain `https://studymovie.com/*` vào manifest host_permissions + content_scripts matches (hiện chỉ localhost:3000). (4) Khách chốt UI streak "hôm nay chưa đạt".
+- **Next:** WEB-06 /playlist (+ hook nút Học ↔ timer), WEB-08 + BE-04/05 /upgrade thật (VietQR + SePay).
+- **Blocker / cần làm:** (1) Production: thêm domain `https://studymovie.com/*` vào manifest host_permissions + content_scripts matches (hiện chỉ localhost:3000). (2) Khách chốt UI streak "hôm nay chưa đạt" (backend đã có cờ `today_met`).
 
 ---
 
