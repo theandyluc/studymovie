@@ -22,7 +22,7 @@
       "status": "verified",
       "depends_on": ["INF-01"],
       "acceptance": "Migration chạy sạch; bảng profiles/subscriptions/vocabulary/study_sessions/playlist_items/dictionary tồn tại; RLS theo user; từ điển import xong.",
-      "evidence": "2 migration (20260627000001_init_schema, 20260627000002_rpc) push lên cloud ojsdchkwfzhmzvmwlgmo (Singapore) qua supabase CLI. Introspect xác nhận đủ 6 bảng + constraints (status CHECK, vocabulary UNIQUE(user_id,word), FK), RLS bật cả 6 bảng, policy theo auth.uid()=user_id (profiles=id), dictionary read-only authenticated. Trigger on_auth_user_created → profiles+subscriptions(trial,+24h) verify PASS. BE-06: import từ điển EN-VI FVDP (© Hồ Ngọc Đức, free, cần credit) qua supabase/seed/import_dictionary.mjs → dictionary 103,401 dòng. verify_rpc.mjs 13/13 PASS."
+      "evidence": "2 migration (20260627000001_init_schema, 20260627000002_rpc) push lên cloud ojsdchkwfzhmzvmwlgmo (Singapore) qua supabase CLI. Introspect xác nhận đủ 6 bảng + constraints (status CHECK, vocabulary UNIQUE(user_id,word), FK), RLS bật cả 6 bảng, policy theo auth.uid()=user_id (profiles=id), dictionary read-only authenticated. Trigger on_auth_user_created → profiles+subscriptions(trial,+24h) verify PASS. BE-06: import từ điển EN-VI FVDP (© Hồ Ngọc Đức, free, cần credit) qua supabase/seed/import_dictionary.mjs → dictionary 103,401 dòng. verify_rpc.mjs 13/13 PASS. [TIP-009] migration 20260628000003: + cột dictionary.source (default 'fvdp'); lookup_word v2 thêm rule lemmatize 's + -er/-est/-ier/doubled/+e (re-verify từ cũ không hồi quy, dog's/bigger/happier/larger giờ HIT). Cache free_dict ghi vào dictionary."
     },
     {
       "id": "BE-03",
@@ -143,7 +143,7 @@
       "status": "verified",
       "depends_on": ["EXT-01", "BE-03"],
       "acceptance": "Click 1 từ → lemmatize → lookup_word trả nghĩa+IPA; audio từ Free Dictionary; Lưu ghi vocabulary kèm example. KHÔNG dịch câu.",
-      "evidence": "Click từ EN → video.pause() + giữ phụ đề → GET /api/lookup?word= (RPC lookup_word lemmatize+tra dictionary) → popup lemma/IPA/nghĩa/audio(nếu có)/Lưu. Lưu → POST /api/vocabulary (word/lemma/ipa/meaning_vi/example=câu EN/audio_url), idempotent UNIQUE(user_id,word). Click ra ngoài/Đóng → video.play(). Backend e2e verify_vocab.mjs 5/5 PASS (lookup 200, save, dup không lỗi, DB 1 dòng+example). LƯU Ý: audio Free Dictionary API chưa tích hợp (audio_url từ dict hiện null → nút audio chỉ hiện khi có); để bổ sung sau. UI click trên YouTube cần Homeowner test Chrome."
+      "evidence": "Click từ EN → video.pause() + giữ phụ đề → GET /api/lookup?word= (RPC lookup_word lemmatize+tra dictionary) → popup lemma/IPA/nghĩa/audio(nếu có)/Lưu. Lưu → POST /api/vocabulary (word/lemma/ipa/meaning_vi/example=câu EN/audio_url), idempotent UNIQUE(user_id,word). Click ra ngoài/Đóng → video.play(). Backend e2e verify_vocab.mjs 5/5 PASS (lookup 200, save, dup không lỗi, DB 1 dòng+example). LƯU Ý: audio Free Dictionary API chưa tích hợp (audio_url từ dict hiện null → nút audio chỉ hiện khi có); để bổ sung sau. UI click trên YouTube cần Homeowner test Chrome. [TIP-009] /api/lookup giờ có FALLBACK Free Dictionary API server-side khi FVDP miss (định nghĩa EN + IPA + audio + ví dụ), CACHE vào dictionary (source='free_dict', lần sau qua RPC khỏi gọi lại API), xử lý 404/429/timeout. Popup gắn nhãn 'định nghĩa tiếng Anh' khi source=free_dict. verify_lookup.mjs 8/8 PASS (lemmatize mới, neuron→free_dict 3 nghĩa+IPA, cache, 404 not_found)."
     },
     {
       "id": "EXT-04",

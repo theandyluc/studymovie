@@ -38,10 +38,14 @@ interface LookupResult {
   ipa: string | null;
   meanings: Sense[] | null;
   audio_url: string | null;
+  source?: string;
 }
 interface LookupResponse {
   word: string;
   result: LookupResult | null;
+  source?: string;
+  status?: string;
+  message?: string | null;
 }
 
 const ID = "studymovie-overlay";
@@ -265,14 +269,14 @@ async function onWordClick(word: string, surface: string, sentence: string): Pro
   pop.textContent = "Đang tra…";
   player.appendChild(pop);
 
-  let result: LookupResult | null = null;
+  let res: LookupResponse;
   try {
-    const res = await callApi<LookupResponse>("GET", `/api/lookup?word=${encodeURIComponent(word)}`);
-    result = res.result;
+    res = await callApi<LookupResponse>("GET", `/api/lookup?word=${encodeURIComponent(word)}`);
   } catch (e) {
     pop.textContent = `Lỗi tra nghĩa: ${e instanceof Error ? e.message : String(e)}`;
     return;
   }
+  const result = res.result;
 
   pop.textContent = "";
   const head = document.createElement("div");
@@ -281,6 +285,12 @@ async function onWordClick(word: string, surface: string, sentence: string): Pro
   pop.appendChild(head);
 
   if (result) {
+    if (result.source === "free_dict") {
+      const tag = document.createElement("div");
+      tag.textContent = "📖 định nghĩa tiếng Anh";
+      tag.style.cssText = "font-size:11px;color:#4f46e5;margin-top:2px;";
+      pop.appendChild(tag);
+    }
     const sub = document.createElement("div");
     sub.style.color = "#71717a";
     sub.style.fontSize = "12px";
@@ -316,7 +326,7 @@ async function onWordClick(word: string, surface: string, sentence: string): Pro
   } else {
     const none = document.createElement("div");
     none.style.margin = "8px 0";
-    none.textContent = "Không tìm thấy nghĩa trong từ điển.";
+    none.textContent = res.status === "error" ? "Lỗi tra cứu, thử lại sau." : "Không tìm thấy nghĩa.";
     pop.appendChild(none);
   }
 

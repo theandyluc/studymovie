@@ -16,6 +16,22 @@
 
 ## Session log
 
+### Session 9 — TIP-009 Lemmatize v2 + Free Dictionary fallback + cache + audio (2026-06-28)
+- **TIP/Feature:** TIP-009 — cải thiện tra từ (EXT-02/BE-06). Fix lemmatize + fallback Free Dictionary API + cache + credit.
+- **Đã làm:**
+  - **Migration `20260628000003_lookup_word_v2.sql`** (push cloud OK): `ALTER dictionary ADD source default 'fvdp'`; `lookup_word` v2 thêm rule **'s** (dog's→dog) + **-er/-est/-ier** (bigger→big, happier→happy, larger→large) + phụ âm đôi; exact-first (giữ it's/don't). Trả thêm `source`.
+  - **Backend `/api/lookup`** (`api/lookup.ts`): FVDP miss → fetch `api.dictionaryapi.dev` server-side (timeout 5s, xử 404/429/network) → định nghĩa EN + IPA + audio → **cache** upsert dictionary `source='free_dict'` (lần sau RPC tìm thấy, khỏi gọi API). Trả `source`/`status`.
+  - **Extension popup** (`youtube.ts`): nhãn "📖 định nghĩa tiếng Anh" khi `source=free_dict`; status `not_found`/`error` → message hợp lý.
+  - **Settings**: thêm credit **Free Dictionary API (Wiktionary, CC BY-SA)** + link, cạnh credit FVDP GPL.
+- **Verification:**
+  - Re-verify lemmatize: từ cũ (run/walked/cities/it's/don't/children/went) KHÔNG hồi quy; từ mới (dog's/world's/bigger/biggest/happier/larger/taller/happiest) giờ HIT.
+  - `init.sh` exit 0 (lint+typecheck 3 pkg); extension build + FE build OK.
+  - **`verify_lookup.mjs` 8/8 PASS**: 401; bigger→big(fvdp); dog's→dog; neuron→free_dict (3 nghĩa EN + IPA `/ˈnjəɹɑn/`); cache row source=free_dict; lần 2 OK; từ bịa→not_found không crash. (cleanup cache test + user tạm.)
+- **Còn dở / chưa verify (Homeowner browser):** UI popup hiển thị nhãn EN + audio khi click từ chuyên ngành thật; lemmatize trên video thật.
+- **Deviation/Defer:** (1) Sửa RPC lookup_word (đã verified TIP-002) → đã re-verify không hồi quy, evidence ghi vào BE-02/EXT-02. (2) **HOÃN** audio-cho-từ-FVDP-thiếu-audio (gọi API cho mọi từ FVDP thiếu audio = rất nhiều call, rủi ro rate-limit) — chỉ lấy audio qua fallback free_dict. (3) cleanWord client KHÔNG đổi (RPC xử 's exact-first đủ, giữ contraction).
+- **Cách resume:** `npm run dev` + extension reload → click từ chuyên ngành (neuron) → định nghĩa EN + audio; click dog's/bigger → ra nghĩa.
+- **Commit:** feat(lookup): TIP-009 lemmatize rules + Free Dictionary fallback + cache + audio.
+
 ### Session 8 — TIP-008 Điều tra nguồn từ điển Wiktionary (KHÔNG swap) (2026-06-28)
 - **TIP/Feature:** TIP-008 — điều tra đổi nguồn dictionary FVDP → Wiktionary (CC BY-SA). 2 giai đoạn, chốt chặn trước khi swap.
 - **Đã làm (Giai đoạn 1 — chỉ điều tra, KHÔNG swap):** stream-count mẫu 9.52% (300MB giữa file) của kaikki.org Wiktextract English (3.15GB), trích cặp EN→VI từ `translations[code=vi]`.

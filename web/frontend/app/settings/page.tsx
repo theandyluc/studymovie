@@ -9,6 +9,7 @@ import { getSupabase } from "@/lib/supabaseClient";
 import { fetchProfile, fetchMe, updateProfile, subscriptionText, type Me, type Profile } from "@/lib/account";
 
 const DICT_SOURCE_URL = "https://github.com/manhminno/English-Vietnamese-Dictionary";
+const FREEDICT_URL = "https://dictionaryapi.dev/";
 
 function SettingsInner() {
   const router = useRouter();
@@ -102,10 +103,16 @@ function SettingsInner() {
         </Button>
       </Card>
 
-      <Card>
+      <Card className="space-y-2">
         <p className="text-xs text-muted-foreground">
-          Từ điển: <strong>Free Vietnamese Dictionary Project</strong> © Hồ Ngọc Đức (GNU GPL v2).{" "}
+          Nghĩa tiếng Việt: <strong>Free Vietnamese Dictionary Project</strong> © Hồ Ngọc Đức (GNU GPL v2).{" "}
           <a href={DICT_SOURCE_URL} target="_blank" rel="noreferrer" className="text-primary underline">
+            Nguồn
+          </a>
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Định nghĩa tiếng Anh + phát âm: <strong>Free Dictionary API</strong> (Wiktionary, CC BY-SA).{" "}
+          <a href={FREEDICT_URL} target="_blank" rel="noreferrer" className="text-primary underline">
             Nguồn
           </a>
         </p>
