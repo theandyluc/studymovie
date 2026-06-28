@@ -25,6 +25,11 @@
     },
     {
       "matches": ["*://*.youtube.com/*"],
+      "js": ["content/timer.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://*.youtube.com/*"],
       "js": ["content/yt-intercept.js"],
       "run_at": "document_start",
       "world": "MAIN"

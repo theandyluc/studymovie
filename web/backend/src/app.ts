@@ -8,6 +8,7 @@ import { postVocabulary, getVocabulary, deleteVocabulary } from "./api/vocabular
 import { getDashboard } from "./api/dashboard.js";
 import { getLeaderboard } from "./api/leaderboard.js";
 import { getProfile, patchProfile } from "./api/profile.js";
+import { postStudySession } from "./api/study-session.js";
 
 /**
  * Backend API service — DÙNG CHUNG cho web frontend + extension.
@@ -47,5 +48,6 @@ app.get("/api/dashboard", requireAuth, getDashboard); // WEB-02
 app.get("/api/leaderboard", requireAuth, getLeaderboard); // WEB-07
 app.get("/api/profile", requireAuth, getProfile); // WEB-09
 app.patch("/api/profile", requireAuth, patchProfile); // WEB-09
+app.post("/api/study-session", requireAuth, postStudySession); // EXT-03 timer
 
 export default app;

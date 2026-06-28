@@ -16,6 +16,21 @@
 
 ## Session log
 
+### Session 10 — TIP-010 Auto study timer → study_sessions (2026-06-28)
+- **TIP/Feature:** TIP-010 — EXT-03 timer tự động ghi study_sessions (sinh dữ liệu giờ cho dashboard/leaderboard/streak).
+- **Đã làm:**
+  - **`content/timer.ts`** (ISOLATED, youtube.com): đo **wall-clock** khi video đang phát (play/playing→tính; pause/ended/emptied→dừng). Tua dùng wall-clock nên KHÔNG cộng bước nhảy. Flush **delta** (giây) qua background SM_API: định kỳ **60s** + sự kiện (pause/ended/đổi video/visibility hidden/pagehide). Chống double-count (trừ phần đã gửi, giữ phần lẻ <1s). Cap 3600s/flush.
+  - **Backend `POST /api/study-session`**: getUserClient insert study_sessions (`started_at=now−duration`, `ended_at=now` → RPC nhóm theo started_at UTC+7), validate `>0 & ≤3600`. Wire app.ts.
+  - **Popup**: thêm "Hôm nay X phút" (today_minutes từ /api/dashboard).
+  - Manifest + build: thêm content script `timer.js`.
+- **Verification:**
+  - init.sh exit 0 (lint+typecheck 3 pkg); extension build (timer.js 1.9kb).
+  - **`verify_timer.mjs` 10/10 PASS**: 401; POST 120s+90s → 2 row tổng 210s, started_at≤ended_at; today_minutes=3; validate 0/-5/99999/"abc"→400; cleanup.
+- **Còn dở (Homeowner test Chrome):** AC-1 đo giờ khi phát/pause, AC-2 không cộng tua, AC-5 dashboard/leaderboard "sống" theo giờ thật, AC-6 popup phút.
+- **Deviation:** (1) Timer TỰ ĐỘNG theo trạng thái video (không nút Start/Pause/Stop — đúng chốt). (2) Set started_at/ended_at (TIP ghi created_at, nhưng RPC nhóm theo started_at NOT NULL → set đúng để dashboard tính). (3) "Nút Học từ playlist auto-start" (trong title EXT-03) thuộc WEB-06 (chưa làm) → ngoài scope TIP-010, để sau.
+- **Cách resume:** xem video YouTube vài phút → /dashboard + /leaderboard có giờ thật.
+- **Commit:** feat(ext): TIP-010 auto study timer -> study_sessions.
+
 ### Session 9 — TIP-009 Lemmatize v2 + Free Dictionary fallback + cache + audio (2026-06-28)
 - **TIP/Feature:** TIP-009 — cải thiện tra từ (EXT-02/BE-06). Fix lemmatize + fallback Free Dictionary API + cache + credit.
 - **Đã làm:**

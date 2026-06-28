@@ -88,7 +88,17 @@ function renderUser(me: Me): void {
   const sub = subStatusText(me);
   const statusBox = div(`status${sub.expired ? " expired" : ""}`, sub.text);
 
-  const nodes: Node[] = [div("title", "StudyMovie"), row, statusBox];
+  // Phút học hôm nay (TIP-010) — cập nhật bất đồng bộ từ /api/dashboard.
+  const minutesBox = div("status", "Hôm nay: … phút");
+  void apiExt<{ today_minutes?: number }>("/api/dashboard")
+    .then((d) => {
+      minutesBox.textContent = `Hôm nay: ${d.today_minutes ?? 0} phút`;
+    })
+    .catch(() => {
+      minutesBox.textContent = "Hôm nay: — phút";
+    });
+
+  const nodes: Node[] = [div("title", "StudyMovie"), row, minutesBox, statusBox];
   if (!me.is_active) {
     nodes.push(button("Nâng cấp", () => openTab(`${SITE_URL}/upgrade`)));
   }
