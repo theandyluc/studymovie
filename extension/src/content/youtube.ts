@@ -63,7 +63,7 @@ let popupOpen = false;
 let pausedByPopup = false;
 let currentVid = "";
 
-const SM_DEBUG = false; // bật để xem log chẩn đoán caption/SPA
+const SM_DEBUG = false; // bật để xem log chẩn đoán
 const dbg = (...a: unknown[]): void => {
   if (SM_DEBUG) console.log("[StudyMovie/content]", ...a);
 };
@@ -101,6 +101,7 @@ function cleanWord(raw: string): string {
 // ---- Overlay ----
 function removeOverlay(): void {
   document.getElementById(ID)?.remove();
+  document.getElementById("studymovie-vinote")?.remove();
   activeIndex = -1;
 }
 
@@ -183,17 +184,50 @@ function syncTick(): void {
   if (!video || !document.getElementById(ID)) return;
   if (popupOpen) return; // giữ phụ đề đứng yên khi popup mở
   const t = video.currentTime;
+  // Chọn cue MỚI NHẤT đã bắt đầu: start lớn nhất thỏa start <= t < start+dur.
+  // (Bỏ break + so start lớn nhất → xử lý đúng cue GỐI nhau; không cue nào chứa t → -1 → ẩn.)
+  // EN & VI cùng nằm trong cues[idx] nên hiển thị khớp nhau theo cùng logic.
   let idx = -1;
   for (let i = 0; i < cues.length; i++) {
     if (t >= cues[i].start && t < cues[i].start + cues[i].dur) {
-      idx = i;
-      break;
+      if (idx === -1 || cues[i].start > cues[idx].start) idx = i;
     }
   }
   if (idx !== activeIndex) {
     activeIndex = idx;
     renderCue(idx);
   }
+}
+
+// Nhãn trạng thái VI (khi EN-only). state: blocked | empty | null(=ẩn).
+function setViNote(text: string | null): void {
+  const existing = document.getElementById("studymovie-vinote");
+  if (!text) {
+    existing?.remove();
+    return;
+  }
+  const player = getPlayer();
+  if (!player) return;
+  let el = existing as HTMLDivElement | null;
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "studymovie-vinote";
+    Object.assign(el.style, {
+      position: "absolute",
+      left: "0",
+      right: "0",
+      bottom: "118px",
+      textAlign: "center",
+      zIndex: "61",
+      pointerEvents: "none",
+      color: "#fbbf24",
+      fontSize: "12px",
+      fontFamily: "Arial, sans-serif",
+      textShadow: "0 1px 2px rgba(0,0,0,0.85)",
+    } as Partial<CSSStyleDeclaration>);
+    player.appendChild(el);
+  }
+  el.textContent = text;
 }
 
 // ---- Word popup (tra nghĩa + lưu) ----
@@ -492,9 +526,9 @@ function applySettings(): void {
 // ---- Nhận cue từ interceptor (MAIN world) ----
 function onMessage(e: MessageEvent): void {
   if (e.source !== window) return;
-  const d = e.data as { __sm?: string; cues?: Cue[]; videoId?: string } | null;
+  const d = e.data as { __sm?: string; cues?: Cue[]; videoId?: string; viState?: string } | null;
   if (d?.__sm !== "SM_CUES" || !Array.isArray(d.cues)) return;
-  dbg("nhận cue", d.cues.length, "video=", d.videoId);
+  dbg("nhận cue", d.cues.length, "video=", d.videoId, "viState=", d.viState);
   cues = d.cues;
   currentVid = d.videoId ?? locVideoId();
   activeIndex = -1;
@@ -503,6 +537,11 @@ function onMessage(e: MessageEvent): void {
   if (settings.enabled && cues.length) {
     buildOverlay();
     buildGear();
+    // Nhãn khi không có VI: phân biệt bị-chặn (Sorry) vs video thật sự không có VI.
+    const hasVi = cues.some((c) => c.vi);
+    if (!hasVi && d.viState === "blocked") setViNote("⚠️ Phụ đề Việt tạm bị giới hạn, thử lại sau");
+    else if (!hasVi && d.viState === "empty") setViNote("Video này không có phụ đề Việt");
+    else setViNote(null);
   }
 }
 
