@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/Button";
 const NAV: { href: string; label: string; enabled: boolean }[] = [
   { href: "/dashboard", label: "Dashboard", enabled: true },
   { href: "/vocabulary", label: "Từ vựng", enabled: true },
-  { href: "#", label: "Playlist", enabled: false },
+  { href: "/playlist", label: "Playlist", enabled: true },
   { href: "/leaderboard", label: "Bảng xếp hạng", enabled: true },
   { href: "/settings", label: "Cài đặt", enabled: true },
 ];

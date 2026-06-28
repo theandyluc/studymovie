@@ -9,6 +9,7 @@ import { getDashboard } from "./api/dashboard.js";
 import { getLeaderboard } from "./api/leaderboard.js";
 import { getProfile, patchProfile } from "./api/profile.js";
 import { postStudySession } from "./api/study-session.js";
+import { getPlaylist, postPlaylist, patchPlaylist, deletePlaylist } from "./api/playlist.js";
 
 /**
  * Backend API service — DÙNG CHUNG cho web frontend + extension.
@@ -49,5 +50,9 @@ app.get("/api/leaderboard", requireAuth, getLeaderboard); // WEB-07
 app.get("/api/profile", requireAuth, getProfile); // WEB-09
 app.patch("/api/profile", requireAuth, patchProfile); // WEB-09
 app.post("/api/study-session", requireAuth, postStudySession); // EXT-03 timer
+app.get("/api/playlist", requireAuth, getPlaylist); // WEB-06
+app.post("/api/playlist", requireAuth, postPlaylist); // WEB-06
+app.patch("/api/playlist/:id", requireAuth, patchPlaylist); // WEB-06
+app.delete("/api/playlist/:id", requireAuth, deletePlaylist); // WEB-06
 
 export default app;

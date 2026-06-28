@@ -7,14 +7,25 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** GĐ2 — extension timer xong (TIP-010 done: EXT-03). Dashboard/leaderboard giờ có dữ liệu giờ thật.
+- **Giai đoạn hiện tại:** GĐ2 — web playlist xong (TIP-011 done: WEB-06). Còn lại: thanh toán.
 - **Feature đang làm:** (chưa bắt đầu TIP tiếp theo)
-- **Next:** WEB-06 /playlist (+ hook nút Học ↔ timer), WEB-08 + BE-04/05 /upgrade thật (VietQR + SePay).
+- **Next:** WEB-08 + BE-04/05 /upgrade thật (VietQR động + SePay webhook) — mảnh ghép cuối GĐ thanh toán.
 - **Blocker / cần làm:** (1) Production: thêm domain `https://studymovie.com/*` vào manifest host_permissions + content_scripts matches (hiện chỉ localhost:3000). (2) Khách chốt UI streak "hôm nay chưa đạt" (backend đã có cờ `today_met`).
 
 ---
 
 ## Session log
+
+### Session 11 — TIP-011 Playlist (paste link + thumbnail/title + học/done/xóa) (2026-06-28)
+- **TIP/Feature:** TIP-011 — WEB-06 trang /playlist.
+- **Đã làm:**
+  - **Backend `api/playlist.ts`** (getUserClient/RLS): GET list; POST (parse videoId watch?v=/youtu.be/shorts/embed, validate 11-ký-tự → 400 nếu sai; **oEmbed** `youtube.com/oembed` server-side timeout 5s lấy title, lỗi → fallback=videoId; thumbnail `img.youtube.com/vi/{id}/hqdefault.jpg`); PATCH is_done toggle; DELETE (own). Wire app.ts.
+  - **`lib/playlist.ts`** + **`app/playlist/page.tsx`**: dán link+Thêm, list thumbnail+title+trạng thái, nút **Học** (mở tab YouTube — timer TIP-010 tự tính giờ), tick **Xong** (toggle), **Xóa** (confirm), empty state. Bật nav Playlist.
+- **Verification:** init.sh exit 0; FE build (/playlist); **`verify_playlist.mjs` 12/12 PASS** (link sai→400, oEmbed title thật 'Rick Astley…', youtu.be parse, GET/PATCH/DELETE, 401, not-own delete=false).
+- **Còn dở (Homeowner browser):** UI thêm/list/Học/done/xóa + thumbnail/title hiển thị.
+- **Deviation:** Nút Học CHỈ mở video (timer tự động TIP-010 lo tính giờ — không cần tín hiệu start riêng, đúng chốt). Sửa feature_list WEB-06 tip TIP-006→TIP-011.
+- **Cách resume:** /playlist → dán link → Học/done/xóa.
+- **Commit:** feat(web): TIP-011 playlist.
 
 ### Session 10 — TIP-010 Auto study timer → study_sessions (2026-06-28)
 - **TIP/Feature:** TIP-010 — EXT-03 timer tự động ghi study_sessions (sinh dữ liệu giờ cho dashboard/leaderboard/streak).
