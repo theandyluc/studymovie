@@ -133,7 +133,7 @@
       "status": "verified",
       "depends_on": ["EXT-05-06-07"],
       "acceptance": "Hiện 2 dòng đồng bộ currentTime; lấy VI qua tlang=vi từ client; video không caption → chỉ EN, không vỡ.",
-      "evidence": "content/youtube.ts: overlay 2 dòng (EN trên/VI dưới) trong #movie_player, sync currentTime qua interval 250ms (đúng khi seek). lib/captions.ts: đọc captionTracks từ ytInitialPlayerResponse (fetch lại trang watch, cùng origin), EN = track gốc + fmt=json3; VI = cùng baseUrl + tlang=vi (auto-translate, D-1). Không caption → loadCues trả [] → không overlay (fallback im lặng, không throw). Ẩn caption gốc YouTube qua style. init.sh exit 0, build dist OK. CẦN Homeowner test video có caption EN trên Chrome (không tự test YouTube DOM được)."
+      "evidence": "content/youtube.ts: overlay 2 dòng (EN trên/VI dưới) trong #movie_player, sync currentTime qua interval 250ms (đúng khi seek). lib/captions.ts: đọc captionTracks từ ytInitialPlayerResponse (fetch lại trang watch, cùng origin), EN = track gốc + fmt=json3; VI = cùng baseUrl + tlang=vi (auto-translate, D-1). Không caption → loadCues trả [] → không overlay (fallback im lặng, không throw). Ẩn caption gốc YouTube qua style. init.sh exit 0, build dist OK. [TIP-009 fix phụ đề — Homeowner verified Chrome] (1) Anti-bot: lấy caption qua URL ĐÃ KÝ player tự gọi (intercept body EN player → bớt 1 request), VI fetch sau delay 500ms + retry 1 lần khi gặp trang Google 'Sorry/automated queries', phân biệt 3 trạng thái VI (ok/blocked/empty) + nhãn tương ứng. (2) Chọn cue: max-start match (bỏ break, cue mới nhất start≤t<start+dur) → sửa lag do cue gối nhau; khoảng trống → ẩn. Test OK: cue gối + thường + tua + song ngữ."
     },
     {
       "id": "EXT-02",

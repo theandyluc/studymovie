@@ -31,6 +31,10 @@
 - **Deviation/Defer:** (1) Sửa RPC lookup_word (đã verified TIP-002) → đã re-verify không hồi quy, evidence ghi vào BE-02/EXT-02. (2) **HOÃN** audio-cho-từ-FVDP-thiếu-audio (gọi API cho mọi từ FVDP thiếu audio = rất nhiều call, rủi ro rate-limit) — chỉ lấy audio qua fallback free_dict. (3) cleanWord client KHÔNG đổi (RPC xử 's exact-first đủ, giữ contraction).
 - **Cách resume:** `npm run dev` + extension reload → click từ chuyên ngành (neuron) → định nghĩa EN + audio; click dog's/bigger → ra nghĩa.
 - **Commit:** feat(lookup): TIP-009 lemmatize rules + Free Dictionary fallback + cache + audio.
+- **Fix phụ đề (cùng TIP-009, sau test Chrome — 4 vòng debug):**
+  1. Mất VI: VI 1103B = trang Google "Sorry/automated queries" → **anti-bot chặn request VI thứ 2 (burst)**. Fix: intercept **body EN player đã tải** (bớt 1 request) + VI fetch sau **delay 500ms** + **retry 1 lần** khi gặp Sorry + detect "Sorry" + phân biệt 3 trạng thái VI (ok/blocked/empty) + nhãn.
+  2. Lag biến thiên 1–3s: KHÔNG phải nguồn cue (body≡refetch) mà **logic chọn cue sai** — first-match + cue GỐI nhau → cue cũ che cue mới. Fix: **max-start match** (bỏ break, chọn cue start lớn nhất thỏa start≤t<start+dur); khoảng trống → ẩn. Bug có sẵn từ TIP-005, lộ ở video cue gối.
+  - Homeowner test OK: cue gối + thường + tua + song ngữ. Commit: `fix(ext): phụ đề VI anti-bot + max-start cue matching`.
 
 ### Session 8 — TIP-008 Điều tra nguồn từ điển Wiktionary (KHÔNG swap) (2026-06-28)
 - **TIP/Feature:** TIP-008 — điều tra đổi nguồn dictionary FVDP → Wiktionary (CC BY-SA). 2 giai đoạn, chốt chặn trước khi swap.
