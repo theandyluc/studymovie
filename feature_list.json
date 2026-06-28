@@ -50,7 +50,7 @@
       "title": "Trang vocabulary: list + checkbox + 3 nút (flashcard/test EN-VI/test VI-EN)",
       "area": "frontend",
       "tip": "TIP-006",
-      "status": "done",
+      "status": "verified",
       "depends_on": ["BE-03"],
       "acceptance": "Hiện toàn bộ từ đã lưu (word/IPA/nghĩa/example/audio); XÓA từng từ; 3 nút Flashcard/Quiz EN-VI/Quiz VI-EN học TẤT CẢ từ (KHÔNG tick).",
       "evidence": "app/vocabulary/page.tsx: list data thật từ GET /api/vocabulary (word/IPA/nghĩa/example/🔊), nút Xóa → DELETE /api/vocabulary/:id (chỉ của user), empty state, 3 nút điều hướng; nav 'Từ vựng' bật trong Header. Backend GET/DELETE + verify_vocab.mjs 10/10 PASS (list/delete/401/không xóa của user khác). init.sh exit 0, FE build route /vocabulary. List/xóa UI cần Homeowner test browser."
@@ -60,7 +60,7 @@
       "title": "Flashcard: thẻ từ+IPA+nghĩa+audio, swipe trái/phải",
       "area": "frontend",
       "tip": "TIP-006",
-      "status": "done",
+      "status": "verified",
       "depends_on": ["WEB-03"],
       "acceptance": "Lật thẻ (word+IPA+audio ↔ nghĩa+example); trước/sau qua hết bộ; dùng TẤT CẢ từ.",
       "evidence": "app/vocabulary/flashcard: lật thẻ (mặt trước word+IPA+🔊, mặt sau nghĩa+example), nút Trước/Sau + đếm vị trí (n/total), dùng toàn bộ vocab, empty state. logic tách ở lib/vocabulary.ts. FE build OK. Cần Homeowner test browser."
@@ -70,7 +70,7 @@
       "title": "Quiz trắc nghiệm 2 chiều (EN-VI / VI-EN), 3 đáp án sai random từ vocab user",
       "area": "frontend",
       "tip": "TIP-006",
-      "status": "done",
+      "status": "verified",
       "depends_on": ["WEB-03"],
       "acceptance": "4 đáp án; 3 sai random từ vocab của chính user; 2 chế độ chiều; <4 từ → chặn có thông báo.",
       "evidence": "app/vocabulary/quiz: buildQuiz (lib/vocabulary.ts) en2vi/vi2en, mỗi câu 4 đáp án (1 đúng + 3 sai random từ chính vocab user, distinct), chấm điểm + kết quả cuối, tối đa 20 câu. <4 từ quizable → màn 'cần ít nhất 4 từ' + nút quay lại (AC-7), không crash. Mode đọc từ query. FE build OK. Cần Homeowner test browser (đủ ≥4 từ)."
