@@ -110,7 +110,7 @@
       "title": "Playlist tuần: paste link, todo list thumbnail+tên, nút Học (auto-start timer), tick done, xóa",
       "area": "frontend",
       "tip": "TIP-011",
-      "status": "done",
+      "status": "verified",
       "depends_on": ["BE-03"],
       "acceptance": "Thêm/xóa video; thumbnail+title; tick done; nút Học mở tab + tín hiệu auto-start timer extension.",
       "evidence": "app/playlist + lib/playlist.ts: dán link → POST /api/playlist (parse videoId watch?v=/youtu.be/shorts, oEmbed title server-side timeout 5s + fallback videoId, thumbnail img.youtube.com/{id}/hqdefault.jpg) → list thumbnail+title+trạng thái; nút Học mở tab YouTube (timer TIP-010 tự bám video → KHÔNG cần tín hiệu start riêng), tick done (PATCH toggle), xóa (DELETE own). Backend getUserClient (RLS). verify_playlist.mjs 12/12 PASS (link sai→400, oEmbed title thật 'Rick Astley…', youtu.be, CRUD, 401, not-own delete=false). nav Playlist bật. UI cần Homeowner test browser. LƯU Ý: 'auto-start timer' = timer tự động (TIP-010) khi video phát — nút Học chỉ mở video."

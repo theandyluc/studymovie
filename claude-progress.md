@@ -26,6 +26,7 @@
 - **Deviation:** Nút Học CHỈ mở video (timer tự động TIP-010 lo tính giờ — không cần tín hiệu start riêng, đúng chốt). Sửa feature_list WEB-06 tip TIP-006→TIP-011.
 - **Cách resume:** /playlist → dán link → Học/done/xóa.
 - **Commit:** feat(web): TIP-011 playlist.
+- **Fix UX (cùng TIP-011, sau test):** thông báo lỗi thân thiện thay raw "API /path → HTTP n". Backend trả mã `invalid_youtube_url`; `apiClient` thêm `ApiError(status, code)` (đọc body.error); page map → "Link không hợp lệ. Vui lòng dán link YouTube…". Homeowner test OK. → WEB-06 verified.
 
 ### Session 10 — TIP-010 Auto study timer → study_sessions (2026-06-28)
 - **TIP/Feature:** TIP-010 — EXT-03 timer tự động ghi study_sessions (sinh dữ liệu giờ cho dashboard/leaderboard/streak).
