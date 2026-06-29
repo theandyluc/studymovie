@@ -7,11 +7,9 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** TIP-016 — Level system Dashboard (WEB-LEVEL) **done (self-tested)**. TIP-015 (EXT-04) cũng đang **chờ Homeowner xác nhận test Chrome** (commit local 97ba22d chưa push).
+- **Giai đoạn hiện tại:** TIP-015 (EXT-04 cài đặt phụ đề) + TIP-016 (WEB-LEVEL level system) **VERIFIED** (Homeowner test Chrome/web PASS; migration 006 đã áp production).
 - **Feature đang làm:** (chưa bắt đầu TIP tiếp theo)
-- **CHỜ HOMEOWNER:** (1) TIP-015 test Chrome → verified; (2) TIP-016 áp migration `006` + test web. Cả hai chưa push (đang ở local).
-- **Next:** QA-01, INF-02 (đóng gói extension + HANDOVER + transfer).
-- **CẦN ÁP MIGRATION:** `20260629000006_level_system.sql` (level cols + RPC) — Homeowner chạy Supabase SQL Editor.
+- **Next:** QA-01 (QA tổng), INF-02 (đóng gói extension Chrome Web Store + HANDOVER.md + transfer ownership).
 - **LƯU Ý KỸ THUẬT (quan trọng):** Vercel serverless đọc body POST treo với `@hono/node-server/vercel` (Readable.toWeb deadlock). Đã fix bằng buffer rawBody trong `web/backend/api/index.ts` — **KHÔNG gỡ**. Mọi POST mới (web/extension/webhook) phụ thuộc fix này khi chạy trên Vercel.
 - **URL production:** frontend=`https://studymovie-frontend.vercel.app`, backend=`https://studymovie-backend.vercel.app`. (manifest extension đã trỏ host frontend này; build:prod đọc extension/.env.production.)
 - **Blocker / cần làm:** Khách chốt UI streak "hôm nay chưa đạt" (backend đã có cờ `today_met`).
