@@ -37,6 +37,93 @@ function openTab(url: string): void {
   void chrome.tabs.create({ url });
 }
 
+// ── Timer (TIP-014) ─────────────────────────────────────────────────────────
+type TimerState = { running: boolean; elapsedSec: number };
+let tickHandle: ReturnType<typeof setInterval> | null = null;
+
+function clearTick(): void {
+  if (tickHandle != null) {
+    clearInterval(tickHandle);
+    tickHandle = null;
+  }
+}
+function fmtHMS(total: number): string {
+  const t = Math.max(0, total);
+  const p = (n: number): string => String(n).padStart(2, "0");
+  return `${p(Math.floor(t / 3600))}:${p(Math.floor((t % 3600) / 60))}:${p(t % 60)}`;
+}
+// Hỏi/đổi state timer ở background (state bền ở đó, không ở popup).
+function timerMsg(type: string): Promise<TimerState> {
+  return new Promise((resolve) => {
+    try {
+      chrome.runtime.sendMessage({ type }, (resp: TimerState | undefined) => {
+        if (chrome.runtime.lastError || !resp) resolve({ running: false, elapsedSec: 0 });
+        else resolve(resp);
+      });
+    } catch {
+      resolve({ running: false, elapsedSec: 0 });
+    }
+  });
+}
+
+// Card timer: hiển thị HH:MM:SS đếm lên (state lấy từ background), nút Bắt đầu/Kết thúc.
+function buildTimerCard(onStopped: () => void): HTMLElement {
+  const card = div("timer");
+  const label = div("timer-label", "Thời gian học");
+  const time = div("timer-time", "00:00:00");
+  const controls = div("timer-controls");
+  const startBtn = button("▶ Bắt đầu", () => void onStart(), "btn timer-btn");
+  const stopBtn = button("■ Kết thúc", () => void onStop(), "btn ghost timer-btn");
+  controls.appendChild(startBtn);
+  controls.appendChild(stopBtn);
+  card.appendChild(label);
+  card.appendChild(time);
+  card.appendChild(controls);
+
+  let elapsed = 0;
+  let running = false;
+
+  const paint = (): void => {
+    time.textContent = fmtHMS(elapsed);
+    startBtn.disabled = running;
+    stopBtn.disabled = !running;
+  };
+  const startTick = (): void => {
+    clearTick();
+    tickHandle = setInterval(() => {
+      if (running) {
+        elapsed += 1;
+        time.textContent = fmtHMS(elapsed);
+      }
+    }, 1000);
+  };
+  async function onStart(): Promise<void> {
+    const s = await timerMsg("SM_TIMER_START");
+    running = s.running;
+    elapsed = s.elapsedSec;
+    paint();
+    if (running) startTick();
+  }
+  async function onStop(): Promise<void> {
+    clearTick();
+    const s = await timerMsg("SM_TIMER_STOP");
+    running = s.running;
+    elapsed = s.elapsedSec;
+    paint();
+    onStopped(); // ghi nhận xong → cập nhật "phút hôm nay"
+  }
+
+  // Khởi tạo từ background (popup mở lại vẫn đúng thời gian đã trôi — AC-3).
+  void timerMsg("SM_TIMER_STATE").then((s) => {
+    running = s.running;
+    elapsed = s.elapsedSec;
+    paint();
+    if (running) startTick();
+  });
+
+  return card;
+}
+
 function subStatusText(me: Me): { text: string; expired: boolean } {
   const s = me.subscription;
   if (me.is_active && s?.status === "trial" && s.trial_ends_at) {
@@ -88,17 +175,23 @@ function renderUser(me: Me): void {
   const sub = subStatusText(me);
   const statusBox = div(`status${sub.expired ? " expired" : ""}`, sub.text);
 
-  // Phút học hôm nay (TIP-010) — cập nhật bất đồng bộ từ /api/dashboard.
+  // Phút học hôm nay — cập nhật bất đồng bộ từ /api/dashboard (refresh lại sau khi Kết thúc).
   const minutesBox = div("status", "Hôm nay: … phút");
-  void apiExt<{ today_minutes?: number }>("/api/dashboard")
-    .then((d) => {
-      minutesBox.textContent = `Hôm nay: ${d.today_minutes ?? 0} phút`;
-    })
-    .catch(() => {
-      minutesBox.textContent = "Hôm nay: — phút";
-    });
+  const refreshMinutes = (): void => {
+    void apiExt<{ today_minutes?: number }>("/api/dashboard")
+      .then((d) => {
+        minutesBox.textContent = `Hôm nay: ${d.today_minutes ?? 0} phút`;
+      })
+      .catch(() => {
+        minutesBox.textContent = "Hôm nay: — phút";
+      });
+  };
+  refreshMinutes();
 
-  const nodes: Node[] = [div("title", "StudyMovie"), row, minutesBox, statusBox];
+  // Timer thủ công (TIP-014): "Thời gian học" HH:MM:SS + Bắt đầu/Kết thúc. State ở background.
+  const timerCard = buildTimerCard(refreshMinutes);
+
+  const nodes: Node[] = [div("title", "StudyMovie"), row, timerCard, minutesBox, statusBox];
   if (!me.is_active) {
     nodes.push(button("Nâng cấp", () => openTab(`${SITE_URL}/upgrade`)));
   }
@@ -112,6 +205,7 @@ function renderUser(me: Me): void {
 }
 
 async function render(): Promise<void> {
+  clearTick(); // huỷ tick cũ trước khi vẽ lại (tránh interval mồ côi)
   const { data } = await supabaseExt.auth.getSession();
   if (!data.session) {
     renderLogin();

@@ -4,7 +4,8 @@
 import type { Context } from "hono";
 import { getUserClient } from "../lib/supabase.js";
 
-const MAX_SEC = 3600; // chặn giá trị vô lý / lần flush
+// TIP-014: timer thủ công cộng HẾT (không loại trừ tua/double). Chỉ cap an toàn 1 ngày.
+const MAX_SEC = 86400; // chặn giá trị vô lý / lần flush (≤ 24h)
 
 export async function postStudySession(c: Context) {
   const user = c.get("user");

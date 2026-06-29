@@ -38,6 +38,13 @@
       .btn { width: 100%; border: 0; border-radius: var(--radius); padding: 9px 12px; font-size: 14px; font-weight: 500; cursor: pointer; background: var(--primary); color: #fff; margin-top: 8px; }
       .btn:hover { background: var(--primary-hover); }
       .btn.ghost { background: transparent; color: var(--fg); border: 1px solid var(--border); }
+      .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+      /* Timer (TIP-014) */
+      .timer { text-align: center; margin: 12px 0; padding: 14px 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-muted); }
+      .timer-label { font-size: 13px; color: var(--muted); }
+      .timer-time { font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: 1px; margin: 4px 0 12px; color: var(--fg); }
+      .timer-controls { display: flex; gap: 8px; }
+      .timer-btn { margin-top: 0; }
     </style>
   </head>
   <body>

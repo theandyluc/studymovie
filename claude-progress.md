@@ -7,9 +7,10 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** GĐ thanh toán **XONG** — TIP-013 (BE-04 webhook + BE-05 VietQR/upgrade) **VERIFIED PRODUCTION** (SePay sandbox/phát lại thật: kích hoạt Pro + idempotency PASS).
+- **Giai đoạn hiện tại:** TIP-014 — timer extension đổi sang **THỦ CÔNG Start/Stop** + streak ngưỡng >10 phút. EXT-03 **done (self-tested), CHỜ HOMEOWNER** test Chrome + áp migration streak.
 - **Feature đang làm:** (chưa bắt đầu TIP tiếp theo)
-- **Next:** QA-01 (QA tổng), INF-02 (đóng gói extension + HANDOVER + transfer ownership).
+- **Next:** Homeowner test TIP-014 (Chrome Start/Stop) + áp migration `20260629000005_streak_threshold.sql` → verified. Còn: QA-01, INF-02 (đóng gói extension + HANDOVER + transfer).
+- **CẦN ÁP MIGRATION:** `20260629000005_streak_threshold.sql` (streak >600s/ngày) — Homeowner chạy trên Supabase SQL Editor (MCP/CLI không có quyền headless).
 - **LƯU Ý KỸ THUẬT (quan trọng):** Vercel serverless đọc body POST treo với `@hono/node-server/vercel` (Readable.toWeb deadlock). Đã fix bằng buffer rawBody trong `web/backend/api/index.ts` — **KHÔNG gỡ**. Mọi POST mới (web/extension/webhook) phụ thuộc fix này khi chạy trên Vercel.
 - **URL production:** frontend=`https://studymovie-frontend.vercel.app`, backend=`https://studymovie-backend.vercel.app`. (manifest extension đã trỏ host frontend này; build:prod đọc extension/.env.production.)
 - **Blocker / cần làm:** Khách chốt UI streak "hôm nay chưa đạt" (backend đã có cờ `today_met`).
@@ -17,6 +18,18 @@
 ---
 
 ## Session log
+
+### Session 16 — TIP-014 Timer THỦ CÔNG Start/Stop + streak >10 phút (2026-06-29)
+- **TIP/Feature:** TIP-014 — EXT-03 đổi timer tự động → thủ công (theo Figma + comment khách Truong Luc). Self-tested; chờ Homeowner test Chrome.
+- **Đã làm:**
+  - **GỠ auto-timer:** xóa `extension/src/content/timer.ts` (đo wall-clock bám <video>), bỏ khỏi `build.mjs` entry + `manifest.json` content_scripts → hết double-track (AC-7). Giữ youtube.ts/yt-intercept.ts (phụ đề/click-từ — KHÔNG đụng).
+  - **Background timer** (`service-worker.ts`): state ở chrome.storage `sm-timer-state` (running/sessionStartedAt/flushedSec) — bền khi popup đóng. Messages SM_TIMER_START/STOP/STATE. Flush định kỳ qua `chrome.alarms` 0.5'(~30s) khi running → POST `/api/study-session` phần chưa flush (cộng HẾT; lỗi mạng giữ flushedSec gửi lại). `onStartup` finalize nếu còn running (KHÔNG đếm thời gian Chrome đóng). Thêm permission `alarms`.
+  - **Popup** (`popup.ts`+`.html`): card "Thời gian học" HH:MM:SS đếm lên realtime (tick 1s, seed từ background), nút Bắt đầu/Kết thúc enable/disable; Kết thúc xong refresh "phút hôm nay". State lấy từ background (AC-3).
+  - **Backend** `study-session.ts`: cap MAX_SEC 3600→86400 (an toàn 1 ngày, không loại trừ).
+  - **RPC streak** (migration `20260629000005_streak_threshold.sql`): `get_dashboard` streak dùng ngưỡng cố định **>600s/ngày** (UTC+7) thay goal cam kết; `today_met`/tổng giờ/biểu đồ tuần-tháng GIỮ NGUYÊN.
+- **Verification (tự test):** init.sh exit 0 (lint+typecheck 3 pkg); ext build dev OK (dist không còn timer.js); backend 20/20 test.
+- **CHỜ HOMEOWNER (Chrome):** reload ext → Bắt đầu/đợi/Kết thúc (AC-1), HH:MM:SS đếm lên (AC-2), đóng/mở popup state còn (AC-3), Start/Stop nhiều lần cộng hết (AC-4), tắt Chrome (AC-5). AC-6 streak: áp migration 005 + dữ liệu nhiều ngày / kiểm DB.
+- **Commit:** feat(ext): TIP-014 manual start/stop timer + streak >10min threshold.
 
 ### Session 15 — TIP-013 VERIFIED production + fix Vercel body deadlock (2026-06-29)
 - **TIP/Feature:** TIP-013 — BE-04 + BE-05 → **verified** (production thật).
