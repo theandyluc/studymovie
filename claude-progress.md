@@ -7,15 +7,23 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** GĐ3 — deploy config Vercel xong (TIP-012 done: INF-03). Code/config sẵn sàng; **chờ Homeowner deploy live + nhập env Vercel + Supabase redirect.**
+- **Giai đoạn hiện tại:** GĐ3 — deploy Vercel **VERIFIED PRODUCTION** (TIP-012: INF-03 verified). Frontend + backend chạy live, Homeowner test toàn bộ OK (login Google, dashboard, vocab, playlist, CORS, /health 200).
 - **Feature đang làm:** (chưa bắt đầu TIP tiếp theo)
-- **Next:** Homeowner deploy theo checklist TIP-012 → verified. Còn: WEB-08+BE-04/05 /upgrade (thanh toán), QA-01, INF-02 (đóng gói extension + HANDOVER + transfer).
-- **URL production:** (điền sau khi Homeowner deploy) frontend=`https://<frontend>.vercel.app`, backend=`https://<backend>.vercel.app`.
-- **Blocker / cần làm:** (1) Production: thêm domain `https://studymovie.com/*` vào manifest host_permissions + content_scripts matches (hiện chỉ localhost:3000). (2) Khách chốt UI streak "hôm nay chưa đạt" (backend đã có cờ `today_met`).
+- **Next:** WEB-08+BE-04/05 /upgrade (thanh toán) — mảnh cuối GĐ thanh toán. Còn: QA-01, INF-02 (đóng gói extension + HANDOVER + transfer).
+- **URL production:** frontend=`https://studymovie-frontend.vercel.app`, backend=`https://studymovie-backend.vercel.app`. (manifest extension đã trỏ host frontend này; build:prod đọc extension/.env.production.)
+- **Blocker / cần làm:** Khách chốt UI streak "hôm nay chưa đạt" (backend đã có cờ `today_met`).
 
 ---
 
 ## Session log
+
+### Session 13 — TIP-012 Deploy VERIFIED production (2026-06-29)
+- **TIP/Feature:** TIP-012 — INF-03 → **verified**. Homeowner deploy live 2 project Vercel + test production.
+- **URL:** frontend `https://studymovie-frontend.vercel.app`, backend `https://studymovie-backend.vercel.app`.
+- **Homeowner test OK:** login Google, dashboard, vocab, playlist, CORS, backend `/health` 200.
+- **Đã làm (Thợ):** `manifest.json` đổi placeholder `studymovie.vercel.app` → `studymovie-frontend.vercel.app` (host_permissions + content_scripts.matches), giữ `localhost:3000`. feature_list INF-03 → verified (+ URL trong evidence). progress cập nhật URL + trạng thái.
+- **Commit:** chore(deploy): TIP-012 production URLs + manifest prod domain.
+- **Lưu ý bảo mật:** service_role key vẫn ở `.env` local (gitignore) + Vercel env backend; nhắc Homeowner rotate nếu lo lộ (không bắt buộc).
 
 ### Session 12 — TIP-012 Deploy config Vercel (frontend + backend serverless) (2026-06-28)
 - **TIP/Feature:** TIP-012 — INF-03 (deploy config). Thợ chuẩn bị code/config; live deploy = Homeowner (Thợ không có quyền tài khoản).

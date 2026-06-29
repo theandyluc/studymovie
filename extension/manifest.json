@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "description": "Học tiếng Anh qua YouTube với phụ đề song ngữ + ôn từ vựng.",
   "permissions": ["storage", "tabs", "scripting"],
-  "host_permissions": ["*://*.youtube.com/*", "http://localhost:3000/*", "https://studymovie.vercel.app/*"],
+  "host_permissions": ["*://*.youtube.com/*", "http://localhost:3000/*", "https://studymovie-frontend.vercel.app/*"],
   "background": {
     "service_worker": "background/service-worker.js"
   },
@@ -14,7 +14,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["http://localhost:3000/*", "https://studymovie.vercel.app/*"],
+      "matches": ["http://localhost:3000/*", "https://studymovie-frontend.vercel.app/*"],
       "js": ["content/auth-bridge.js"],
       "run_at": "document_idle"
     },
