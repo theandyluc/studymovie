@@ -68,7 +68,7 @@ export async function postPlaylist(c: Context) {
   }
   const url = typeof body.url === "string" ? body.url.trim() : "";
   const videoId = parseVideoId(url);
-  if (!videoId) return c.json({ error: "link YouTube không hợp lệ" }, 400);
+  if (!videoId) return c.json({ error: "invalid_youtube_url" }, 400);
 
   const title = (await fetchTitle(videoId)) ?? videoId; // oEmbed lỗi → title tạm = videoId
   const row = {

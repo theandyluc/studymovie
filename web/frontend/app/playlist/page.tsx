@@ -4,7 +4,16 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PageLoading } from "@/components/ui/Spinner";
+import { ApiError } from "@/lib/apiClient";
 import { fetchPlaylist, addPlaylist, setPlaylistDone, deletePlaylistItem, type PlaylistItem } from "@/lib/playlist";
+
+// Map lỗi thêm video sang thông báo thân thiện (KHÔNG lộ HTTP/đường dẫn API).
+function friendlyAddError(e: unknown): string {
+  if (e instanceof ApiError && e.code === "invalid_youtube_url") {
+    return "Link không hợp lệ. Vui lòng dán link YouTube (youtube.com hoặc youtu.be).";
+  }
+  return "Không thêm được video. Vui lòng thử lại.";
+}
 
 // WEB-06 — Playlist video YouTube: dán link → thumbnail+tiêu đề tự động → Học/done/xóa.
 function PlaylistInner() {
@@ -30,7 +39,7 @@ function PlaylistInner() {
       setItems((cur) => [item, ...(cur ?? [])]);
       setUrl("");
     } catch (e) {
-      setAddErr(e instanceof Error ? e.message : String(e));
+      setAddErr(friendlyAddError(e));
     } finally {
       setAdding(false);
     }

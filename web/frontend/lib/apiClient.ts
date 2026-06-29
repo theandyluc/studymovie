@@ -3,6 +3,18 @@ import { getSupabase } from "./supabaseClient";
 
 const BASE = process.env.NEXT_PUBLIC_BACKEND_URL ?? "";
 
+// Lỗi API mang theo status + code (body.error) để UI map sang thông báo thân thiện.
+export class ApiError extends Error {
+  status: number;
+  code?: string;
+  constructor(status: number, code?: string) {
+    super(code ?? `HTTP ${status}`);
+    this.name = "ApiError";
+    this.status = status;
+    this.code = code;
+  }
+}
+
 export async function apiFetch<T = unknown>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
   const sb = getSupabase();
@@ -15,7 +27,14 @@ export async function apiFetch<T = unknown>(path: string, init: RequestInit = {}
 
   const res = await fetch(`${BASE}${path}`, { ...init, headers });
   if (!res.ok) {
-    throw new Error(`API ${path} → HTTP ${res.status}`);
+    let code: string | undefined;
+    try {
+      const body = (await res.json()) as { error?: unknown };
+      if (typeof body.error === "string") code = body.error;
+    } catch {
+      /* body không phải JSON */
+    }
+    throw new ApiError(res.status, code);
   }
   return (await res.json()) as T;
 }
