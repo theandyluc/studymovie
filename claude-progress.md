@@ -7,9 +7,11 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** TIP-015 — Cài đặt phụ đề trong popup (EXT-04). **done (self-tested), CHỜ HOMEOWNER** test Chrome.
+- **Giai đoạn hiện tại:** TIP-016 — Level system Dashboard (WEB-LEVEL) **done (self-tested)**. TIP-015 (EXT-04) cũng đang **chờ Homeowner xác nhận test Chrome** (commit local 97ba22d chưa push).
 - **Feature đang làm:** (chưa bắt đầu TIP tiếp theo)
-- **Next:** Homeowner test TIP-015 (Chrome: toggle EN/VI, nền %, cỡ chữ realtime) → verified. Còn: QA-01, INF-02 (đóng gói extension + HANDOVER + transfer).
+- **CHỜ HOMEOWNER:** (1) TIP-015 test Chrome → verified; (2) TIP-016 áp migration `006` + test web. Cả hai chưa push (đang ở local).
+- **Next:** QA-01, INF-02 (đóng gói extension + HANDOVER + transfer).
+- **CẦN ÁP MIGRATION:** `20260629000006_level_system.sql` (level cols + RPC) — Homeowner chạy Supabase SQL Editor.
 - **LƯU Ý KỸ THUẬT (quan trọng):** Vercel serverless đọc body POST treo với `@hono/node-server/vercel` (Readable.toWeb deadlock). Đã fix bằng buffer rawBody trong `web/backend/api/index.ts` — **KHÔNG gỡ**. Mọi POST mới (web/extension/webhook) phụ thuộc fix này khi chạy trên Vercel.
 - **URL production:** frontend=`https://studymovie-frontend.vercel.app`, backend=`https://studymovie-backend.vercel.app`. (manifest extension đã trỏ host frontend này; build:prod đọc extension/.env.production.)
 - **Blocker / cần làm:** Khách chốt UI streak "hôm nay chưa đạt" (backend đã có cờ `today_met`).
@@ -17,6 +19,18 @@
 ---
 
 ## Session log
+
+### Session 18 — TIP-016 Level system Dashboard (2026-06-29)
+- **TIP/Feature:** TIP-016 — WEB-LEVEL: card "Level hiện tại" + "Mục tiêu tiếp theo" (vòng tròn) trên Dashboard. Self-tested; chờ Homeowner áp migration + test web.
+- **Bảng giờ mục tiêu (lên cấp kế):** A0→A1=95h, A1→A2=95h, A2→B1=185h, B1→B2=175h, B2→C1=200h, C1→C2=350h. C2=cao nhất.
+- **Đã làm:**
+  - **DB** (migration `20260629000006_level_system.sql`): profiles + `current_level` (CHECK A0..C2) + `level_started_at`. RPC `set_current_level(p_level)` (set + reset mốc now()). RPC `get_level_progress()` (security definer/auth.uid): needs_input nếu null; **giờ RESET mỗi cấp** = sum(duration_sec) study_sessions started_at ≥ level_started_at; target theo bảng; **TỰ LÊN CẤP 1 cấp/lần** (side-effect update current_level=next + level_started_at=now) trả just_leveled_up/old/new; C2 → is_max; percent/remaining.
+  - **Backend:** `api/level.ts` GET/POST `/api/level` (getUserClient RPC), wire `app.ts`.
+  - **Frontend:** `lib/level.ts`; `dashboard/page.tsx` thêm `<LevelSection/>` (2 card) + `ProgressRing` (SVG %, tooltip 'giờ mục tiêu/còn lại') + `LevelPicker` (nhập lần đầu + 'Đổi level') + banner '🎉 lên cấp {new}'. Dashboard cũ (streak/giờ/biểu đồ) KHÔNG đụng (RPC riêng).
+- **Side-effect (ghi rõ):** get_level_progress UPDATE profiles khi đủ giờ (tự lên cấp). 1 cấp mỗi lần gọi.
+- **Verification (tự test):** init.sh exit 0 (lint+typecheck 3 pkg); FE build OK (/dashboard 4.36kB); backend 20/20 test.
+- **CHỜ HOMEOWNER:** áp migration 006 (SQL in trong report) + test web login: nhập level (A1→mục tiêu A2/95h), vòng tròn %, tự lên cấp (verify nhanh: chọn level + insert study_sessions test hoặc tạm bằng giờ đã có), dashboard cũ đúng.
+- **Commit:** feat(web): TIP-016 level system (current/target level, auto level-up).
 
 ### Session 17 — TIP-015 Cài đặt phụ đề trong popup (2026-06-29)
 - **TIP/Feature:** TIP-015 — EXT-04 dời cài đặt phụ đề từ panel gear (player) sang POPUP (Figma + khách Truong Luc). Self-tested; chờ Homeowner test Chrome.

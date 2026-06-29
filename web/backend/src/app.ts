@@ -11,6 +11,7 @@ import { getProfile, patchProfile } from "./api/profile.js";
 import { postStudySession } from "./api/study-session.js";
 import { getPlaylist, postPlaylist, patchPlaylist, deletePlaylist } from "./api/playlist.js";
 import { postCreateOrder, getOrder, postSepayWebhook } from "./api/payment.js";
+import { getLevel, setLevel } from "./api/level.js";
 
 /**
  * Backend API service — DÙNG CHUNG cho web frontend + extension.
@@ -50,6 +51,8 @@ app.post("/api/vocabulary", requireAuth, postVocabulary); // EXT-02: lưu từ
 app.get("/api/vocabulary", requireAuth, getVocabulary); // WEB-03: danh sách
 app.delete("/api/vocabulary/:id", requireAuth, deleteVocabulary); // WEB-03: xóa
 app.get("/api/dashboard", requireAuth, getDashboard); // WEB-02
+app.get("/api/level", requireAuth, getLevel); // WEB-LEVEL TIP-016
+app.post("/api/level", requireAuth, setLevel); // WEB-LEVEL TIP-016
 app.get("/api/leaderboard", requireAuth, getLeaderboard); // WEB-07
 app.get("/api/profile", requireAuth, getProfile); // WEB-09
 app.patch("/api/profile", requireAuth, patchProfile); // WEB-09
