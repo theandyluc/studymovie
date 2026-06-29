@@ -80,6 +80,11 @@ export function verifyApiKey(authHeader: string | undefined): boolean {
 
 // POST /api/payment/create-order (protected): tạo đơn pending + trả VietQR + thông tin CK.
 export async function postCreateOrder(c: Context) {
+  // [TIP-013 DEBUG] create-order KHÔNG đọc body (đây là lý do nó chạy được dù body-read có lỗi).
+  console.log("[co] entered (no body read)", {
+    ct: c.req.header("content-type"),
+    cl: c.req.header("content-length"),
+  });
   const user = c.get("user");
   const sb = getServiceClient();
 
@@ -128,16 +133,31 @@ export async function getOrder(c: Context) {
 // POST /api/sepay-webhook (KHÔNG qua requireAuth — SePay gọi). CỬA BẢO MẬT.
 // Mọi nhánh "không khớp đủ" trả 200 (để SePay không retry vô hạn) NHƯNG không kích hoạt.
 export async function postSepayWebhook(c: Context) {
+  // [TIP-013 DEBUG] log đầu handler — header luôn đọc được (đồng bộ), chưa chạm body.
+  // Mục tiêu: biết content-type/length/transfer-encoding SePay gửi + có vào handler không.
+  console.log("[wh] entered", {
+    ct: c.req.header("content-type"),
+    cl: c.req.header("content-length"),
+    te: c.req.header("transfer-encoding"),
+    method: c.req.method,
+  });
+
   // 1) Verify Apikey. Sai -> 401, KHÔNG xử lý.
   if (!verifyApiKey(c.req.header("Authorization"))) {
+    console.log("[wh] apikey FAIL -> 401");
     return c.json({ success: false, error: "unauthorized" }, 401);
   }
+  console.log("[wh] apikey OK, before read body");
 
   // 2) Parse payload (field theo docs.sepay.vn: id, transferAmount, transferType, content, code).
   let p: Record<string, unknown>;
   try {
-    p = (await c.req.json()) as Record<string, unknown>;
-  } catch {
+    const raw = await c.req.text(); // [TIP-013 DEBUG] đọc raw để đo độ dài; nếu treo, log dưới KHÔNG in.
+    console.log("[wh] after read body", { len: raw.length });
+    p = JSON.parse(raw) as Record<string, unknown>;
+    console.log("[wh] parsed keys", Object.keys(p));
+  } catch (e) {
+    console.log("[wh] body read/parse FAIL", String(e));
     return c.json({ success: true, note: "invalid json" }); // 200, không xử lý
   }
 
