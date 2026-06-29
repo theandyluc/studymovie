@@ -7,10 +7,9 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** TIP-014 — timer extension đổi sang **THỦ CÔNG Start/Stop** + streak ngưỡng >10 phút. EXT-03 **done (self-tested), CHỜ HOMEOWNER** test Chrome + áp migration streak.
+- **Giai đoạn hiện tại:** TIP-014 **VERIFIED** — timer extension THỦ CÔNG Start/Stop (AC-1→5 PASS Chrome) + streak >10 phút (migration 005 đã áp production, co_600=true).
 - **Feature đang làm:** (chưa bắt đầu TIP tiếp theo)
-- **Next:** Homeowner test TIP-014 (Chrome Start/Stop) + áp migration `20260629000005_streak_threshold.sql` → verified. Còn: QA-01, INF-02 (đóng gói extension + HANDOVER + transfer).
-- **CẦN ÁP MIGRATION:** `20260629000005_streak_threshold.sql` (streak >600s/ngày) — Homeowner chạy trên Supabase SQL Editor (MCP/CLI không có quyền headless).
+- **Next:** QA-01 (QA tổng), INF-02 (đóng gói extension Chrome Web Store + HANDOVER.md + transfer ownership).
 - **LƯU Ý KỸ THUẬT (quan trọng):** Vercel serverless đọc body POST treo với `@hono/node-server/vercel` (Readable.toWeb deadlock). Đã fix bằng buffer rawBody trong `web/backend/api/index.ts` — **KHÔNG gỡ**. Mọi POST mới (web/extension/webhook) phụ thuộc fix này khi chạy trên Vercel.
 - **URL production:** frontend=`https://studymovie-frontend.vercel.app`, backend=`https://studymovie-backend.vercel.app`. (manifest extension đã trỏ host frontend này; build:prod đọc extension/.env.production.)
 - **Blocker / cần làm:** Khách chốt UI streak "hôm nay chưa đạt" (backend đã có cờ `today_met`).
