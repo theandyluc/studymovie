@@ -7,15 +7,27 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** GĐ thanh toán — TIP-013 (BE-04 webhook + BE-05 VietQR/upgrade) **done (self-tested), CHỜ HOMEOWNER** áp migration + env Vercel + cấu hình SePay → test sandbox → verified.
+- **Giai đoạn hiện tại:** GĐ thanh toán **XONG** — TIP-013 (BE-04 webhook + BE-05 VietQR/upgrade) **VERIFIED PRODUCTION** (SePay sandbox/phát lại thật: kích hoạt Pro + idempotency PASS).
 - **Feature đang làm:** (chưa bắt đầu TIP tiếp theo)
-- **Next:** Homeowner test TIP-013 sandbox → verified. Còn: QA-01, INF-02 (đóng gói extension + HANDOVER + transfer).
+- **Next:** QA-01 (QA tổng), INF-02 (đóng gói extension + HANDOVER + transfer ownership).
+- **LƯU Ý KỸ THUẬT (quan trọng):** Vercel serverless đọc body POST treo với `@hono/node-server/vercel` (Readable.toWeb deadlock). Đã fix bằng buffer rawBody trong `web/backend/api/index.ts` — **KHÔNG gỡ**. Mọi POST mới (web/extension/webhook) phụ thuộc fix này khi chạy trên Vercel.
 - **URL production:** frontend=`https://studymovie-frontend.vercel.app`, backend=`https://studymovie-backend.vercel.app`. (manifest extension đã trỏ host frontend này; build:prod đọc extension/.env.production.)
 - **Blocker / cần làm:** Khách chốt UI streak "hôm nay chưa đạt" (backend đã có cờ `today_met`).
 
 ---
 
 ## Session log
+
+### Session 15 — TIP-013 VERIFIED production + fix Vercel body deadlock (2026-06-29)
+- **TIP/Feature:** TIP-013 — BE-04 + BE-05 → **verified** (production thật).
+- **Sự cố production:** webhook SePay timeout (SePay buông 30s, Vercel kill 300s). Debug Protocol nhiều vòng:
+  - Log `[wh]`: `apikey OK, before read body` nhưng KHÔNG có `after read body` → treo tại đọc body. Loại nghi key (verify OK) + Supabase (create-order insert service_role chạy OK; webhook chưa tới query).
+  - Giải mâu thuẫn "create-order chạy được": create-order KHÔNG đọc body → không chứng minh body-read OK.
+  - Gốc: adapter `@hono/node-server/vercel` deadlock ở `Readable.toWeb(incoming)` với body request SePay (Node stream kẹt backpressure). `c.req.text()/json()/arrayBuffer()` đều treo (cùng đường adapter).
+- **FIX (chỉ `web/backend/api/index.ts`):** wrapper tự buffer raw body tầng Node (`for await (chunk of req)` chủ động kéo) → gán `req.rawBody` → adapter dùng fast-path (enqueue Buffer 1 lần), né toWeb. GET/HEAD bỏ qua. Sửa cả webhook lẫn MỌI POST trên Vercel. `src/index.ts` dev nguyên.
+- **Verify production:** SePay "Phát lại" tx 65630775 → `[wh] after read body` xuất hiện → verify key → đối soát mã `SMT1GIE6OH` + 49000 → Pro active, hạn 29/7/2026. **AC-4:** phát lại 3 lần đều 200, KHÔNG cộng đôi (idempotency PASS). AC-1/AC-3/AC-4 pass thật.
+- **Dọn:** gỡ toàn bộ log debug `[wh]/[pl]/[co]`; GIỮ buffer rawBody (fix thật). Lint/typecheck/20 test pass.
+- **Commit:** fix(payment): buffer rawBody for Vercel serverless webhook; BE-04/05 verified.
 
 ### Session 14 — TIP-013 Thanh toán Pro (VietQR + SePay webhook + kích hoạt) (2026-06-29)
 - **TIP/Feature:** TIP-013 — BE-05 (VietQR + /upgrade) + BE-04 (webhook). Lưu ý: feature_list KHÔNG có id WEB-08 (trang /upgrade nằm trong title BE-05) → đánh BE-04+BE-05 done, ghi chú trong report (không tự thêm id ngoài scope).

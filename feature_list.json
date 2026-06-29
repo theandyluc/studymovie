@@ -170,7 +170,7 @@
       "title": "VietQR động theo user (nội dung CK có mã định danh) + trang /upgrade",
       "area": "backend",
       "tip": "TIP-013",
-      "status": "done",
+      "status": "verified",
       "depends_on": ["BE-02"],
       "acceptance": "QR generate đúng mã user; trang /upgrade hiện QR + text + copy.",
       "evidence": "Backend api/payment.ts: POST /api/payment/create-order (đơn pending + code SMxxxxxxxx duy nhất nhúng nội dung CK; buildVietQrUrl api.vietqr.io/image/{BANK_ID}-{ACC}-{template}.jpg?amount&addInfo) + GET /api/payment/order/:code (poll, chỉ đơn của mình). Frontend app/upgrade/page.tsx: nút Mua Pro 49.000đ → QR ảnh + thông tin CK (số TK/tên/nội dung) + nút Chép + poll 4s + nút 'tôi đã CK'. lib/payment.ts. Giá/bank ở env (PRO_PRICE/BANK_*). TỰ TEST: vitest buildVietQrUrl/generateOrderCode/parseOrderCode (20/20); FE build /upgrade OK; backend dev create-order no-auth=401. CHỜ HOMEOWNER: nhập env Vercel + áp migration → test thật trên production."
@@ -180,10 +180,10 @@
       "title": "SePay webhook auto-unlock subscription",
       "area": "backend",
       "tip": "TIP-013",
-      "status": "done",
+      "status": "verified",
       "depends_on": ["BE-05"],
       "acceptance": "Webhook verify + match nội dung CK → cập nhật paid_until, status=active; test sandbox end-to-end.",
-      "evidence": "POST /api/sepay-webhook (KHÔNG qua JWT — SePay gọi). Cửa bảo mật: (1) verify header 'Authorization: Apikey <SEPAY_API_KEY>' constant-time, key trống→reject; (2) chỉ transferType='in'; (3) idempotency theo payload.id (cột sepay_tx_id UNIQUE + pre-check); (4) đối soát: bóc code từ content/field code, tìm đơn pending, số tiền ≥ amount; (5) update đơn guard status='pending' (chỉ 1 lần) → subscriptions paid_until=max(now,cũ)+30 ngày, status=active (service_role). Mọi nhánh không khớp → 200 không kích hoạt. migration 20260629000004_payment_orders.sql (RLS user select, ghi qua service_role). TỰ TEST vitest 20/20 (AC-2 401 sai/thiếu apikey; AC-4/AC-5 logic parseOrderCode + computeNextPaidUntil cộng dồn; tiền ra/thiếu id→200). CHỜ HOMEOWNER: áp migration + env Vercel + cấu hình webhook SePay → test sandbox (AC-3/AC-4/AC-6 end-to-end)."
+      "evidence": "POST /api/sepay-webhook (KHÔNG qua JWT — SePay gọi). Cửa bảo mật: (1) verify header 'Authorization: Apikey <SEPAY_API_KEY>' constant-time, key trống→reject; (2) chỉ transferType='in'; (3) idempotency theo payload.id (cột sepay_tx_id UNIQUE + pre-check); (4) đối soát: bóc code từ content/field code, tìm đơn pending, số tiền ≥ amount; (5) update đơn guard status='pending' (chỉ 1 lần) → subscriptions paid_until=max(now,cũ)+30 ngày, status=active (service_role). Mọi nhánh không khớp → 200 không kích hoạt. migration 20260629000004_payment_orders.sql (RLS user select, ghi qua service_role). TỰ TEST vitest 20/20 (AC-2 401 sai/thiếu apikey; AC-4/AC-5 logic parseOrderCode + computeNextPaidUntil cộng dồn; tiền ra/thiếu id→200). VERIFIED PRODUCTION (2026-06-29): SePay 'Phát lại' tx 65630775 → webhook 200, kích hoạt Pro (hạn 29/7/2026); phát lại 3 lần KHÔNG cộng đôi (AC-4 idempotency PASS). FIX deadlock: adapter @hono/node-server/vercel treo ở Readable.toWeb(incoming) khi đọc body SePay (verify key OK rồi timeout 300s) → buffer rawBody tầng Node trong api/index.ts (for await kéo stream → req.rawBody → adapter fast-path); sửa cả webhook lẫn mọi POST trên Vercel."
     },
     {
       "id": "QA-01",

@@ -60,19 +60,10 @@ export async function getPlaylist(c: Context) {
 
 export async function postPlaylist(c: Context) {
   const user = c.get("user");
-  // [TIP-013 DEBUG] so sánh body-read của frontend (fetch) vs SePay webhook trên Vercel.
-  console.log("[pl] entered, before read body", {
-    ct: c.req.header("content-type"),
-    cl: c.req.header("content-length"),
-    te: c.req.header("transfer-encoding"),
-  });
   let body: { url?: unknown };
   try {
-    const raw = await c.req.text();
-    console.log("[pl] after read body", { len: raw.length });
-    body = JSON.parse(raw) as { url?: unknown };
+    body = (await c.req.json()) as { url?: unknown };
   } catch {
-    console.log("[pl] body read/parse FAIL");
     return c.json({ error: "invalid json" }, 400);
   }
   const url = typeof body.url === "string" ? body.url.trim() : "";
