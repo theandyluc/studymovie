@@ -7,15 +7,29 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** GĐ3 — deploy Vercel **VERIFIED PRODUCTION** (TIP-012: INF-03 verified). Frontend + backend chạy live, Homeowner test toàn bộ OK (login Google, dashboard, vocab, playlist, CORS, /health 200).
+- **Giai đoạn hiện tại:** GĐ thanh toán — TIP-013 (BE-04 webhook + BE-05 VietQR/upgrade) **done (self-tested), CHỜ HOMEOWNER** áp migration + env Vercel + cấu hình SePay → test sandbox → verified.
 - **Feature đang làm:** (chưa bắt đầu TIP tiếp theo)
-- **Next:** WEB-08+BE-04/05 /upgrade (thanh toán) — mảnh cuối GĐ thanh toán. Còn: QA-01, INF-02 (đóng gói extension + HANDOVER + transfer).
+- **Next:** Homeowner test TIP-013 sandbox → verified. Còn: QA-01, INF-02 (đóng gói extension + HANDOVER + transfer).
 - **URL production:** frontend=`https://studymovie-frontend.vercel.app`, backend=`https://studymovie-backend.vercel.app`. (manifest extension đã trỏ host frontend này; build:prod đọc extension/.env.production.)
 - **Blocker / cần làm:** Khách chốt UI streak "hôm nay chưa đạt" (backend đã có cờ `today_met`).
 
 ---
 
 ## Session log
+
+### Session 14 — TIP-013 Thanh toán Pro (VietQR + SePay webhook + kích hoạt) (2026-06-29)
+- **TIP/Feature:** TIP-013 — BE-05 (VietQR + /upgrade) + BE-04 (webhook). Lưu ý: feature_list KHÔNG có id WEB-08 (trang /upgrade nằm trong title BE-05) → đánh BE-04+BE-05 done, ghi chú trong report (không tự thêm id ngoài scope).
+- **Đã làm:**
+  - **Migration** `supabase/migrations/20260629000004_payment_orders.sql`: bảng `payment_orders(id, code UNIQUE, user_id, amount, status pending|paid|expired, sepay_tx_id UNIQUE, created_at, paid_at)`. RLS: user SELECT đơn của mình; ghi qua service_role (không policy insert/update).
+  - **Backend `api/payment.ts`** (service_role): create-order (sinh code SM+8base36 duy nhất, retry chống trùng), get order (poll, lọc user_id), **webhook** cửa bảo mật. Pure helpers test được: generateOrderCode/parseOrderCode/computeNextPaidUntil/buildVietQrUrl/verifyApiKey. Route webhook để NGOÀI requireAuth, create-order/order trong requireAuth.
+  - **Webhook bảo mật:** verify Apikey constant-time (key trống→reject all); chỉ transferType=in; idempotency payload.id (sepay_tx_id UNIQUE + pre-check); đối soát code (content/field code) + đơn pending + tiền ≥ amount; update guard status='pending' (1 lần) → subscriptions paid_until=max(now,cũ)+PRO_DURATION_DAYS, status=active. Mọi nhánh sai → 200 KHÔNG kích hoạt.
+  - **env.ts:** SEPAY_API_KEY, BANK_ID, BANK_ACCOUNT_NO, BANK_ACCOUNT_NAME, VIETQR_TEMPLATE(=compact2), PRO_PRICE(=49000), PRO_DURATION_DAYS(=30). `.env.example` cập nhật (không giá trị thật).
+  - **Frontend** `lib/payment.ts` + `app/upgrade/page.tsx` thật: nút Mua Pro → QR VietQR ảnh + thông tin CK + nút Chép nội dung + poll 4s → paid → màn thành công + link dashboard; nút "tôi đã CK" kiểm lại.
+- **SePay field (theo docs.sepay.vn):** id (tx, idempotency), transferType (in/out), transferAmount (số tiền), content (nội dung CK → bóc code), code (mã SePay auto-extract, dùng dự phòng). Webhook trả 200 `{success:true}` trong 30s.
+- **Verification (tự test):** init.sh exit 0 (lint+typecheck 3 pkg); **vitest backend 20/20** (verifyApiKey, parseOrderCode, computeNextPaidUntil cộng dồn, buildVietQrUrl, AC-2 webhook 401 sai/thiếu apikey, tiền-ra/thiếu-id→200); FE build /upgrade OK; backend dev boot — health 200, /api/me 401, webhook no-apikey 401, create-order no-auth 401.
+- **CHỜ HOMEOWNER (AC-1/3/4/6 end-to-end):** áp migration prod; nhập env Vercel backend; cấu hình webhook SePay URL; test SePay sandbox (mô phỏng giao dịch, không cần tiền thật). Checklist trong Completion Report.
+- **Bảo mật:** không commit secret (scan sạch); webhook verify Apikey; service_role chỉ backend. SEPAY_API_KEY + số TK do Homeowner nhập Vercel.
+- **Commit:** feat(payment): TIP-013 VietQR order + SePay webhook + Pro activation (local — CHỜ duyệt push).
 
 ### Session 13 — TIP-012 Deploy VERIFIED production (2026-06-29)
 - **TIP/Feature:** TIP-012 — INF-03 → **verified**. Homeowner deploy live 2 project Vercel + test production.
