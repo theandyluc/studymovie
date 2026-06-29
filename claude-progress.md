@@ -7,9 +7,9 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** TIP-014 **VERIFIED** — timer extension THỦ CÔNG Start/Stop (AC-1→5 PASS Chrome) + streak >10 phút (migration 005 đã áp production, co_600=true).
+- **Giai đoạn hiện tại:** TIP-015 — Cài đặt phụ đề trong popup (EXT-04). **done (self-tested), CHỜ HOMEOWNER** test Chrome.
 - **Feature đang làm:** (chưa bắt đầu TIP tiếp theo)
-- **Next:** QA-01 (QA tổng), INF-02 (đóng gói extension Chrome Web Store + HANDOVER.md + transfer ownership).
+- **Next:** Homeowner test TIP-015 (Chrome: toggle EN/VI, nền %, cỡ chữ realtime) → verified. Còn: QA-01, INF-02 (đóng gói extension + HANDOVER + transfer).
 - **LƯU Ý KỸ THUẬT (quan trọng):** Vercel serverless đọc body POST treo với `@hono/node-server/vercel` (Readable.toWeb deadlock). Đã fix bằng buffer rawBody trong `web/backend/api/index.ts` — **KHÔNG gỡ**. Mọi POST mới (web/extension/webhook) phụ thuộc fix này khi chạy trên Vercel.
 - **URL production:** frontend=`https://studymovie-frontend.vercel.app`, backend=`https://studymovie-backend.vercel.app`. (manifest extension đã trỏ host frontend này; build:prod đọc extension/.env.production.)
 - **Blocker / cần làm:** Khách chốt UI streak "hôm nay chưa đạt" (backend đã có cờ `today_met`).
@@ -17,6 +17,18 @@
 ---
 
 ## Session log
+
+### Session 17 — TIP-015 Cài đặt phụ đề trong popup (2026-06-29)
+- **TIP/Feature:** TIP-015 — EXT-04 dời cài đặt phụ đề từ panel gear (player) sang POPUP (Figma + khách Truong Luc). Self-tested; chờ Homeowner test Chrome.
+- **Đọc code cũ:** TIP-005 `settings.ts` (key `sm-ext-settings`) {enabled,mode,fontSize,textColor,bgColor,bgOpacity(0..1)} + panel gear 📖 trong player (toggleSettingsPanel).
+- **Đã làm:**
+  - **settings.ts:** GỘP 1 nguồn (giữ key `sm-ext-settings`, không tạo trùng) → model mới `{showEn,showVi,bgEnabled,bgOpacity%(0..100),fontSizePx}` + `normalize`/`clampFont` (12..32 bước 2). Field cũ trong storage bị bỏ qua (migrate về default).
+  - **Popup** (`popup.ts`+`.html`): card "Cài đặt" = 2 switch EN/VI + toggle "Màu nền"+slider % (disable khi tắt) + stepper − [Npx] + (clamp+disable biên). Mỗi đổi → `setSettings` → chrome.storage. CSS switch/slider/stepper.
+  - **youtube.ts:** `onSettingsChange` → `applySettings` re-render cue hiện tại NGAY: showEn/showVi ẩn-hiện dòng, nền `rgba(0,0,0,%/100)` (tắt → transparent + textShadow), `fontSizePx`. GỠ `buildGear`/`toggleSettingsPanel`/`hexToRgba`/`row` (panel cũ trùng + dùng model đã bỏ). GIỮ nguyên cue/click-từ/anti-bot VI.
+- **Deviation (flag):** gỡ panel gear trong player — vì cài đặt giờ ở popup (Figma) và panel cũ dùng model đã bỏ. Nếu khách muốn giữ gear in-player → yêu cầu mới.
+- **Verification (tự test):** init.sh exit 0 (lint+typecheck 3 pkg); ext build dev OK (youtube.js 16.8→12.8kb sau gỡ gear).
+- **CHỜ HOMEOWNER (Chrome):** AC-1 toggle EN/VI realtime; AC-2 độ đậm nền; AC-3 cỡ chữ 12-32 bước 2; AC-4 bền qua đóng/mở popup+reload; AC-5 click-từ vẫn chạy; AC-6 timer không ảnh hưởng.
+- **Commit:** feat(ext): TIP-015 subtitle settings (toggle EN/VI, bg opacity, font size).
 
 ### Session 16 — TIP-014 Timer THỦ CÔNG Start/Stop + streak >10 phút (2026-06-29)
 - **TIP/Feature:** TIP-014 — EXT-03 đổi timer tự động → thủ công (theo Figma + comment khách Truong Luc). Self-tested; chờ Homeowner test Chrome.

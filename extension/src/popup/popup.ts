@@ -2,6 +2,15 @@
 import { supabaseExt, EXT_STORAGE_KEY } from "../lib/supabaseExt";
 import { apiExt } from "../lib/apiExt";
 import { SITE_URL } from "../lib/env";
+import {
+  getSettings,
+  setSettings,
+  clampFont,
+  FONT_MIN,
+  FONT_MAX,
+  FONT_STEP,
+  type Settings,
+} from "../lib/settings";
 
 type Me = {
   user: { id: string; email: string | null };
@@ -124,6 +133,106 @@ function buildTimerCard(onStopped: () => void): HTMLElement {
   return card;
 }
 
+// ── Cài đặt phụ đề (TIP-015) ──────────────────────────────────────────────────
+// Mỗi thay đổi ghi ngay chrome.storage (setSettings) → content script áp realtime.
+function switchRow(label: string, checked: boolean, onChange: (v: boolean) => void): HTMLElement {
+  const r = div("set-row");
+  r.appendChild(div("set-label", label));
+  const sw = document.createElement("label");
+  sw.className = "switch";
+  const input = document.createElement("input");
+  input.type = "checkbox";
+  input.checked = checked;
+  input.addEventListener("change", () => onChange(input.checked));
+  const slider = document.createElement("span");
+  slider.className = "switch-slider";
+  sw.appendChild(input);
+  sw.appendChild(slider);
+  r.appendChild(sw);
+  return r;
+}
+
+function buildSettingsCard(): HTMLElement {
+  const card = div("settings");
+  card.appendChild(div("set-title", "Cài đặt"));
+
+  void getSettings().then((s: Settings) => {
+    let bgEnabled = s.bgEnabled;
+    let bgOpacity = s.bgOpacity;
+    let fontSize = clampFont(s.fontSizePx);
+
+    // 1 & 2 — toggle EN / VI
+    card.appendChild(switchRow("🇬🇧 Phụ đề Tiếng Anh", s.showEn, (v) => void setSettings({ showEn: v })));
+    card.appendChild(switchRow("🇻🇳 Phụ đề Tiếng Việt", s.showVi, (v) => void setSettings({ showVi: v })));
+
+    // 3 — Màu nền (toggle) + độ đậm nền đen %
+    const opLabel = div("set-val", `${bgOpacity}%`);
+    const slider = document.createElement("input");
+    slider.type = "range";
+    slider.min = "0";
+    slider.max = "100";
+    slider.step = "5";
+    slider.value = String(bgOpacity);
+    slider.className = "set-slider";
+    const syncBg = (): void => {
+      slider.disabled = !bgEnabled;
+      opLabel.style.opacity = bgEnabled ? "1" : "0.4";
+    };
+    slider.addEventListener("input", () => {
+      bgOpacity = Number(slider.value);
+      opLabel.textContent = `${bgOpacity}%`;
+      void setSettings({ bgOpacity });
+    });
+    card.appendChild(
+      switchRow("Màu nền phụ đề", bgEnabled, (v) => {
+        bgEnabled = v;
+        syncBg();
+        void setSettings({ bgEnabled: v });
+      })
+    );
+    const opRow = div("set-row");
+    opRow.appendChild(slider);
+    opRow.appendChild(opLabel);
+    card.appendChild(opRow);
+    syncBg();
+
+    // 4 — Kích thước phụ đề: − [Npx] + (12..32, bước 2)
+    const sizeRow = div("set-row");
+    sizeRow.appendChild(div("set-label", "Kích thước phụ đề"));
+    const stepper = div("stepper");
+    const minus = document.createElement("button");
+    minus.className = "step-btn";
+    minus.textContent = "−";
+    const val = div("set-val");
+    const plus = document.createElement("button");
+    plus.className = "step-btn";
+    plus.textContent = "+";
+    const paintSize = (): void => {
+      val.textContent = `${fontSize}px`;
+      minus.disabled = fontSize <= FONT_MIN;
+      plus.disabled = fontSize >= FONT_MAX;
+    };
+    minus.addEventListener("click", () => {
+      fontSize = clampFont(fontSize - FONT_STEP);
+      paintSize();
+      void setSettings({ fontSizePx: fontSize });
+    });
+    plus.addEventListener("click", () => {
+      fontSize = clampFont(fontSize + FONT_STEP);
+      paintSize();
+      void setSettings({ fontSizePx: fontSize });
+    });
+    stepper.appendChild(minus);
+    stepper.appendChild(val);
+    stepper.appendChild(plus);
+    sizeRow.appendChild(stepper);
+    card.appendChild(sizeRow);
+    paintSize();
+  });
+
+  return card;
+}
+
 function subStatusText(me: Me): { text: string; expired: boolean } {
   const s = me.subscription;
   if (me.is_active && s?.status === "trial" && s.trial_ends_at) {
@@ -190,8 +299,10 @@ function renderUser(me: Me): void {
 
   // Timer thủ công (TIP-014): "Thời gian học" HH:MM:SS + Bắt đầu/Kết thúc. State ở background.
   const timerCard = buildTimerCard(refreshMinutes);
+  // Cài đặt phụ đề (TIP-015): EN/VI toggle, độ đậm nền, cỡ chữ — áp realtime qua chrome.storage.
+  const settingsCard = buildSettingsCard();
 
-  const nodes: Node[] = [div("title", "StudyMovie"), row, timerCard, minutesBox, statusBox];
+  const nodes: Node[] = [div("title", "StudyMovie"), row, timerCard, minutesBox, settingsCard, statusBox];
   if (!me.is_active) {
     nodes.push(button("Nâng cấp", () => openTab(`${SITE_URL}/upgrade`)));
   }

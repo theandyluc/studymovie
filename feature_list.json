@@ -147,13 +147,13 @@
     },
     {
       "id": "EXT-04",
-      "title": "Settings popup: toggle sub, chế độ hiển thị, font size ±, màu chữ, background",
+      "title": "Cài đặt phụ đề trong POPUP: toggle EN/VI, độ đậm nền đen %, cỡ chữ ± (12-32) — áp realtime",
       "area": "extension",
-      "tip": "TIP-005",
-      "status": "verified",
+      "tip": "TIP-015",
+      "status": "done",
       "depends_on": ["EXT-01"],
-      "acceptance": "Tất cả tùy chọn lưu chrome.storage và áp dụng realtime lên overlay.",
-      "evidence": "lib/settings.ts (chrome.storage.local + defaults + onSettingsChange). Panel gear 📖 trên player: bật/tắt phụ đề, chế độ EN+VI/EN/VI, cỡ chữ, màu chữ, màu nền, độ mờ nền. onSettingsChange → applySettings re-render overlay NGAY (realtime). Lưu qua phiên. Cần Homeowner test trên Chrome."
+      "acceptance": "4 mục (toggle EN, toggle VI, màu nền+%, cỡ chữ ±) lưu chrome.storage; overlay áp realtime; settings bền.",
+      "evidence": "TIP-015 dời cài đặt phụ đề từ panel gear trong player (TIP-005) sang POPUP (theo Figma + khách). lib/settings.ts gộp 1 nguồn (key cũ sm-ext-settings, KHÔNG trùng): model mới {showEn,showVi,bgEnabled,bgOpacity%(0..100),fontSizePx} + normalize/clamp (bỏ field cũ enabled/mode/textColor/bgColor). Popup card 'Cài đặt': 2 switch EN/VI, toggle 'Màu nền'+slider % (disable khi tắt), stepper − [Npx] + (12..32 bước 2, disable ở biên). Mỗi đổi → setSettings → chrome.storage. youtube.ts: onSettingsChange → applySettings re-render cue hiện tại NGAY (ẩn/hiện EN-VI, nền rgba(0,0,0,%/100) hoặc transparent+textShadow, cỡ chữ). GỠ panel gear+toggleSettingsPanel trong player (trùng, dùng model cũ). Giữ nguyên cue/click-từ/anti-bot VI. TỰ TEST: init.sh exit 0 (lint+typecheck 3 pkg), ext build dev OK (youtube.js 16.8→12.8kb). CẦN HOMEOWNER (Chrome): AC-1..5 toggle/nền/cỡ chữ realtime trên video CC + click từ vẫn chạy."
     },
     {
       "id": "EXT-03",
