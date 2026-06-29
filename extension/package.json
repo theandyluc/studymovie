@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
+    "build:prod": "node build.mjs --prod",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },

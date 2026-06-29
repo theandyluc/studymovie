@@ -204,6 +204,16 @@
       "depends_on": ["QA-01"],
       "acceptance": "Extension đóng gói submit; web deploy chạy; .env.example + HANDOVER.md đầy đủ; checklist handover (Blueprint mục 9) pass.",
       "evidence": ""
+    },
+    {
+      "id": "INF-03",
+      "title": "Deploy config Vercel: frontend (Next) + backend (Hono serverless) + CORS/env production",
+      "area": "infra",
+      "tip": "TIP-012",
+      "status": "done",
+      "depends_on": ["WEB-06"],
+      "acceptance": "Backend chạy serverless Vercel; frontend deploy; CORS+OAuth redirect cho domain production; secret ở Vercel env (không commit); dev flow không hỏng; extension build được bản production.",
+      "evidence": "Backend serverless: web/backend/api/index.ts (@hono/node-server/vercel handle, Node runtime) + vercel.json (rewrite /(.*) -> /api để Hono định tuyến). env.ts đọc process.env (Vercel env vars), local đọc root .env. CORS giữ localhost dev + SITE_URL (env=prod frontend) + chrome-extension, KHÔNG '*'. Frontend Next: NEXT_PUBLIC_* qua Vercel env (next.config inline). Extension: build.mjs --prod đọc .env.production (giữ bản dev); manifest thêm host production placeholder (Homeowner đổi domain thật) + giữ localhost. .env.example ghi rõ var nào ở project nào. Khuyến nghị 2 project Vercel riêng (frontend + backend) cho CORS độc lập. TỰ TEST: init.sh exit 0 (lint+typecheck 3 pkg, api/ included), ext build dev + build:prod chạy, backend dev boot (health 200, /api/me 401) — dev flow KHÔNG hỏng. LIVE DEPLOY + nhập env Vercel + Supabase redirect = HOMEOWNER làm theo checklist; verified sau khi production chạy."
     }
   ]
 }

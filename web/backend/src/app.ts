@@ -18,11 +18,12 @@ import { getPlaylist, postPlaylist, patchPlaylist, deletePlaylist } from "./api/
  */
 export const app = new Hono();
 
-// CORS: cho web frontend (SITE_URL) + popup/background extension (chrome-extension://<id>,
-// id thay đổi mỗi lần load unpacked nên phản chiếu theo scheme). KHÔNG mở '*'.
+// CORS: web frontend (SITE_URL — production set qua env Vercel) + localhost dev +
+// popup/background extension (chrome-extension://<id>). KHÔNG mở '*'.
+const DEV_ORIGIN = "http://localhost:3000";
 function allowedOrigin(origin: string | undefined): string | null {
   if (!origin) return SITE_URL; // request không có Origin (server-to-server) — vô hại
-  if (origin === SITE_URL) return origin;
+  if (origin === SITE_URL || origin === DEV_ORIGIN) return origin;
   if (origin.startsWith("chrome-extension://")) return origin;
   return null; // chặn mọi origin khác
 }

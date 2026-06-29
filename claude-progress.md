@@ -7,14 +7,29 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** GĐ2 — web playlist xong (TIP-011 done: WEB-06). Còn lại: thanh toán.
+- **Giai đoạn hiện tại:** GĐ3 — deploy config Vercel xong (TIP-012 done: INF-03). Code/config sẵn sàng; **chờ Homeowner deploy live + nhập env Vercel + Supabase redirect.**
 - **Feature đang làm:** (chưa bắt đầu TIP tiếp theo)
-- **Next:** WEB-08 + BE-04/05 /upgrade thật (VietQR động + SePay webhook) — mảnh ghép cuối GĐ thanh toán.
+- **Next:** Homeowner deploy theo checklist TIP-012 → verified. Còn: WEB-08+BE-04/05 /upgrade (thanh toán), QA-01, INF-02 (đóng gói extension + HANDOVER + transfer).
+- **URL production:** (điền sau khi Homeowner deploy) frontend=`https://<frontend>.vercel.app`, backend=`https://<backend>.vercel.app`.
 - **Blocker / cần làm:** (1) Production: thêm domain `https://studymovie.com/*` vào manifest host_permissions + content_scripts matches (hiện chỉ localhost:3000). (2) Khách chốt UI streak "hôm nay chưa đạt" (backend đã có cờ `today_met`).
 
 ---
 
 ## Session log
+
+### Session 12 — TIP-012 Deploy config Vercel (frontend + backend serverless) (2026-06-28)
+- **TIP/Feature:** TIP-012 — INF-03 (deploy config). Thợ chuẩn bị code/config; live deploy = Homeowner (Thợ không có quyền tài khoản).
+- **Đã làm:**
+  - **Backend serverless:** `web/backend/api/index.ts` (`@hono/node-server/vercel` `handle`, Node runtime) + `web/backend/vercel.json` (rewrite `/(.*)`→`/api` để Hono tự định tuyến /health, /api/*). tsconfig include thêm `api`. `env.ts` đã đọc `process.env` (Vercel env) — local fallback root .env.
+  - **CORS** (`app.ts`): giữ `localhost:3000` (dev) + `SITE_URL` (env = prod frontend) + `chrome-extension://`. KHÔNG '*'.
+  - **Frontend:** không đổi code — NEXT_PUBLIC_* set qua Vercel env, next.config inline. Root-.env loader fail-silent trên Vercel.
+  - **Extension prod:** `build.mjs --prod` đọc `extension/.env.production` (template `.env.production.example`, gitignore `.env.production`); script `build:prod`; manifest thêm host `https://studymovie.vercel.app/*` (placeholder Homeowner đổi) + giữ localhost.
+  - `.env.example`: ghi rõ var nào ở Vercel project frontend vs backend.
+- **Kiến trúc chốt:** 2 Vercel project riêng (frontend Root=web/frontend, backend Root=web/backend) → CORS/độc lập rõ ràng.
+- **Verification (tự test):** init.sh exit 0 (lint+typecheck 3 pkg, api/ typecheck OK); ext build dev + build:prod chạy; backend dev boot (health 200, /api/me 401) — **AC-7 dev flow KHÔNG hỏng**; secret scan sạch; `.env.production` được ignore.
+- **CHỜ HOMEOWNER (AC-1..5 live):** tạo 2 project Vercel, nhập env vars, Supabase redirect URL production, deploy. Checklist trong Completion Report.
+- **Deviation:** Thêm entry INF-03 (deploy config, tip TIP-012) thay vì đánh INF-02 (TIP-014 handover đầy đủ — gồm đóng gói extension/HANDOVER/transfer, chưa làm).
+- **Commit:** chore(deploy): TIP-012 Vercel deploy config.
 
 ### Session 11 — TIP-011 Playlist (paste link + thumbnail/title + học/done/xóa) (2026-06-28)
 - **TIP/Feature:** TIP-011 — WEB-06 trang /playlist.

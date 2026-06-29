@@ -10,11 +10,15 @@ import * as esbuild from "esbuild";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
-// Đọc biến công khai từ root .env (giữ 1 nguồn duy nhất).
-async function readRootEnv() {
+// --prod: build bản production, đọc extension/.env.production (trỏ về URL Vercel).
+// mặc định (dev): đọc root .env (trỏ localhost). Giữ được CẢ 2 bản.
+const PROD = process.argv.includes("--prod");
+const ENV_FILE = PROD ? resolve(here, ".env.production") : resolve(here, "../.env");
+
+async function readEnvFile() {
   const env = {};
   try {
-    const txt = await readFile(resolve(here, "../.env"), "utf8");
+    const txt = await readFile(ENV_FILE, "utf8");
     for (const line of txt.split(/\r?\n/)) {
       const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)$/);
       if (m) env[m[1]] = m[2].replace(/\s+#.*$/, "").trim();
@@ -25,7 +29,8 @@ async function readRootEnv() {
   return env;
 }
 
-const e = await readRootEnv();
+const e = await readEnvFile();
+console.log(`[StudyMovie] build ${PROD ? "PRODUCTION (.env.production)" : "dev (root .env)"}`);
 const pick = (k, fallback = "") => e[k] ?? process.env[k] ?? fallback;
 
 const define = {
