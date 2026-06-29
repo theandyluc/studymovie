@@ -12,6 +12,12 @@ import { postStudySession } from "./api/study-session.js";
 import { getPlaylist, postPlaylist, patchPlaylist, deletePlaylist } from "./api/playlist.js";
 import { postCreateOrder, getOrder, postSepayWebhook } from "./api/payment.js";
 import { getLevel, setLevel } from "./api/level.js";
+import {
+  getWeeklyPlan,
+  postWeeklyPlan,
+  patchWeeklyPlan,
+  deleteWeeklyPlan,
+} from "./api/weekly-plan.js";
 
 /**
  * Backend API service — DÙNG CHUNG cho web frontend + extension.
@@ -53,6 +59,10 @@ app.delete("/api/vocabulary/:id", requireAuth, deleteVocabulary); // WEB-03: xó
 app.get("/api/dashboard", requireAuth, getDashboard); // WEB-02
 app.get("/api/level", requireAuth, getLevel); // WEB-LEVEL TIP-016
 app.post("/api/level", requireAuth, setLevel); // WEB-LEVEL TIP-016
+app.get("/api/weekly-plan", requireAuth, getWeeklyPlan); // WEB-PLAN TIP-017
+app.post("/api/weekly-plan", requireAuth, postWeeklyPlan); // WEB-PLAN TIP-017
+app.patch("/api/weekly-plan/:id", requireAuth, patchWeeklyPlan); // WEB-PLAN TIP-017
+app.delete("/api/weekly-plan/:id", requireAuth, deleteWeeklyPlan); // WEB-PLAN TIP-017
 app.get("/api/leaderboard", requireAuth, getLeaderboard); // WEB-07
 app.get("/api/profile", requireAuth, getProfile); // WEB-09
 app.patch("/api/profile", requireAuth, patchProfile); // WEB-09

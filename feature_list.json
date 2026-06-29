@@ -224,6 +224,16 @@
       "depends_on": ["WEB-02"],
       "acceptance": "Nhập level lần đầu; mục tiêu = cấp kế + giờ theo bảng; vòng tròn % + tooltip; giờ reset mỗi cấp; tự lên cấp + thông báo; C2 max; dashboard cũ không đổi.",
       "evidence": "VERIFIED PRODUCTION (Homeowner web 2026-06-29): migration 006 đã áp; nhập level, mục tiêu+giờ theo bảng, vòng tròn %, tự lên cấp + thông báo, dashboard cũ đúng — PASS. | DB (migration 20260629000006): profiles thêm current_level (CHECK A0..C2) + level_started_at; RPC set_current_level(p_level) (set + reset mốc now()) + get_level_progress() (security definer, auth.uid). get_level_progress: needs_input nếu current_level null; studied = sum(duration_sec) study_sessions started_at>=level_started_at (RESET mỗi cấp); target theo bảng A0→A1=95,A1→A2=95,A2→B1=185,B1→B2=175,B2→C1=200,C1→C2=350; TỰ LÊN CẤP 1 cấp/lần (side-effect update profiles: current_level=next, level_started_at=now) + just_leveled_up/old/new; C2 is_max; trả percent/remaining. Backend api/level.ts GET/POST /api/level (getUserClient RPC), wire app.ts. Frontend lib/level.ts + dashboard: LevelSection (2 card), ProgressRing SVG % + tooltip 'giờ mục tiêu/còn lại', LevelPicker (nhập lần đầu + Đổi level), banner '🎉 lên cấp'. KHÔNG đụng get_dashboard cũ. TỰ TEST: init.sh exit 0 (lint+typecheck 3 pkg), FE build OK (/dashboard 4.36kB), backend 20/20. CẦN HOMEOWNER: áp migration 006 + test web login (nhập level, mục tiêu+giờ, vòng tròn, tự lên cấp qua insert study_sessions test)."
+    },
+    {
+      "id": "WEB-PLAN",
+      "title": "Kế hoạch tuần này (Dashboard): bảng tự nhập theo ngày + CRUD + RLS",
+      "area": "web",
+      "tip": "TIP-017",
+      "status": "done",
+      "depends_on": ["WEB-02"],
+      "acceptance": "Thêm/sửa/xóa dòng + tick hoàn thành; mọi ô input text; link clickable mở tab mới; bền + RLS user chỉ thấy của mình; dashboard cũ không đổi.",
+      "evidence": "DB (migration 20260629000007): bảng RIÊNG public.weekly_plans (id, user_id FK auth.users, plan_date text, video_link text, committed_time text, done bool, created_at) — KHÔNG đụng playlist_items. RLS 4 policy auth.uid()=user_id + grant authenticated + index(user_id). Backend api/weekly-plan.ts: GET list, POST add, PATCH (sửa text fields HOẶC toggle done), DELETE — getUserClient (RLS), wire app.ts. Frontend lib/weeklyPlan.ts + components/WeeklyPlan.tsx (WeeklyPlanTable) render trong dashboard dưới biểu đồ: bảng cột (sửa/xóa | Ngày | Link | Thời gian cam kết | Hoàn thành?), link clickable target=_blank rel=noopener, checkbox done lưu ngay, ✏️ sửa inline + 💾/✖️, 🗑️ xóa (confirm), form 'Thêm dòng' (3 input + Lưu/Huỷ, không auto-save), empty state. KHÔNG đụng Level/Playlist/dashboard cũ. TỰ TEST: init.sh exit 0 (lint+typecheck 3 pkg), FE build OK (/dashboard 5.49kB), backend 20/20. CẦN HOMEOWNER: áp migration 007 + test web (thêm/sửa/xóa/tick/link/reload/RLS)."
     }
   ]
 }

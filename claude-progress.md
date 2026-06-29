@@ -7,9 +7,10 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** TIP-015 (EXT-04 cài đặt phụ đề) + TIP-016 (WEB-LEVEL level system) **VERIFIED** (Homeowner test Chrome/web PASS; migration 006 đã áp production).
+- **Giai đoạn hiện tại:** TIP-017 — Kế hoạch tuần (WEB-PLAN) **done (self-tested), CHỜ HOMEOWNER** áp migration 007 + test web. (TIP-015/016 đã verified+push trước đó.)
 - **Feature đang làm:** (chưa bắt đầu TIP tiếp theo)
-- **Next:** QA-01 (QA tổng), INF-02 (đóng gói extension Chrome Web Store + HANDOVER.md + transfer ownership).
+- **CẦN ÁP MIGRATION:** `20260629000007_weekly_plans.sql` — Homeowner chạy Supabase SQL Editor.
+- **Next:** QA-01 (QA tổng), INF-02 (đóng gói extension + HANDOVER.md + transfer ownership).
 - **LƯU Ý KỸ THUẬT (quan trọng):** Vercel serverless đọc body POST treo với `@hono/node-server/vercel` (Readable.toWeb deadlock). Đã fix bằng buffer rawBody trong `web/backend/api/index.ts` — **KHÔNG gỡ**. Mọi POST mới (web/extension/webhook) phụ thuộc fix này khi chạy trên Vercel.
 - **URL production:** frontend=`https://studymovie-frontend.vercel.app`, backend=`https://studymovie-backend.vercel.app`. (manifest extension đã trỏ host frontend này; build:prod đọc extension/.env.production.)
 - **Blocker / cần làm:** Khách chốt UI streak "hôm nay chưa đạt" (backend đã có cờ `today_met`).
@@ -17,6 +18,16 @@
 ---
 
 ## Session log
+
+### Session 19 — TIP-017 Kế hoạch tuần này (Dashboard) (2026-06-29)
+- **TIP/Feature:** TIP-017 — WEB-PLAN: bảng "Kế hoạch tuần này" dưới Dashboard. Self-tested; chờ Homeowner áp migration 007 + test web.
+- **Đã làm:**
+  - **DB** (migration `20260629000007_weekly_plans.sql`): bảng RIÊNG `weekly_plans` (id, user_id FK auth.users, plan_date/video_link/committed_time text, done bool, created_at). RLS 4 policy auth.uid()=user_id + grant authenticated + index(user_id). KHÔNG đụng playlist_items.
+  - **Backend** `api/weekly-plan.ts` (getUserClient/RLS): GET list, POST add, PATCH (sửa fields hoặc toggle done), DELETE. Wire app.ts (/api/weekly-plan + /:id).
+  - **Frontend** `lib/weeklyPlan.ts` + `components/WeeklyPlan.tsx` (`WeeklyPlanTable`) render dưới biểu đồ dashboard: bảng (sửa/xóa | Ngày | Link | Thời gian cam kết | Hoàn thành?), mọi ô input text, link clickable target=_blank rel=noopener, checkbox done lưu ngay, ✏️ sửa inline (💾/✖️), 🗑️ xóa (confirm), form "Thêm dòng" (3 input + Lưu/Huỷ — KHÔNG auto-save), empty state.
+- **Verification (tự test):** init.sh exit 0 (lint+typecheck 3 pkg); FE build OK (/dashboard 5.49kB); backend 20/20.
+- **CHỜ HOMEOWNER:** áp migration 007 (SQL in trong report) + test web (AC-1..8): thêm/sửa/xóa/tick/link/reload/RLS; dashboard cũ đúng.
+- **Commit:** feat(web): TIP-017 weekly plan table (CRUD, RLS).
 
 ### Session 18 — TIP-016 Level system Dashboard (2026-06-29)
 - **TIP/Feature:** TIP-016 — WEB-LEVEL: card "Level hiện tại" + "Mục tiêu tiếp theo" (vòng tròn) trên Dashboard. Self-tested; chờ Homeowner áp migration + test web.

@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { PageLoading } from "@/components/ui/Spinner";
 import { fetchDashboard, type Dashboard, type DayPoint } from "@/lib/account";
 import { fetchLevel, setLevel, LEVELS, type LevelProgress } from "@/lib/level";
+import { WeeklyPlanTable } from "@/components/WeeklyPlan";
 
 // Biểu đồ cột bằng div (không thêm thư viện chart — gọn, dễ reskin).
 function BarChart({ data }: { data: DayPoint[] }) {
@@ -280,6 +281,8 @@ function DashboardInner() {
           </p>
         )}
       </Card>
+
+      <WeeklyPlanTable />
     </div>
   );
 }
