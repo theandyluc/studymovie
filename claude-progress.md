@@ -7,9 +7,12 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** TIP-021 reskin web (WEB-RESKIN) **done (self-tested AC-5), CHỜ HOMEOWNER** test visual (AC-2/3/4). 019b+020 đã VERIFIED production + push.
+- **Giai đoạn hiện tại:** TIP-021 reskin web (WEB-RESKIN) **VERIFIED (Homeowner browser local 2026-06-30, AC-2/3/4 PASS)**. 019b+020 đã VERIFIED production + push. Đang giao TIP-022.
+- **VAI TRÒ:** Phiên chính đóng vai **CHỦ THẦU** (viết TIP, review report, gate verified); Thợ là phiên Claude Code khác thực thi. Giao TIP tuần tự.
 - **MIGRATION ĐÃ ÁP production:** 008 (get_access_status) + 009 (admin). Bootstrap `is_admin=true` cho dokhiem562@gmail.com xong.
-- **ROADMAP:** ✅018 ✅019a ✅019b ✅020 → **021 reskin (đang chờ verify)** → **QA-01** → **INF-02** (đóng gói extension + HANDOVER + transfer). + nhánh TIP-024/025/026 (vocab list/flashcard restructure — sẽ reskin trong chính các TIP đó, nên 021 KHÔNG reskin sâu /tu-vung, /hoc-tu-vung).
+- **SCOPE RESKIN ĐÃ CHỐT (từ Figma, Homeowner duyệt):** TOÀN BỘ web + extension. Gồm 3 thay đổi đảo feature verified: flashcard NÚT→**swipe**, học TẤT CẢ→**chọn từ (tick)**, extension Google-only→**+email/mật khẩu**.
+- **TASK GRAPH reskin:** ✅TIP-021 reskin web → **TIP-022 reskin extension popup+overlay (đang giao)** → TIP-023 phụ đề (màu chữ EN/VI + khoảng cách dòng, VI=80%EN + né control YouTube) → TIP-024 vocab status Từ mới/Đã học + form thêm từ web → TIP-025 vocab search/lọc/phân trang/biểu đồ → TIP-026 flashcard swipe + học từ đã chọn → TIP-027 extension email/mật khẩu+đăng ký → TIP-028 polish (countdown thanh toán + nút Tắt extension + leaderboard top5) → QA-01 → INF-02.
+- **FIGMA:** ảnh export ở `C:\Users\ADMIN\OneDrive\Máy tính\Figma\` (Webapp 20 + Extension 8 + Phụ đề 7). Token hex suy từ ảnh (chưa có Dev Mode chính thức) — rà lại nếu khách đưa hex.
 - **LƯU Ý KỸ THUẬT (quan trọng):** Vercel serverless đọc body POST treo với `@hono/node-server/vercel` (Readable.toWeb deadlock). Đã fix bằng buffer rawBody trong `web/backend/api/index.ts` — **KHÔNG gỡ**. Mọi POST mới (web/extension/webhook) phụ thuộc fix này khi chạy trên Vercel.
 - **URL production:** frontend=`https://studymovie-frontend.vercel.app`, backend=`https://studymovie-backend.vercel.app`. (manifest extension đã trỏ host frontend này; build:prod đọc extension/.env.production.)
 - **Blocker / cần làm:** Khách chốt UI streak "hôm nay chưa đạt" (backend đã có cờ `today_met`).
@@ -29,9 +32,9 @@
   - login/leaderboard/settings/playlist/thanh-toan/cam-on/admin reskin qua token.
 - **NGOÀI scope (mục 5):** KHÔNG reskin sâu /tu-vung + /hoc-tu-vung (chỉ token toàn cục — restructure ở TIP-024/025/026).
 - **Verification (AC-5):** lint+typecheck+build PASS (14 route, Inter nạp).
-- **CHỜ HOMEOWNER (AC-2/3/4):** so Figma + thao tác feature không mất chức năng.
-- **DEVIATION (Chủ thầu rà):** token hex suy từ baseline TIP-021 (chưa có hex Figma chính thức); QuizGame 1 cột→2 cột (style, giữ logic).
-- **Commit:** feat(web): TIP-021 reskin web design system + app shell.
+- **VERIFIED (Homeowner browser local 2026-06-30):** AC-2 nav pill+logo+dropdown không 404, AC-3 các trang khớp Figma, AC-4 thao tác không vỡ — PASS. Chủ thầu duyệt deviation (token baseline + QuizGame 2 cột).
+- **DEVIATION (Chủ thầu đã rà & chấp nhận):** token hex suy từ baseline TIP-021 (chưa có hex Figma chính thức); QuizGame 1 cột→2 cột (style, giữ logic).
+- **Commit:** feat(web): TIP-021 reskin web design system + app shell (b864873) + chore verified.
 
 ### Session 24 — TIP-019b + TIP-020 VERIFIED production + push (2026-06-30)
 - **TIP/Feature:** WEB-TRIAL (TIP-019b) + WEB-ADMIN (TIP-020) → **verified**.
