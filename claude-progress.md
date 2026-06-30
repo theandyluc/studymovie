@@ -7,7 +7,7 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** TIP-018 — Flashcard hướng dẫn lần đầu + audio tự phát (WEB-FLASH) **done (self-tested), CHỜ HOMEOWNER** test web.
+- **Giai đoạn hiện tại:** TIP-018 — Flashcard hướng dẫn lần đầu + audio tự phát (WEB-FLASH) **VERIFIED** (Homeowner web PASS). Tiếp theo TIP-019 routing VI.
 - **Feature đang làm:** (chưa bắt đầu TIP tiếp theo)
 - **ROADMAP (khách cập nhật, thay Task Graph cũ chỉ ghi QA+bàn giao):** TIP-018 flashcard hướng dẫn+audio (đang) → **TIP-019** routing tiếng Việt + redirect → **TIP-020** admin → **TIP-021** reskin → rồi **QA-01** + **INF-02** (đóng gói extension + HANDOVER + transfer). Các TIP gửi tuần tự.
 - **LƯU Ý KỸ THUẬT (quan trọng):** Vercel serverless đọc body POST treo với `@hono/node-server/vercel` (Readable.toWeb deadlock). Đã fix bằng buffer rawBody trong `web/backend/api/index.ts` — **KHÔNG gỡ**. Mọi POST mới (web/extension/webhook) phụ thuộc fix này khi chạy trên Vercel.

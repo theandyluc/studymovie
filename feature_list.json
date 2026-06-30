@@ -240,10 +240,10 @@
       "title": "Flashcard: màn hướng dẫn lần đầu (localStorage) + audio tự phát mỗi thẻ mới",
       "area": "web",
       "tip": "TIP-018",
-      "status": "done",
+      "status": "verified",
       "depends_on": ["WEB-04"],
       "acceptance": "Lần đầu hiện overlay hướng dẫn khớp tương tác thật; lần sau bỏ qua; audio tự phát thẻ mới (URL/speechSynthesis); nút loa thủ công; autoplay chặn không vỡ UI; flashcard cũ không đổi.",
-      "evidence": "Flashcard hiện tại = NÚT bấm (click thẻ lật + ← Trước/Sau →), KHÔNG kéo → hướng dẫn mô tả đúng nút (không ghi 'kéo', đúng AC-3). Thêm: overlay hướng dẫn lần đầu (localStorage key sm-flashcard-tutorial-seen; lần sau vào thẳng) + nút nhỏ 'Hướng dẫn' xem lại. Audio TỰ PHÁT mỗi thẻ mới qua useEffect [idx] (không phát khi đang xem hướng dẫn, không phát lại khi lật): playWord ưu tiên audio_url (TIP-009), lỗi/không có → fallback speechSynthesis en-US; try/catch + p.catch nuốt lỗi autoplay (AC-5 không vỡ UI). Nút loa 🔊 thủ công giữ (giờ luôn hiện, gọi playWord). KHÔNG đổi tương tác/logic flashcard (lật/chuyển/học tất cả/2 chiều). TỰ TEST: lint+typecheck sạch, FE build OK (/vocabulary/flashcard 3.61kB). CẦN HOMEOWNER: web test — xóa localStorage → vào thấy hướng dẫn → Bắt đầu → học; chuyển thẻ nghe audio tự phát; nút loa phát lại; vào lại không hiện hướng dẫn; flashcard cũ chạy đúng."
+      "evidence": "VERIFIED (Homeowner web 2026-06-29): hướng dẫn lần đầu + bỏ qua lần sau, audio tự phát thẻ mới, nút loa, flashcard cũ chạy đúng — PASS. | Flashcard hiện tại = NÚT bấm (click thẻ lật + ← Trước/Sau →), KHÔNG kéo → hướng dẫn mô tả đúng nút (không ghi 'kéo', đúng AC-3). Thêm: overlay hướng dẫn lần đầu (localStorage key sm-flashcard-tutorial-seen; lần sau vào thẳng) + nút nhỏ 'Hướng dẫn' xem lại. Audio TỰ PHÁT mỗi thẻ mới qua useEffect [idx] (không phát khi đang xem hướng dẫn, không phát lại khi lật): playWord ưu tiên audio_url (TIP-009), lỗi/không có → fallback speechSynthesis en-US; try/catch + p.catch nuốt lỗi autoplay (AC-5 không vỡ UI). Nút loa 🔊 thủ công giữ (giờ luôn hiện, gọi playWord). KHÔNG đổi tương tác/logic flashcard (lật/chuyển/học tất cả/2 chiều). TỰ TEST: lint+typecheck sạch, FE build OK (/vocabulary/flashcard 3.61kB). CẦN HOMEOWNER: web test — xóa localStorage → vào thấy hướng dẫn → Bắt đầu → học; chuyển thẻ nghe audio tự phát; nút loa phát lại; vào lại không hiện hướng dẫn; flashcard cũ chạy đúng."
     }
   ]
 }
