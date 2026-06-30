@@ -7,10 +7,9 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** TIP-017 — Kế hoạch tuần (WEB-PLAN) **done (self-tested), CHỜ HOMEOWNER** áp migration 007 + test web. (TIP-015/016 đã verified+push trước đó.)
+- **Giai đoạn hiện tại:** TIP-017 — Kế hoạch tuần (WEB-PLAN) **VERIFIED** (Homeowner web PASS; migration 007 đã áp production). TIP-015/016 đã verified+push trước đó.
 - **Feature đang làm:** (chưa bắt đầu TIP tiếp theo)
-- **CẦN ÁP MIGRATION:** `20260629000007_weekly_plans.sql` — Homeowner chạy Supabase SQL Editor.
-- **Next:** QA-01 (QA tổng), INF-02 (đóng gói extension + HANDOVER.md + transfer ownership).
+- **Next:** QA-01 (QA tổng flow thật), INF-02 (đóng gói extension Chrome Web Store + HANDOVER.md + transfer ownership).
 - **LƯU Ý KỸ THUẬT (quan trọng):** Vercel serverless đọc body POST treo với `@hono/node-server/vercel` (Readable.toWeb deadlock). Đã fix bằng buffer rawBody trong `web/backend/api/index.ts` — **KHÔNG gỡ**. Mọi POST mới (web/extension/webhook) phụ thuộc fix này khi chạy trên Vercel.
 - **URL production:** frontend=`https://studymovie-frontend.vercel.app`, backend=`https://studymovie-backend.vercel.app`. (manifest extension đã trỏ host frontend này; build:prod đọc extension/.env.production.)
 - **Blocker / cần làm:** Khách chốt UI streak "hôm nay chưa đạt" (backend đã có cờ `today_met`).

@@ -230,10 +230,10 @@
       "title": "Kế hoạch tuần này (Dashboard): bảng tự nhập theo ngày + CRUD + RLS",
       "area": "web",
       "tip": "TIP-017",
-      "status": "done",
+      "status": "verified",
       "depends_on": ["WEB-02"],
       "acceptance": "Thêm/sửa/xóa dòng + tick hoàn thành; mọi ô input text; link clickable mở tab mới; bền + RLS user chỉ thấy của mình; dashboard cũ không đổi.",
-      "evidence": "DB (migration 20260629000007): bảng RIÊNG public.weekly_plans (id, user_id FK auth.users, plan_date text, video_link text, committed_time text, done bool, created_at) — KHÔNG đụng playlist_items. RLS 4 policy auth.uid()=user_id + grant authenticated + index(user_id). Backend api/weekly-plan.ts: GET list, POST add, PATCH (sửa text fields HOẶC toggle done), DELETE — getUserClient (RLS), wire app.ts. Frontend lib/weeklyPlan.ts + components/WeeklyPlan.tsx (WeeklyPlanTable) render trong dashboard dưới biểu đồ: bảng cột (sửa/xóa | Ngày | Link | Thời gian cam kết | Hoàn thành?), link clickable target=_blank rel=noopener, checkbox done lưu ngay, ✏️ sửa inline + 💾/✖️, 🗑️ xóa (confirm), form 'Thêm dòng' (3 input + Lưu/Huỷ, không auto-save), empty state. KHÔNG đụng Level/Playlist/dashboard cũ. TỰ TEST: init.sh exit 0 (lint+typecheck 3 pkg), FE build OK (/dashboard 5.49kB), backend 20/20. CẦN HOMEOWNER: áp migration 007 + test web (thêm/sửa/xóa/tick/link/reload/RLS)."
+      "evidence": "VERIFIED PRODUCTION (Homeowner web 2026-06-29): migration 007 đã áp; thêm/sửa/xóa/tick/link/reload PASS, dashboard cũ đúng. | DB (migration 20260629000007): bảng RIÊNG public.weekly_plans (id, user_id FK auth.users, plan_date text, video_link text, committed_time text, done bool, created_at) — KHÔNG đụng playlist_items. RLS 4 policy auth.uid()=user_id + grant authenticated + index(user_id). Backend api/weekly-plan.ts: GET list, POST add, PATCH (sửa text fields HOẶC toggle done), DELETE — getUserClient (RLS), wire app.ts. Frontend lib/weeklyPlan.ts + components/WeeklyPlan.tsx (WeeklyPlanTable) render trong dashboard dưới biểu đồ: bảng cột (sửa/xóa | Ngày | Link | Thời gian cam kết | Hoàn thành?), link clickable target=_blank rel=noopener, checkbox done lưu ngay, ✏️ sửa inline + 💾/✖️, 🗑️ xóa (confirm), form 'Thêm dòng' (3 input + Lưu/Huỷ, không auto-save), empty state. KHÔNG đụng Level/Playlist/dashboard cũ. TỰ TEST: init.sh exit 0 (lint+typecheck 3 pkg), FE build OK (/dashboard 5.49kB), backend 20/20. CẦN HOMEOWNER: áp migration 007 + test web (thêm/sửa/xóa/tick/link/reload/RLS)."
     }
   ]
 }
