@@ -7,10 +7,9 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** TIP-019b (WEB-TRIAL) + TIP-020 admin (WEB-ADMIN) **done (self-tested), CHỜ HOMEOWNER** áp migration 008+009 + bootstrap admin + test. 019a đã verified production.
-- **Feature đang làm:** (sau 019b+020 verified → TIP-021 reskin, QA-01, INF-02).
-- **CẦN ÁP MIGRATION:** `20260629000008_access_status.sql` (RPC get_access_status) + `20260629000009_admin.sql` (is_admin/app_settings/RPC admin) + **bootstrap** `update profiles set is_admin=true where email='dokhiem562@gmail.com'`. Homeowner chạy Supabase SQL Editor.
-- **⚠️ ĐANG CHỜ REVIEW NHIỀU MẢNH (local, chưa push):** 019b (f245086) + 020 (commit kế). Push khi Homeowner chốt.
+- **Giai đoạn hiện tại:** TIP-019b (WEB-TRIAL) + TIP-020 admin (WEB-ADMIN) **VERIFIED production (2026-06-30)** — migration 008+009 + bootstrap admin đã áp, Homeowner test browser PASS. Đã push origin/main.
+- **Feature đang làm:** TIP-021 reskin (chưa có spec) → QA-01 → INF-02. Chờ Chủ thầu giao TIP-021.
+- **MIGRATION ĐÃ ÁP:** 008 (get_access_status) + 009 (admin: is_admin/app_settings/RPC) + bootstrap `is_admin=true` cho dokhiem562@gmail.com — ÁP XONG production.
 - **019b (chưa làm) — cần khi tới:** RPC `get_access_status` (trial = profiles.created_at+24h, paid_until từ subscriptions) + /api/access-status + guard chặn trang học khi has_access=false → /thanh-toan (biến NEXT_PUBLIC_PAYWALL_REDIRECT). KHÔNG chặn /, /thanh-toan, /cam-on, /ho-tro, /blog. Bảo vệ: /dashboard + /tu-vung + /hoc-tu-vung + /kiem-tra-anh-viet + /kiem-tra-viet-anh + /playlist + /leaderboard + /settings.
 - **Feature đang làm:** (chưa bắt đầu TIP tiếp theo)
 - **ROADMAP (khách cập nhật, thay Task Graph cũ chỉ ghi QA+bàn giao):** TIP-018 flashcard hướng dẫn+audio (đang) → **TIP-019** routing tiếng Việt + redirect → **TIP-020** admin → **TIP-021** reskin → rồi **QA-01** + **INF-02** (đóng gói extension + HANDOVER + transfer). Các TIP gửi tuần tự.
@@ -21,6 +20,15 @@
 ---
 
 ## Session log
+
+### Session 24 — TIP-019b + TIP-020 VERIFIED production + push (2026-06-30)
+- **TIP/Feature:** WEB-TRIAL (TIP-019b) + WEB-ADMIN (TIP-020) → **verified**.
+- **Homeowner đã làm:** áp migration 008 (trước) + 009 (admin) + bootstrap `update profiles set is_admin=true where email='dokhiem562@gmail.com'` qua Supabase SQL Editor; query kiểm tra OK; test browser production PASS.
+- **Test PASS (Homeowner):** 019b — trial hết hạn→/thanh-toan, public không chặn, Pro vào /thanh-toan báo đã Pro. 020 — admin /admin xem stats/users, set giá→đơn áp giá mới+QR, gán Pro, toggle admin (chặn tự gỡ admin mình), user thường /admin→đẩy /dashboard.
+- **Thợ làm:** feature_list WEB-TRIAL + WEB-ADMIN → verified (+ evidence verified). progress cập nhật trạng thái tổng quan + entry này. Push 2 commit local (f245086 019b + 83cb3c2 020) + commit state lên origin/main.
+- **Lưu ý:** Supabase MCP của Thợ Unauthorized (không có access token) → migration do Homeowner áp tay; nếu sau muốn Thợ tự áp cần cấp SUPABASE_ACCESS_TOKEN hoặc DB url.
+- **Kế tiếp:** Chờ Chủ thầu giao TIP-021 (reskin). Sau đó QA-01 + INF-02 (đóng gói + handover).
+- **Commit:** chore: WEB-TRIAL + WEB-ADMIN verified (TIP-019b + TIP-020).
 
 ### Session 23 — TIP-020 Admin panel (stats, users, giá Pro DB, gán Pro, quản admin) (2026-06-30)
 - **TIP/Feature:** TIP-020 — WEB-ADMIN. Không tách (chủ yếu additive; điểm chạm rủi ro = giá Pro→DB, đã giữ fallback env). Self-tested; chờ Homeowner áp migration + bootstrap + test.
