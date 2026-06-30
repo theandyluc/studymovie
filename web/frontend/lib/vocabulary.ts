@@ -34,6 +34,19 @@ export async function deleteVocab(id: string): Promise<boolean> {
   return deleted;
 }
 
+// TIP-026 — đánh dấu các từ đã học (learned_at=now), idempotent (chỉ set khi null). Trả số cập nhật.
+export async function markLearned(ids: string[]): Promise<number> {
+  if (ids.length === 0) return 0;
+  const { updated } = await apiFetch<{ updated: number }>("/api/vocabulary/mark-learned", {
+    method: "POST",
+    body: JSON.stringify({ ids }),
+  });
+  return updated;
+}
+
+// TIP-026 — selection truyền giữa /tu-vung → /hoc-tu-vung qua sessionStorage.
+export const STUDY_SELECTION_KEY = "sm-study-selection";
+
 export type QuizDirection = "en2vi" | "vi2en";
 
 export interface QuizQuestion {

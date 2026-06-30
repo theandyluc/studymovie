@@ -1,12 +1,13 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AuthGuard } from "@/components/AuthGuard";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { PageLoading } from "@/components/ui/Spinner";
-import { fetchVocab, addVocab, deleteVocab, type VocabItem } from "@/lib/vocabulary";
+import { fetchVocab, addVocab, deleteVocab, STUDY_SELECTION_KEY, type VocabItem } from "@/lib/vocabulary";
 
 function playAudio(url: string): void {
   try {
@@ -81,9 +82,11 @@ function TotalLearnedRing({ count }: { count: number }) {
 
 // WEB-03 / TIP-024 / TIP-025 — list + thêm từ + search/lọc/phân trang/biểu đồ (client-side).
 function VocabList() {
+  const router = useRouter();
   const [items, setItems] = useState<VocabItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set()); // TIP-026: từ tick để học
   // Form thêm từ
   const [word, setWord] = useState("");
   const [meaning, setMeaning] = useState("");
@@ -145,6 +148,36 @@ function VocabList() {
     }
   };
 
+  const toggleSelect = (id: string) => {
+    setSelected((cur) => {
+      const next = new Set(cur);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  // Học tất cả: xóa selection → flashcard học toàn bộ.
+  const studyAll = () => {
+    try {
+      sessionStorage.removeItem(STUDY_SELECTION_KEY);
+    } catch {
+      /* ignore */
+    }
+    router.push("/hoc-tu-vung");
+  };
+
+  // Học các từ đã chọn: lưu ids → flashcard chỉ học các từ đó.
+  const studySelected = () => {
+    if (selected.size === 0) return;
+    try {
+      sessionStorage.setItem(STUDY_SELECTION_KEY, JSON.stringify([...selected]));
+    } catch {
+      /* ignore */
+    }
+    router.push("/hoc-tu-vung");
+  };
+
   const applyDate = () => {
     const key = parseVNDate(dateInput);
     setDateApplied(dateInput.trim() === "" ? "" : (key ?? "__invalid__"));
@@ -187,9 +220,10 @@ function VocabList() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-heading text-2xl font-bold">Từ vựng ({items.length})</h1>
         <div className="flex flex-wrap gap-2">
-          <Link href="/hoc-tu-vung">
-            <Button>Flashcard</Button>
-          </Link>
+          <Button onClick={studyAll}>Flashcard</Button>
+          <Button onClick={studySelected} disabled={selected.size === 0} variant="info">
+            Học các từ đã chọn ({selected.size})
+          </Button>
           <Link href="/kiem-tra-anh-viet">
             <Button variant="ghost">Quiz EN→VI</Button>
           </Link>
@@ -298,13 +332,14 @@ function VocabList() {
                   <th className="py-2 pr-2">Nghĩa</th>
                   <th className="py-2 pr-2">Ngày thêm</th>
                   <th className="py-2 pr-2">Trạng thái</th>
+                  <th className="py-2 pr-2 text-center">Học từ này?</th>
                   <th className="w-12 py-2 pr-2"></th>
                 </tr>
               </thead>
               <tbody>
                 {pageItems.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-6 text-center text-muted-foreground">
+                    <td colSpan={7} className="py-6 text-center text-muted-foreground">
                       Không có từ khớp bộ lọc.
                     </td>
                   </tr>
@@ -331,6 +366,14 @@ function VocabList() {
                       <td className="py-2 pr-2">{fmtDate(it.created_at)}</td>
                       <td className="py-2 pr-2">
                         {it.learned_at ? <Badge tone="success">Đã học</Badge> : <Badge tone="danger">Từ mới</Badge>}
+                      </td>
+                      <td className="py-2 pr-2 text-center">
+                        <input
+                          type="checkbox"
+                          checked={selected.has(it.id)}
+                          onChange={() => toggleSelect(it.id)}
+                          aria-label={`Chọn học từ ${it.word}`}
+                        />
                       </td>
                       <td className="py-2 pr-2">
                         <button

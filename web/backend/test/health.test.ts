@@ -20,3 +20,15 @@ describe("GET /api/me (protected)", () => {
     expect(res.status).toBe(401);
   });
 });
+
+// TIP-026 — mark-learned: bảo vệ bằng requireAuth.
+describe("POST /api/vocabulary/mark-learned", () => {
+  it("returns 401 when no Authorization header", async () => {
+    const res = await app.request("/api/vocabulary/mark-learned", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: ["x"] }),
+    });
+    expect(res.status).toBe(401);
+  });
+});

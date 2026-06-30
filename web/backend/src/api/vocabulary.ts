@@ -1,7 +1,7 @@
 // TIP-005 — POST /api/vocabulary (protected): lưu từ cho user hiện tại.
 // Idempotent theo UNIQUE(user_id, word): trùng -> không tạo mới, không lỗi.
 import type { Context } from "hono";
-import { getServiceClient } from "../lib/supabase.js";
+import { getServiceClient, getUserClient } from "../lib/supabase.js";
 
 type VocabBody = {
   word?: string;
@@ -59,6 +59,28 @@ export async function getVocabulary(c: Context) {
     .order("created_at", { ascending: false }); // mới nhất trước
   if (error) return c.json({ error: error.message }, 500);
   return c.json({ items: data ?? [] });
+}
+
+// TIP-026 — POST /api/vocabulary/mark-learned {ids}: đánh dấu từ "đã học" (learned_at=now()).
+// getUserClient (RLS chỉ từ của user) + chỉ set khi learned_at NULL (idempotent, không ghi đè).
+export async function postMarkLearned(c: Context) {
+  let body: { ids?: unknown };
+  try {
+    body = (await c.req.json()) as { ids?: unknown };
+  } catch {
+    return c.json({ error: "invalid json" }, 400);
+  }
+  const ids = Array.isArray(body.ids) ? body.ids.filter((x): x is string => typeof x === "string") : [];
+  if (ids.length === 0) return c.json({ updated: 0 }); // rỗng → no-op 200
+
+  const { data, error } = await getUserClient(c.get("token"))
+    .from("vocabulary")
+    .update({ learned_at: new Date().toISOString() })
+    .in("id", ids)
+    .is("learned_at", null) // chỉ lần đầu — idempotent
+    .select("id");
+  if (error) return c.json({ error: error.message }, 500);
+  return c.json({ updated: data?.length ?? 0 });
 }
 
 // TIP-006 — DELETE /api/vocabulary/:id: chỉ xóa từ của chính user.

@@ -7,11 +7,11 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** TIP-021→025 **VERIFIED (Homeowner 2026-06-30)**. Đang giao TIP-026 (flashcard swipe + học từ đã chọn + mark-learned — đảo C1+C2, có endpoint mark-learned mới).
+- **Giai đoạn hiện tại:** TIP-026 flashcard swipe + chọn-từ + mark-learned (WEB-FLASH2) **done (self-tested AC-8), CHỜ HOMEOWNER** test web. TIP-021→025 VERIFIED. (endpoint mark-learned mới, KHÔNG migration.)
 - **VAI TRÒ:** Phiên chính đóng vai **CHỦ THẦU** (viết TIP, review report, gate verified); Thợ là phiên Claude Code khác thực thi. Giao TIP tuần tự.
 - **MIGRATION ĐÃ ÁP production:** 008 (get_access_status) + 009 (admin) + 010 (vocab learned_at). Bootstrap `is_admin=true` cho dokhiem562@gmail.com xong.
 - **SCOPE RESKIN ĐÃ CHỐT (từ Figma, Homeowner duyệt):** TOÀN BỘ web + extension. Gồm 3 thay đổi đảo feature verified: flashcard NÚT→**swipe**, học TẤT CẢ→**chọn từ (tick)**, extension Google-only→**+email/mật khẩu**.
-- **TASK GRAPH reskin:** ✅TIP-021 reskin web → ✅TIP-022 reskin extension → ✅TIP-023 phụ đề ext → ✅TIP-024 vocab status + form thêm từ web → ✅TIP-025 vocab search/lọc/phân trang/biểu đồ (FE-only) → **TIP-026 (đang giao)** flashcard swipe + học từ đã chọn → TIP-027 extension email/mật khẩu+đăng ký → TIP-028 polish (countdown thanh toán + nút Tắt extension + leaderboard top5) → QA-01 → INF-02.
+- **TASK GRAPH reskin:** ✅TIP-021 reskin web → ✅TIP-022 reskin extension → ✅TIP-023 phụ đề ext → ✅TIP-024 vocab status + form thêm từ web → ✅TIP-025 vocab search/lọc/phân trang/biểu đồ → **✅TIP-026 flashcard swipe + chọn-từ + mark-learned (chờ verify)** → TIP-027 extension email/mật khẩu+đăng ký → TIP-028 polish (countdown thanh toán + nút Tắt extension + leaderboard top5) → QA-01 → INF-02.
 - **FIGMA:** ảnh export ở `C:\Users\ADMIN\OneDrive\Máy tính\Figma\` (Webapp 20 + Extension 8 + Phụ đề 7). Token hex suy từ ảnh (chưa có Dev Mode chính thức) — rà lại nếu khách đưa hex.
 - **LƯU Ý KỸ THUẬT (quan trọng):** Vercel serverless đọc body POST treo với `@hono/node-server/vercel` (Readable.toWeb deadlock). Đã fix bằng buffer rawBody trong `web/backend/api/index.ts` — **KHÔNG gỡ**. Mọi POST mới (web/extension/webhook) phụ thuộc fix này khi chạy trên Vercel.
 - **URL production:** frontend=`https://studymovie-frontend.vercel.app`, backend=`https://studymovie-backend.vercel.app`. (manifest extension đã trỏ host frontend này; build:prod đọc extension/.env.production.)
@@ -20,6 +20,18 @@
 ---
 
 ## Session log
+
+### Session 30 — TIP-026 Flashcard swipe + học từ đã chọn + mark-learned (2026-06-30)
+- **TIP/Feature:** TIP-026 — WEB-FLASH2. ĐẢO QĐ cũ (Homeowner duyệt): flashcard NÚT→SWIPE, học TẤT CẢ→thêm chọn-từ. backend endpoint + frontend (KHÔNG migration).
+- **Đã làm:**
+  - **Backend** vocabulary.ts: `POST /api/vocabulary/mark-learned {ids}` (getUserClient/RLS; update learned_at=now() where id in ids AND learned_at IS NULL → idempotent; rỗng→no-op 200; requireAuth→401). Wire app.ts. +test mark-learned 401 (backend 21/21).
+  - **lib/vocabulary.ts:** markLearned(ids) + STUDY_SELECTION_KEY.
+  - **Flashcard /hoc-tu-vung** rewrite: SWIPE pointer events (ngưỡng 90px; kéo phải→thẻ sau, trái→trước, chưa đủ→nảy về; transform translateX+rotate; chạm<6px→lật) — BỎ nút ←/→; audio tự phát giữ; tutorial sửa thành 'kéo'; thẻ mới hiện → markLearned([id]) fire-and-forget; ≡ menu (3 route); selection: đọc sessionStorage sm-study-selection → học chỉ ids (rỗng→tất cả).
+  - **/tu-vung:** cột 'Học từ này?' checkbox/dòng + nút 'Học các từ đã chọn (N)' (lưu ids→sessionStorage→/hoc-tu-vung, disable khi 0) + Flashcard=học tất cả (xóa selection). Giữ search/lọc/phân trang TIP-025.
+- **Verification (AC-8):** init.sh exit 0; FE build (/hoc-tu-vung 4.47k, /tu-vung 5.54k); backend 21/21.
+- **CHỜ HOMEOWNER:** swipe đổi thẻ; chọn từ→học đúng; xem thẻ→reload /tu-vung 'Đã học' + biểu đồ tăng; ≡ menu; quiz/list/lọc chạy.
+- **Lưu ý:** ngưỡng swipe 90px; mark-learned gọi NGAY khi thẻ hiện ('từ đã xem' theo spec), idempotent; selection qua sessionStorage 'sm-study-selection'.
+- **Commit:** feat(web): TIP-026 flashcard swipe + study-selected + mark-learned.
 
 ### Session 29 — TIP-025 Vocab search/lọc/phân trang/biểu đồ (FE-only) (2026-06-30)
 - **TIP/Feature:** TIP-025 — WEB-VOCAB2. CHỈ app/tu-vung/page.tsx (KHÔNG backend/supabase/migration; KHÔNG thư viện — CSS thuần). Tính client từ list fetchVocab.

@@ -4,7 +4,7 @@ import { SITE_URL } from "./env.js";
 import { requireAuth } from "./middleware/auth.js";
 import { getMe } from "./api/me.js";
 import { getLookup } from "./api/lookup.js";
-import { postVocabulary, getVocabulary, deleteVocabulary } from "./api/vocabulary.js";
+import { postVocabulary, getVocabulary, deleteVocabulary, postMarkLearned } from "./api/vocabulary.js";
 import { getDashboard } from "./api/dashboard.js";
 import { getLeaderboard } from "./api/leaderboard.js";
 import { getProfile, patchProfile } from "./api/profile.js";
@@ -63,6 +63,7 @@ app.get("/api/me", requireAuth, getMe);
 app.get("/api/access-status", requireAuth, getAccessStatus); // WEB-TRIAL TIP-019b
 app.get("/api/lookup", requireAuth, getLookup); // EXT-02: tra nghĩa
 app.post("/api/vocabulary", requireAuth, postVocabulary); // EXT-02: lưu từ
+app.post("/api/vocabulary/mark-learned", requireAuth, postMarkLearned); // WEB-FLASH2 TIP-026
 app.get("/api/vocabulary", requireAuth, getVocabulary); // WEB-03: danh sách
 app.delete("/api/vocabulary/:id", requireAuth, deleteVocabulary); // WEB-03: xóa
 app.get("/api/dashboard", requireAuth, getDashboard); // WEB-02

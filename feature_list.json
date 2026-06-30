@@ -324,6 +324,16 @@
       "depends_on": ["WEB-VOCAB"],
       "acceptance": "Biểu đồ 7 ngày learned_at (UTC+7) + vòng tròn tổng đã học; search word/nghĩa; lọc trạng thái + ngày thêm (AND); phân trang pageSize10 + 'Hiển thị X–Y/N' + reset trang khi đổi lọc; flashcard/quiz vẫn dùng toàn bộ từ.",
       "evidence": "VERIFIED (Homeowner web 2026-06-30): biểu đồ 7 ngày + vòng tròn tổng, search, lọc trạng thái+ngày (AND), phân trang, flashcard/quiz dùng full — PASS. | FRONTEND-ONLY (chỉ app/tu-vung/page.tsx; KHÔNG đụng backend/supabase/migration; KHÔNG thư viện — CSS thuần). Tính client từ list fetchVocab. Biểu đồ LearnedChart: 7 ngày gần nhất (UTC+7 qua dayKeyVN = +7h rồi lấy ngày UTC), đếm từ có learned_at rơi vào ngày, cột cao nhất bg-chart-bar còn lại bg-chart-base, nhãn dd/MM. TotalLearnedRing: đếm learned_at!=null giữa vòng. Search (word|meaning_vi, lowercase includes); lọc trạng thái (all/new=null/learned=!null); lọc ngày thêm (created_at theo UTC+7 = parseVNDate DD/MM/YYYY) + Áp dụng + Xóa lọc + báo ngày không hợp lệ. Lọc AND (useMemo filtered). Phân trang PAGE_SIZE=10: slice trang, 'Hiển thị X–Y trong tổng số N từ vựng' + ‹ ›(disable biên) + trang/pageCount; useEffect reset page=1 khi đổi search/status/dateApplied. GIỮ form thêm từ/xóa/🔊/3 nút Flashcard-Quiz (flashcard/quiz vẫn fetch TOÀN BỘ — search/lọc chỉ áp lên view bảng). TỰ TEST AC-7: lint+typecheck sạch, FE build (/tu-vung 5.23kB). CẦN HOMEOWNER: test web (set tay vài learned_at để thấy biểu đồ/vòng; search; lọc trạng thái+ngày; phân trang; flashcard/quiz dùng full)."
+    },
+    {
+      "id": "WEB-FLASH2",
+      "title": "Flashcard SWIPE + học từ ĐÃ CHỌN (tick) + đánh dấu 'đã học' (mark-learned) + ≡ menu",
+      "area": "web",
+      "tip": "TIP-026",
+      "status": "done",
+      "depends_on": ["WEB-04", "WEB-VOCAB", "WEB-VOCAB2"],
+      "acceptance": "Flashcard kéo (swipe) đổi thẻ thay nút; chọn từ (tick) → học chỉ từ đó; xem thẻ → learned_at set (idempotent); ≡ menu chuyển route; không phá quiz/list/lọc.",
+      "evidence": "ĐẢO QĐ cũ (Homeowner duyệt): flashcard NÚT→SWIPE, học TẤT CẢ→thêm chọn-từ. Backend vocabulary.ts: POST /api/vocabulary/mark-learned {ids} (getUserClient/RLS, update learned_at=now() where id in ids AND learned_at IS NULL → idempotent; rỗng→no-op 200; requireAuth→401). lib/vocabulary.ts markLearned(ids) + STUDY_SELECTION_KEY. Flashcard /hoc-tu-vung rewrite: SWIPE pointer events (ngưỡng 90px; kéo phải→thẻ sau, trái→trước, chưa đủ→nảy về transform translateX+rotate; chạm<6px→lật) — BỎ nút ←/→; audio tự phát + tutorial sửa thành 'kéo' (giữ localStorage key); thẻ mới hiện → markLearned([id]) fire-and-forget (idempotent); ≡ menu (Học từ vựng/Kiểm tra Anh-Việt/Kiểm tra Việt-Anh); selection: đọc sessionStorage sm-study-selection → học chỉ ids đó (rỗng→tất cả). /tu-vung: cột 'Học từ này?' checkbox/dòng + nút 'Học các từ đã chọn (N)' (lưu ids→sessionStorage→/hoc-tu-vung, disable khi 0) + nút Flashcard=học tất cả (xóa selection); giữ search/lọc/phân trang. TỰ TEST AC-8: init.sh exit 0, FE build (/hoc-tu-vung 4.47k, /tu-vung 5.54k), backend 21/21 (+test mark-learned 401). CẦN HOMEOWNER: swipe đổi thẻ; chọn từ→học đúng; xem thẻ→reload /tu-vung thấy 'Đã học' + biểu đồ tăng; ≡ menu; quiz/list/lọc chạy. DEVIATION: mark-learned gọi NGAY khi thẻ hiện (spec 'từ đã xem'), idempotent; ngưỡng swipe 90px."
     }
   ]
 }

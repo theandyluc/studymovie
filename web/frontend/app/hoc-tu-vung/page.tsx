@@ -1,16 +1,15 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { AuthGuard } from "@/components/AuthGuard";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PageLoading } from "@/components/ui/Spinner";
-import { fetchVocab, type VocabItem } from "@/lib/vocabulary";
+import { fetchVocab, markLearned, STUDY_SELECTION_KEY, type VocabItem } from "@/lib/vocabulary";
 
-// TIP-018 — localStorage nhớ đã xem hướng dẫn lần đầu.
 const TUTORIAL_KEY = "sm-flashcard-tutorial-seen";
+const SWIPE_THRESHOLD = 90; // px — kéo vượt mức này mới đổi thẻ; chưa đủ → nảy về.
 
-// Đọc từ tiếng Anh bằng Web Speech API (fallback khi không có audio URL).
 function speak(text: string): void {
   try {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
@@ -22,9 +21,6 @@ function speak(text: string): void {
     /* ignore */
   }
 }
-
-// Phát âm 1 từ: ưu tiên audio URL (TIP-009), lỗi/không có → fallback speechSynthesis.
-// try/catch + catch() nuốt lỗi autoplay (AC-5: không vỡ UI nếu trình duyệt chặn).
 function playWord(it: VocabItem): void {
   const url = it.audio_url;
   if (url) {
@@ -34,33 +30,60 @@ function playWord(it: VocabItem): void {
       if (p && typeof p.then === "function") p.catch(() => speak(it.word));
       return;
     } catch {
-      /* rơi xuống speak */
+      /* fall to speak */
     }
   }
   speak(it.word);
 }
 
-// WEB-04 — Flashcard: dùng TẤT CẢ từ. Lật thẻ (bấm), trước/sau (nút).
-// TIP-018: + overlay hướng dẫn lần đầu + tự phát audio mỗi thẻ mới (giữ nguyên tương tác nút).
+// Đọc selection (id từ đã chọn ở /tu-vung) từ sessionStorage. KHÔNG xóa ở đây — /tu-vung quản lý.
+function readSelection(): string[] {
+  try {
+    const raw = sessionStorage.getItem(STUDY_SELECTION_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw) as unknown;
+    return Array.isArray(arr) ? arr.filter((x): x is string => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+// WEB-04 / TIP-018 / TIP-026 — Flashcard SWIPE: kéo đổi thẻ, chạm lật, audio tự phát,
+// tutorial "kéo", học từ ĐÃ CHỌN (sessionStorage), đánh dấu "đã học" (mark-learned), ≡ menu.
 function Flashcards() {
-  const [items, setItems] = useState<VocabItem[] | null>(null);
+  const [all, setAll] = useState<VocabItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [idx, setIdx] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  // Swipe state
+  const [dragX, setDragX] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const startX = useRef(0);
+  const movedRef = useRef(false);
 
   useEffect(() => {
     fetchVocab()
-      .then(setItems)
+      .then(setAll)
       .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
   }, []);
 
-  // Hướng dẫn lần đầu: chưa có key → hiện overlay (chạy client-only).
+  // Selection: nếu có id đã chọn → chỉ học các từ đó (giữ thứ tự list); else học tất cả.
+  const items = useMemo(() => {
+    if (!all) return null;
+    const sel = readSelection();
+    if (sel.length === 0) return all;
+    const set = new Set(sel);
+    const picked = all.filter((it) => set.has(it.id));
+    return picked.length > 0 ? picked : all;
+  }, [all]);
+
   useEffect(() => {
     try {
       if (localStorage.getItem(TUTORIAL_KEY) !== "1") setShowTutorial(true);
     } catch {
-      /* localStorage không khả dụng → bỏ qua, vào thẳng */
+      /* ignore */
     }
   }, []);
 
@@ -73,11 +96,13 @@ function Flashcards() {
     setShowTutorial(false);
   }, []);
 
-  // Tự phát audio khi sang THẺ MỚI (đổi idx) — không phát khi đang xem hướng dẫn.
-  // Phát 1 lần mỗi thẻ (deps = idx); lật thẻ không đổi idx nên không phát lại.
+  // Thẻ MỚI hiện ra → tự phát audio + đánh dấu "đã học" (mark-learned, idempotent, fire-and-forget).
   useEffect(() => {
     if (!items || items.length === 0 || showTutorial) return;
-    playWord(items[idx]);
+    const cur = items[idx];
+    if (!cur) return;
+    playWord(cur);
+    void markLearned([cur.id]).catch(() => undefined);
   }, [idx, items, showTutorial]);
 
   if (error) return <Card><p className="text-sm text-red-600">Lỗi: {error}</p></Card>;
@@ -99,16 +124,50 @@ function Flashcards() {
     setIdx((i) => Math.min(items.length - 1, Math.max(0, i + d)));
   };
 
+  // ── Swipe (pointer events, không thư viện) ──
+  const onPointerDown = (e: React.PointerEvent) => {
+    startX.current = e.clientX;
+    movedRef.current = false;
+    setDragging(true);
+    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (!dragging) return;
+    const dx = e.clientX - startX.current;
+    if (Math.abs(dx) > 6) movedRef.current = true;
+    setDragX(dx);
+  };
+  const onPointerUp = () => {
+    if (!dragging) return;
+    setDragging(false);
+    const dx = dragX;
+    setDragX(0);
+    if (dx >= SWIPE_THRESHOLD) {
+      go(1); // kéo phải → thẻ tiếp theo
+    } else if (dx <= -SWIPE_THRESHOLD) {
+      go(-1); // kéo trái → thẻ trước
+    } else if (!movedRef.current) {
+      setFlipped((f) => !f); // chạm (không kéo) → lật thẻ
+    }
+    // chưa đủ ngưỡng & có kéo → nảy về (dragX đã reset 0)
+  };
+
+  const cardStyle: React.CSSProperties = {
+    transform: `translateX(${dragX}px) rotate(${dragX * 0.03}deg)`,
+    transition: dragging ? "none" : "transform 0.2s ease",
+    touchAction: "pan-y",
+  };
+
   return (
     <div className="space-y-4">
-      {/* Overlay hướng dẫn lần đầu — mô tả ĐÚNG tương tác thật (bấm thẻ + nút, KHÔNG kéo) */}
+      {/* Tutorial lần đầu — mô tả KÉO (swipe) */}
       {showTutorial ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <Card className="w-full max-w-sm text-center">
             <h2 className="font-heading text-lg font-bold">Cách dùng Học từ vựng</h2>
             <ul className="mt-3 space-y-2 text-left text-sm text-muted-foreground">
-              <li>👆 <b>Bấm vào thẻ</b> để lật xem nghĩa &amp; ví dụ.</li>
-              <li>↔️ Dùng nút <b>← Trước</b> / <b>Sau →</b> để chuyển thẻ.</li>
+              <li>👉 <b>Giữ thẻ và kéo sang phải</b> để xem thẻ tiếp theo; kéo <b>sang trái</b> để quay lại.</li>
+              <li>👆 <b>Chạm vào thẻ</b> để lật xem nghĩa &amp; ví dụ.</li>
               <li>🔊 Mỗi thẻ mới sẽ <b>tự phát âm</b>; bấm nút loa để nghe lại.</li>
             </ul>
             <Button className="mt-4 w-full" onClick={dismissTutorial}>
@@ -136,14 +195,19 @@ function Flashcards() {
       </div>
 
       <Card
-        onClick={() => setFlipped((f) => !f)}
-        className="flex min-h-[220px] cursor-pointer flex-col items-center justify-center text-center"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        style={cardStyle}
+        className="flex min-h-[240px] cursor-grab select-none flex-col items-center justify-center text-center active:cursor-grabbing"
       >
         {!flipped ? (
           <>
             <p className="text-3xl font-bold">{it.word}</p>
             {it.ipa ? <p className="mt-1 text-muted-foreground">/{it.ipa}/</p> : null}
             <button
+              onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => {
                 e.stopPropagation();
                 playWord(it);
@@ -160,16 +224,41 @@ function Flashcards() {
             {it.example ? <p className="mt-3 text-sm italic text-muted-foreground">{it.example}</p> : null}
           </>
         )}
-        <p className="mt-4 text-xs text-muted-foreground">Bấm thẻ để lật</p>
+        <p className="mt-4 text-xs text-muted-foreground">Kéo để chuyển thẻ · chạm để lật</p>
       </Card>
 
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" disabled={idx === 0} onClick={() => go(-1)}>
-          ← Trước
-        </Button>
-        <Button disabled={idx === items.length - 1} onClick={() => go(1)}>
-          Sau →
-        </Button>
+      {/* ≡ menu chuyển nhanh Học từ vựng / Kiểm tra Anh-Việt / Kiểm tra Việt-Anh */}
+      <div className="relative flex justify-center">
+        <button
+          onClick={() => setMenuOpen((o) => !o)}
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-surface text-lg shadow-card hover:bg-surface-muted"
+          title="Menu"
+        >
+          ≡
+        </button>
+        {menuOpen ? (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} aria-hidden />
+            <div className="absolute bottom-12 z-50 w-56 overflow-hidden rounded-card border border-border bg-surface py-1 shadow-card">
+              {[
+                { href: "/hoc-tu-vung", label: "Học từ vựng" },
+                { href: "/kiem-tra-anh-viet", label: "Kiểm tra Anh-Việt" },
+                { href: "/kiem-tra-viet-anh", label: "Kiểm tra Việt-Anh" },
+              ].map((m) => (
+                <Link
+                  key={m.href}
+                  href={m.href}
+                  onClick={() => setMenuOpen(false)}
+                  className="block px-4 py-2 text-center text-sm hover:bg-surface-muted"
+                >
+                  {m.label}
+                </Link>
+              ))}
+            </div>
+          </>
+        ) : null}
       </div>
     </div>
   );
