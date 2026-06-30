@@ -7,8 +7,8 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** TIP-019 ĐÃ TÁCH → **019a routing VN** (WEB-ROUTE) **done (self-tested), CHỜ HOMEOWNER** test web; **019b trial guard** (WEB-TRIAL) làm SAU khi 019a verified.
-- **Feature đang làm:** TIP-019a routing (chờ verify) → rồi 019b.
+- **Giai đoạn hiện tại:** TIP-019a routing VN (WEB-ROUTE) **VERIFIED** (dev PASS; QR /thanh-toan chỉ vỡ trên dev do thiếu BANK_* local, test production sau push). Tiếp: **019b trial guard** (WEB-TRIAL).
+- **Feature đang làm:** TIP-019b (trial guard) — chưa bắt đầu; chờ Homeowner xác nhận production QR ổn.
 - **019b (chưa làm) — cần khi tới:** RPC `get_access_status` (trial = profiles.created_at+24h, paid_until từ subscriptions) + /api/access-status + guard chặn trang học khi has_access=false → /thanh-toan (biến NEXT_PUBLIC_PAYWALL_REDIRECT). KHÔNG chặn /, /thanh-toan, /cam-on, /ho-tro, /blog. Bảo vệ: /dashboard + /tu-vung + /hoc-tu-vung + /kiem-tra-anh-viet + /kiem-tra-viet-anh + /playlist + /leaderboard + /settings.
 - **Feature đang làm:** (chưa bắt đầu TIP tiếp theo)
 - **ROADMAP (khách cập nhật, thay Task Graph cũ chỉ ghi QA+bàn giao):** TIP-018 flashcard hướng dẫn+audio (đang) → **TIP-019** routing tiếng Việt + redirect → **TIP-020** admin → **TIP-021** reskin → rồi **QA-01** + **INF-02** (đóng gói extension + HANDOVER + transfer). Các TIP gửi tuần tự.
