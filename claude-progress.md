@@ -7,11 +7,11 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** TIP-021→024 **VERIFIED (Homeowner 2026-06-30)**. Đang giao TIP-025 (vocab search/lọc/phân trang/biểu đồ — có RPC/endpoint mới).
+- **Giai đoạn hiện tại:** TIP-025 vocab search/lọc/phân trang/biểu đồ (WEB-VOCAB2) **done (self-tested AC-7), CHỜ HOMEOWNER** test web. FRONTEND-ONLY (không backend/migration). TIP-021→024 VERIFIED.
 - **VAI TRÒ:** Phiên chính đóng vai **CHỦ THẦU** (viết TIP, review report, gate verified); Thợ là phiên Claude Code khác thực thi. Giao TIP tuần tự.
 - **MIGRATION ĐÃ ÁP production:** 008 (get_access_status) + 009 (admin) + 010 (vocab learned_at). Bootstrap `is_admin=true` cho dokhiem562@gmail.com xong.
 - **SCOPE RESKIN ĐÃ CHỐT (từ Figma, Homeowner duyệt):** TOÀN BỘ web + extension. Gồm 3 thay đổi đảo feature verified: flashcard NÚT→**swipe**, học TẤT CẢ→**chọn từ (tick)**, extension Google-only→**+email/mật khẩu**.
-- **TASK GRAPH reskin:** ✅TIP-021 reskin web → ✅TIP-022 reskin extension → ✅TIP-023 phụ đề ext → ✅TIP-024 vocab status Từ mới/Đã học + form thêm từ web → **TIP-025 (đang giao)** vocab search/lọc/phân trang/biểu đồ → TIP-026 flashcard swipe + học từ đã chọn → TIP-027 extension email/mật khẩu+đăng ký → TIP-028 polish (countdown thanh toán + nút Tắt extension + leaderboard top5) → QA-01 → INF-02.
+- **TASK GRAPH reskin:** ✅TIP-021 reskin web → ✅TIP-022 reskin extension → ✅TIP-023 phụ đề ext → ✅TIP-024 vocab status + form thêm từ web → **✅TIP-025 vocab search/lọc/phân trang/biểu đồ (chờ verify, FE-only)** → TIP-026 flashcard swipe + học từ đã chọn → TIP-027 extension email/mật khẩu+đăng ký → TIP-028 polish (countdown thanh toán + nút Tắt extension + leaderboard top5) → QA-01 → INF-02.
 - **FIGMA:** ảnh export ở `C:\Users\ADMIN\OneDrive\Máy tính\Figma\` (Webapp 20 + Extension 8 + Phụ đề 7). Token hex suy từ ảnh (chưa có Dev Mode chính thức) — rà lại nếu khách đưa hex.
 - **LƯU Ý KỸ THUẬT (quan trọng):** Vercel serverless đọc body POST treo với `@hono/node-server/vercel` (Readable.toWeb deadlock). Đã fix bằng buffer rawBody trong `web/backend/api/index.ts` — **KHÔNG gỡ**. Mọi POST mới (web/extension/webhook) phụ thuộc fix này khi chạy trên Vercel.
 - **URL production:** frontend=`https://studymovie-frontend.vercel.app`, backend=`https://studymovie-backend.vercel.app`. (manifest extension đã trỏ host frontend này; build:prod đọc extension/.env.production.)
@@ -20,6 +20,18 @@
 ---
 
 ## Session log
+
+### Session 29 — TIP-025 Vocab search/lọc/phân trang/biểu đồ (FE-only) (2026-06-30)
+- **TIP/Feature:** TIP-025 — WEB-VOCAB2. CHỈ app/tu-vung/page.tsx (KHÔNG backend/supabase/migration; KHÔNG thư viện — CSS thuần). Tính client từ list fetchVocab.
+- **Đã làm:**
+  - **Biểu đồ** LearnedChart: 7 ngày gần nhất (UTC+7 qua dayKeyVN = +7h rồi lấy ngày UTC), đếm từ learned_at rơi vào ngày; cột cao nhất bg-chart-bar, còn lại base; nhãn dd/MM. **Vòng tròn** TotalLearnedRing: đếm learned_at != null.
+  - **Search** (word|meaning_vi, lowercase includes). **Lọc trạng thái** (Tất cả/Từ mới=null/Đã học=!null). **Lọc ngày thêm** (created_at UTC+7 = parseVNDate DD/MM/YYYY) + Áp dụng + Xóa lọc + báo ngày sai. Lọc **AND** (useMemo).
+  - **Phân trang** PAGE_SIZE=10: slice, 'Hiển thị X–Y trong tổng số N từ vựng' + ‹ ›(disable biên) + trang/pageCount; reset page=1 khi đổi search/status/dateApplied.
+  - GIỮ form thêm từ/xóa/🔊/3 nút Flashcard-Quiz — flashcard/quiz vẫn dùng TOÀN BỘ từ (search/lọc chỉ áp lên view bảng).
+- **Verification (AC-7):** lint+typecheck sạch; FE build (/tu-vung 5.23kB).
+- **CHỜ HOMEOWNER:** test web (set tay vài learned_at để thấy biểu đồ/vòng; search; lọc trạng thái+ngày; phân trang; flashcard/quiz dùng full).
+- **Lưu ý:** pageSize=10; UTC+7 = cộng 7h rồi .toISOString().slice(0,10).
+- **Commit:** feat(web): TIP-025 vocab search + filters + pagination + learned chart.
 
 ### Session 28 — TIP-024 Vocab status Từ mới/Đã học + thêm từ web + reskin bảng (2026-06-30)
 - **TIP/Feature:** TIP-024 — WEB-VOCAB. supabase migration + backend + frontend. Self-tested; chờ Homeowner áp migration 010 + test.

@@ -314,6 +314,16 @@
       "depends_on": ["WEB-03", "WEB-RESKIN"],
       "acceptance": "Cột learned_at (migrate); GET trả learned_at; thêm từ thủ công {word,meaning_vi} idempotent; bảng STT/Từ/Nghĩa/Ngày/Trạng thái(Badge)/Xóa mới-nhất-trước; trùng từ báo; không phá cũ.",
       "evidence": "VERIFIED (Homeowner web 2026-06-30): migration 010 đã áp; thêm từ→'Từ mới' đỏ lên đầu, trùng báo 'đã có từ này', update learned_at→'Đã học' xanh, xóa/🔊/3 nút chạy — PASS. | DB (migration 20260629000010): vocabulary + cột learned_at timestamptz (null='Từ mới', có giá trị='Đã học'); KHÔNG đổi RLS. Backend vocabulary.ts: GET select thêm learned_at (giữ order created_at desc); POST giữ idempotent UNIQUE(user_id,word) + lemma fallback = word.toLowerCase() khi thêm thủ công, learned_at để DB default null. lib/vocabulary.ts: VocabItem +learned_at; addVocab(word,meaning_vi). Frontend app/tu-vung/page.tsx reskin: bảng STT|Từ vựng(+ipa/🔊)|Nghĩa|Ngày thêm(dd/mm/yyyy)|Trạng thái <Badge danger 'Từ mới'/success 'Đã học'>|🗑️Xóa, mới-nhất-trước; form 'Thêm từ vựng' (Từ Tiếng Anh + Nghĩa Tiếng Việt + Lưu) → addVocab → list refresh (item lên đầu) + clear; trùng → 'đã có từ này' (không ghi đè); validate rỗng; giữ 3 nút Flashcard/Quiz + empty state. KHÔNG làm search/lọc/phân trang/biểu đồ (TIP-025) + checkbox chọn-từ/mark-learned (TIP-026). TỰ TEST AC-6: init.sh exit 0 (lint+typecheck 3 pkg), FE build (/tu-vung 3.97kB), backend 20/20. CẦN HOMEOWNER: áp migration 010 + test web (thêm từ→Từ mới ở đầu, trùng báo, trạng thái pill, xóa, 3 nút). Giả lập 'Đã học': update vocabulary set learned_at=now() where word='...' (mark-learned thật = TIP-026)."
+    },
+    {
+      "id": "WEB-VOCAB2",
+      "title": "Vocab /tu-vung: search + lọc (ngày/trạng thái) + phân trang + biểu đồ (client-side)",
+      "area": "frontend",
+      "tip": "TIP-025",
+      "status": "done",
+      "depends_on": ["WEB-VOCAB"],
+      "acceptance": "Biểu đồ 7 ngày learned_at (UTC+7) + vòng tròn tổng đã học; search word/nghĩa; lọc trạng thái + ngày thêm (AND); phân trang pageSize10 + 'Hiển thị X–Y/N' + reset trang khi đổi lọc; flashcard/quiz vẫn dùng toàn bộ từ.",
+      "evidence": "FRONTEND-ONLY (chỉ app/tu-vung/page.tsx; KHÔNG đụng backend/supabase/migration; KHÔNG thư viện — CSS thuần). Tính client từ list fetchVocab. Biểu đồ LearnedChart: 7 ngày gần nhất (UTC+7 qua dayKeyVN = +7h rồi lấy ngày UTC), đếm từ có learned_at rơi vào ngày, cột cao nhất bg-chart-bar còn lại bg-chart-base, nhãn dd/MM. TotalLearnedRing: đếm learned_at!=null giữa vòng. Search (word|meaning_vi, lowercase includes); lọc trạng thái (all/new=null/learned=!null); lọc ngày thêm (created_at theo UTC+7 = parseVNDate DD/MM/YYYY) + Áp dụng + Xóa lọc + báo ngày không hợp lệ. Lọc AND (useMemo filtered). Phân trang PAGE_SIZE=10: slice trang, 'Hiển thị X–Y trong tổng số N từ vựng' + ‹ ›(disable biên) + trang/pageCount; useEffect reset page=1 khi đổi search/status/dateApplied. GIỮ form thêm từ/xóa/🔊/3 nút Flashcard-Quiz (flashcard/quiz vẫn fetch TOÀN BỘ — search/lọc chỉ áp lên view bảng). TỰ TEST AC-7: lint+typecheck sạch, FE build (/tu-vung 5.23kB). CẦN HOMEOWNER: test web (set tay vài learned_at để thấy biểu đồ/vòng; search; lọc trạng thái+ngày; phân trang; flashcard/quiz dùng full)."
     }
   ]
 }
