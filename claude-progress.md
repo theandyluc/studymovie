@@ -7,11 +7,11 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** TIP-021 (WEB-RESKIN) + TIP-022 (EXT-RESKIN) **VERIFIED (Homeowner 2026-06-30)**. Đang giao TIP-023 (phụ đề: màu chữ EN/VI + khoảng cách dòng VI=80%EN + né control YouTube).
+- **Giai đoạn hiện tại:** TIP-023 phụ đề ext (EXT-SUBTITLE) **done (self-tested AC-1/8), CHỜ HOMEOWNER** test Chrome (AC-2..7). TIP-021+022 đã VERIFIED.
 - **VAI TRÒ:** Phiên chính đóng vai **CHỦ THẦU** (viết TIP, review report, gate verified); Thợ là phiên Claude Code khác thực thi. Giao TIP tuần tự.
 - **MIGRATION ĐÃ ÁP production:** 008 (get_access_status) + 009 (admin). Bootstrap `is_admin=true` cho dokhiem562@gmail.com xong.
 - **SCOPE RESKIN ĐÃ CHỐT (từ Figma, Homeowner duyệt):** TOÀN BỘ web + extension. Gồm 3 thay đổi đảo feature verified: flashcard NÚT→**swipe**, học TẤT CẢ→**chọn từ (tick)**, extension Google-only→**+email/mật khẩu**.
-- **TASK GRAPH reskin:** ✅TIP-021 reskin web → ✅TIP-022 reskin extension popup+overlay → **TIP-023 (đang giao)** phụ đề (màu chữ EN/VI + khoảng cách dòng, VI=80%EN + né control YouTube) → TIP-024 vocab status Từ mới/Đã học + form thêm từ web → TIP-025 vocab search/lọc/phân trang/biểu đồ → TIP-026 flashcard swipe + học từ đã chọn → TIP-027 extension email/mật khẩu+đăng ký → TIP-028 polish (countdown thanh toán + nút Tắt extension + leaderboard top5) → QA-01 → INF-02.
+- **TASK GRAPH reskin:** ✅TIP-021 reskin web → ✅TIP-022 reskin extension → **✅TIP-023 phụ đề ext (chờ verify)** màu chữ EN/VI + khoảng cách VI=80%EN + né control → TIP-024 vocab status Từ mới/Đã học + form thêm từ web → TIP-025 vocab search/lọc/phân trang/biểu đồ → TIP-026 flashcard swipe + học từ đã chọn → TIP-027 extension email/mật khẩu+đăng ký → TIP-028 polish (countdown thanh toán + nút Tắt extension + leaderboard top5) → QA-01 → INF-02.
 - **FIGMA:** ảnh export ở `C:\Users\ADMIN\OneDrive\Máy tính\Figma\` (Webapp 20 + Extension 8 + Phụ đề 7). Token hex suy từ ảnh (chưa có Dev Mode chính thức) — rà lại nếu khách đưa hex.
 - **LƯU Ý KỸ THUẬT (quan trọng):** Vercel serverless đọc body POST treo với `@hono/node-server/vercel` (Readable.toWeb deadlock). Đã fix bằng buffer rawBody trong `web/backend/api/index.ts` — **KHÔNG gỡ**. Mọi POST mới (web/extension/webhook) phụ thuộc fix này khi chạy trên Vercel.
 - **URL production:** frontend=`https://studymovie-frontend.vercel.app`, backend=`https://studymovie-backend.vercel.app`. (manifest extension đã trỏ host frontend này; build:prod đọc extension/.env.production.)
@@ -20,6 +20,18 @@
 ---
 
 ## Session log
+
+### Session 27 — TIP-023 Phụ đề ext: chế độ + màu chữ EN/VI + khoảng cách + né control (2026-06-30)
+- **TIP/Feature:** TIP-023 — EXT-SUBTITLE. CHỈ extension (settings.ts + popup.ts + youtube.ts; KHÔNG đụng web/backend/supabase; KHÔNG đổi logic cue/click-từ/auth/timer).
+- **Đã làm:**
+  - **settings.ts model mới:** {mode'en|both|vi', enColor/viColor'white|black|yellow', bgEnabled, bgOpacity, fontSizePx(EN), lineGapPx}. Giữ key `sm-ext-settings`. MIGRATE TIP-015: showEn&&showVi→both, chỉ EN→en, chỉ VI→vi (field cũ bỏ qua, không crash). COLOR_HEX + clampGap(2..16 bước2).
+  - **popup buildSettingsCard:** tabs segmented (Tiếng Anh/Song ngữ/Tiếng Việt); hàng màu chữ 🇬🇧/🇻🇳 (3 chấm trắng/đen/vàng) hiện theo mode; Màu nền toggle+slider%; stepper Kích thước (EN 12..32); stepper Khoảng cách (2..16) CHỈ mode=both. CSS .seg/.seg-btn/.dots/.dot-btn. Mỗi đổi → setSettings realtime + re-render (ẩn/hiện hàng theo mode).
+  - **youtube.ts overlay:** render theo mode; màu theo enColor/viColor (COLOR_HEX); VI size = round(EN*0.8); marginTop VI = lineGapPx khi có cả EN; pill nền giữ (text-shadow theo màu khi tắt nền). NÉ CONTROL: `updateOverlayPosition()` đọc #movie_player `.ytp-autohide`(control ẩn) + fullscreen(`document.fullscreenElement`|`.ytp-fullscreen`) → bottom thường ẩn20/hiện60, FS ẩn24/hiện80; gọi trong syncTick(250ms)+fullscreenchange; transition .2s.
+  - GIỮ cue max-start / anti-bot VI / click-từ / dựng lại đổi video.
+- **Verification (AC-1/8):** init.sh exit 0 (lint+typecheck 3 pkg); ext build OK (popup.js 769k, youtube.js 14.9k).
+- **CHỜ HOMEOWNER (AC-2..7 Chrome):** tabs/màu/size/gap realtime + né control ẩn/hiện + full screen + click-từ.
+- **Selector phát hiện control (rà nếu YouTube đổi DOM):** `.ytp-autohide` trên #movie_player = control ẩn; `.ytp-fullscreen`/document.fullscreenElement = full screen.
+- **Commit:** feat(ext): TIP-023 subtitle mode + per-line color + line gap + control-aware position.
 
 ### Session 26 — TIP-022 Reskin extension (popup + overlay phụ đề) (2026-06-30)
 - **TIP/Feature:** TIP-022 — EXT-RESKIN. UI-ONLY extension (KHÔNG đụng web/backend/supabase; KHÔNG đổi model settings TIP-015/logic timer/auth/lookup). Đối chiếu Figma\\Extension (8) + Phụ đề (7).

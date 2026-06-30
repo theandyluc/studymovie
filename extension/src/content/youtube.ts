@@ -3,7 +3,7 @@
 // dựng overlay 2 dòng (EXT-01), click-từ tra nghĩa + lưu (EXT-02), settings realtime (EXT-04).
 // Mọi tương tác DOM player có guard — không throw khi YouTube đổi cấu trúc.
 import { type Cue } from "../lib/captions";
-import { getSettings, onSettingsChange, DEFAULT_SETTINGS, type Settings } from "../lib/settings";
+import { getSettings, onSettingsChange, DEFAULT_SETTINGS, COLOR_HEX, type Settings } from "../lib/settings";
 
 // Gọi backend QUA background SW (content script ở origin youtube.com bị CORS chặn;
 // background dùng origin chrome-extension đã nằm trong allowlist). CORS backend giữ chặt.
@@ -102,16 +102,33 @@ function buildOverlay(): void {
     position: "absolute",
     left: "0",
     right: "0",
-    bottom: "70px",
+    bottom: "20px",
     textAlign: "center",
     pointerEvents: "none",
     zIndex: "60",
+    transition: "bottom 0.2s ease", // TIP-023: dời mượt khi control ẩn/hiện
   } as Partial<CSSStyleDeclaration>);
   player.appendChild(box);
+  updateOverlayPosition(); // đặt vị trí theo control/full-screen ngay
   activeIndex = -1;
 }
 
-// TIP-022 reskin — 1 PILL bo tròn nền tối ôm cả EN+VI (Figma). Tắt nền → trong suốt + text-shadow.
+// TIP-023 — Dời overlay để KHÔNG bị thanh control YouTube che.
+//   controls ẩn = #movie_player có class 'ytp-autohide'; full screen = document.fullscreenElement
+//   hoặc player có class 'ytp-fullscreen'. (Rà lại selector nếu YouTube đổi DOM.)
+//   Vị trí: thường ẩn 20px/hiện 60px; full screen ẩn 24px/hiện 80px (control bar ~60px).
+function updateOverlayPosition(): void {
+  const box = document.getElementById(ID) as HTMLDivElement | null;
+  const player = getPlayer();
+  if (!box || !player) return;
+  const fs = !!document.fullscreenElement || player.classList.contains("ytp-fullscreen");
+  const controlsHidden = player.classList.contains("ytp-autohide");
+  const bottom = fs ? (controlsHidden ? 24 : 80) : controlsHidden ? 20 : 60;
+  const px = `${bottom}px`;
+  if (box.style.bottom !== px) box.style.bottom = px;
+}
+
+// TIP-022/023 — 1 PILL bo tròn nền tối ôm dòng phụ đề. Tắt nền → trong suốt + text-shadow.
 function styleBubble(bubble: HTMLElement): void {
   const bg = settings.bgEnabled;
   Object.assign(bubble.style, {
@@ -119,23 +136,30 @@ function styleBubble(bubble: HTMLElement): void {
     maxWidth: "92%",
     padding: bg ? "4px 14px" : "2px 6px",
     borderRadius: "10px",
-    // "Màu nền" = độ đậm nền đen (rgba black theo %); tắt → trong suốt.
     background: bg ? `rgba(0,0,0,${settings.bgOpacity / 100})` : "transparent",
     textAlign: "center",
     fontFamily: "Arial, sans-serif",
   } as Partial<CSSStyleDeclaration>);
 }
 
-// EN đậm trắng; VI nhạt + nhỏ hơn (reskin TIP-022; tinh chỉnh chính xác = TIP-023).
+// EN: size=fontSizePx, đậm; VI: size=80% EN, thường. Màu theo enColor/viColor. Tắt nền → text-shadow.
 function styleLine(el: HTMLElement, vi: boolean): void {
+  const sizePx = vi ? Math.round(settings.fontSizePx * 0.8) : settings.fontSizePx;
+  const colorKey = vi ? settings.viColor : settings.enColor;
+  const color = COLOR_HEX[colorKey];
+  // Không nền: chữ tối (đen) cần halo sáng; chữ sáng (trắng/vàng) cần bóng tối — cho dễ đọc.
+  const shadow = settings.bgEnabled
+    ? "none"
+    : colorKey === "black"
+      ? "0 0 3px rgba(255,255,255,0.95)"
+      : "0 1px 3px rgba(0,0,0,0.95)";
   Object.assign(el.style, {
     display: "block",
-    fontSize: vi ? `${Math.round(settings.fontSizePx * 0.9)}px` : `${settings.fontSizePx}px`,
-    lineHeight: "1.35",
-    color: "#ffffff",
+    fontSize: `${sizePx}px`,
+    lineHeight: "1.3",
+    color,
     fontWeight: vi ? "400" : "700",
-    opacity: vi ? "0.82" : "1",
-    textShadow: settings.bgEnabled ? "none" : "0 1px 3px rgba(0,0,0,0.95)",
+    textShadow: shadow,
   } as Partial<CSSStyleDeclaration>);
 }
 
@@ -147,8 +171,8 @@ function renderCue(idx: number): void {
   const cue = cues[idx];
   if (!cue) return;
 
-  const showEn = settings.showEn && !!cue.en;
-  const showVi = settings.showVi && !!cue.vi;
+  const showEn = (settings.mode === "en" || settings.mode === "both") && !!cue.en;
+  const showVi = (settings.mode === "vi" || settings.mode === "both") && !!cue.vi;
   if (!showEn && !showVi) return;
 
   const bubble = document.createElement("div");
@@ -180,6 +204,8 @@ function renderCue(idx: number): void {
     const vi = document.createElement("div");
     styleLine(vi, true);
     vi.textContent = cue.vi;
+    // Khoảng cách dọc EN↔VI chỉ áp khi hiện cả hai (mode='both').
+    if (showEn) vi.style.marginTop = `${settings.lineGapPx}px`;
     bubble.appendChild(vi);
   }
   box.appendChild(bubble);
@@ -188,6 +214,7 @@ function renderCue(idx: number): void {
 function syncTick(): void {
   const video = getVideo();
   if (!video || !document.getElementById(ID)) return;
+  updateOverlayPosition(); // TIP-023: né control YouTube (ẩn/hiện + full screen), poll 250ms
   if (popupOpen) return; // giữ phụ đề đứng yên khi popup mở
   const t = video.currentTime;
   // Chọn cue MỚI NHẤT đã bắt đầu: start lớn nhất thỏa start <= t < start+dur.
@@ -440,6 +467,7 @@ async function init(): Promise<void> {
   });
 
   window.addEventListener("message", onMessage);
+  document.addEventListener("fullscreenchange", updateOverlayPosition); // TIP-023: dời ngay khi vào/ra full screen
   setInterval(syncTick, 250);
 
   // SPA: KHÔNG dựa vào yt-navigate-finish (dễ race với lúc cue tới). Thay vào đó:

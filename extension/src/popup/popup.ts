@@ -6,10 +6,16 @@ import {
   getSettings,
   setSettings,
   clampFont,
+  clampGap,
   FONT_MIN,
   FONT_MAX,
   FONT_STEP,
+  GAP_MIN,
+  GAP_MAX,
+  GAP_STEP,
   type Settings,
+  type SubMode,
+  type SubColor,
 } from "../lib/settings";
 
 type Me = {
@@ -162,82 +168,165 @@ function switchRow(label: string, checked: boolean, onChange: (v: boolean) => vo
   return r;
 }
 
+// Stepper − [Npx] + (clamp + disable biên). onChange lưu storage.
+function stepperRow(
+  label: string,
+  initial: number,
+  min: number,
+  max: number,
+  step: number,
+  clampFn: (n: number) => number,
+  onChange: (v: number) => void
+): HTMLElement {
+  let val = clampFn(initial);
+  const row = div("set-row");
+  row.appendChild(div("set-label", label));
+  const stepper = div("stepper");
+  const minus = document.createElement("button");
+  minus.className = "step-btn";
+  minus.textContent = "−";
+  const out = div("set-val");
+  const plus = document.createElement("button");
+  plus.className = "step-btn";
+  plus.textContent = "+";
+  const paint = (): void => {
+    out.textContent = `${val}px`;
+    minus.disabled = val <= min;
+    plus.disabled = val >= max;
+  };
+  minus.addEventListener("click", () => {
+    val = clampFn(val - step);
+    paint();
+    onChange(val);
+  });
+  plus.addEventListener("click", () => {
+    val = clampFn(val + step);
+    paint();
+    onChange(val);
+  });
+  stepper.appendChild(minus);
+  stepper.appendChild(out);
+  stepper.appendChild(plus);
+  row.appendChild(stepper);
+  paint();
+  return row;
+}
+
+// Hàng chọn màu chữ (3 chấm trắng/đen/vàng) cho 1 ngôn ngữ.
+function colorRow(flagLabel: string, current: SubColor, onPick: (c: SubColor) => void): HTMLElement {
+  const r = div("set-row");
+  r.appendChild(div("set-label", flagLabel));
+  const dots = div("dots");
+  (["white", "black", "yellow"] as SubColor[]).forEach((c) => {
+    const d = document.createElement("button");
+    d.className = `dot-btn dot-${c}${current === c ? " sel" : ""}`;
+    d.title = c;
+    d.addEventListener("click", () => onPick(c));
+    dots.appendChild(d);
+  });
+  r.appendChild(dots);
+  return r;
+}
+
 function buildSettingsCard(): HTMLElement {
   const card = div("card settings");
   card.appendChild(div("set-title", "Chế độ phụ đề"));
+  const body = div("");
+  card.appendChild(body);
 
   void getSettings().then((s: Settings) => {
-    let bgEnabled = s.bgEnabled;
-    let bgOpacity = s.bgOpacity;
-    let fontSize = clampFont(s.fontSizePx);
+    const st: Settings = { ...s };
 
-    // 1 & 2 — toggle EN / VI
-    card.appendChild(switchRow("🇬🇧 Phụ đề Tiếng Anh", s.showEn, (v) => void setSettings({ showEn: v })));
-    card.appendChild(switchRow("🇻🇳 Phụ đề Tiếng Việt", s.showVi, (v) => void setSettings({ showVi: v })));
+    const render = (): void => {
+      body.textContent = "";
 
-    // 3 — Màu nền (toggle) + độ đậm nền đen %
-    const opLabel = div("set-val", `${bgOpacity}%`);
-    const slider = document.createElement("input");
-    slider.type = "range";
-    slider.min = "0";
-    slider.max = "100";
-    slider.step = "5";
-    slider.value = String(bgOpacity);
-    slider.className = "set-slider";
-    const syncBg = (): void => {
-      slider.disabled = !bgEnabled;
-      opLabel.style.opacity = bgEnabled ? "1" : "0.4";
+      // Tabs chế độ: Tiếng Anh / Song ngữ / Tiếng Việt
+      const seg = div("seg");
+      ([["en", "Tiếng Anh"], ["both", "Song ngữ"], ["vi", "Tiếng Việt"]] as [SubMode, string][]).forEach(
+        ([m, label]) => {
+          const b = document.createElement("button");
+          b.className = `seg-btn${st.mode === m ? " active" : ""}`;
+          b.textContent = label;
+          b.addEventListener("click", () => {
+            if (st.mode === m) return;
+            st.mode = m;
+            void setSettings({ mode: m });
+            render(); // ẩn/hiện hàng EN/VI + Khoảng cách theo mode
+          });
+          seg.appendChild(b);
+        }
+      );
+      body.appendChild(seg);
+
+      // Màu chữ EN / VI (theo mode)
+      if (st.mode === "en" || st.mode === "both") {
+        body.appendChild(
+          colorRow("🇬🇧 Tiếng Anh", st.enColor, (c) => {
+            st.enColor = c;
+            void setSettings({ enColor: c });
+            render();
+          })
+        );
+      }
+      if (st.mode === "vi" || st.mode === "both") {
+        body.appendChild(
+          colorRow("🇻🇳 Tiếng Việt", st.viColor, (c) => {
+            st.viColor = c;
+            void setSettings({ viColor: c });
+            render();
+          })
+        );
+      }
+
+      // Màu nền (toggle) + độ đậm %
+      const opLabel = div("set-val", `${st.bgOpacity}%`);
+      const slider = document.createElement("input");
+      slider.type = "range";
+      slider.min = "0";
+      slider.max = "100";
+      slider.step = "5";
+      slider.value = String(st.bgOpacity);
+      slider.className = "set-slider";
+      slider.disabled = !st.bgEnabled;
+      opLabel.style.opacity = st.bgEnabled ? "1" : "0.4";
+      slider.addEventListener("input", () => {
+        st.bgOpacity = Number(slider.value);
+        opLabel.textContent = `${st.bgOpacity}%`;
+        void setSettings({ bgOpacity: st.bgOpacity });
+      });
+      body.appendChild(
+        switchRow("Màu nền", st.bgEnabled, (v) => {
+          st.bgEnabled = v;
+          slider.disabled = !v;
+          opLabel.style.opacity = v ? "1" : "0.4";
+          void setSettings({ bgEnabled: v });
+        })
+      );
+      const opRow = div("set-row");
+      opRow.appendChild(slider);
+      opRow.appendChild(opLabel);
+      body.appendChild(opRow);
+
+      // Kích thước (EN size) — 12..32 bước 2
+      body.appendChild(
+        stepperRow("Tʀ Kích thước", st.fontSizePx, FONT_MIN, FONT_MAX, FONT_STEP, clampFont, (v) => {
+          st.fontSizePx = v;
+          void setSettings({ fontSizePx: v });
+        })
+      );
+
+      // Khoảng cách EN↔VI — chỉ hiện ở Song ngữ; 2..16 bước 2
+      if (st.mode === "both") {
+        body.appendChild(
+          stepperRow("↕ Khoảng cách", st.lineGapPx, GAP_MIN, GAP_MAX, GAP_STEP, clampGap, (v) => {
+            st.lineGapPx = v;
+            void setSettings({ lineGapPx: v });
+          })
+        );
+      }
     };
-    slider.addEventListener("input", () => {
-      bgOpacity = Number(slider.value);
-      opLabel.textContent = `${bgOpacity}%`;
-      void setSettings({ bgOpacity });
-    });
-    card.appendChild(
-      switchRow("Màu nền phụ đề", bgEnabled, (v) => {
-        bgEnabled = v;
-        syncBg();
-        void setSettings({ bgEnabled: v });
-      })
-    );
-    const opRow = div("set-row");
-    opRow.appendChild(slider);
-    opRow.appendChild(opLabel);
-    card.appendChild(opRow);
-    syncBg();
 
-    // 4 — Kích thước phụ đề: − [Npx] + (12..32, bước 2)
-    const sizeRow = div("set-row");
-    sizeRow.appendChild(div("set-label", "Kích thước phụ đề"));
-    const stepper = div("stepper");
-    const minus = document.createElement("button");
-    minus.className = "step-btn";
-    minus.textContent = "−";
-    const val = div("set-val");
-    const plus = document.createElement("button");
-    plus.className = "step-btn";
-    plus.textContent = "+";
-    const paintSize = (): void => {
-      val.textContent = `${fontSize}px`;
-      minus.disabled = fontSize <= FONT_MIN;
-      plus.disabled = fontSize >= FONT_MAX;
-    };
-    minus.addEventListener("click", () => {
-      fontSize = clampFont(fontSize - FONT_STEP);
-      paintSize();
-      void setSettings({ fontSizePx: fontSize });
-    });
-    plus.addEventListener("click", () => {
-      fontSize = clampFont(fontSize + FONT_STEP);
-      paintSize();
-      void setSettings({ fontSizePx: fontSize });
-    });
-    stepper.appendChild(minus);
-    stepper.appendChild(val);
-    stepper.appendChild(plus);
-    sizeRow.appendChild(stepper);
-    card.appendChild(sizeRow);
-    paintSize();
+    render();
   });
 
   return card;
