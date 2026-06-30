@@ -54,27 +54,33 @@ export function Header() {
   const meta = (user?.user_metadata ?? {}) as { full_name?: string; name?: string; avatar_url?: string };
   const displayName = meta.full_name ?? meta.name ?? user?.email ?? "";
 
+  // Logo "SM." — chữ đen đậm + chấm accent (vàng).
+  const logo = (
+    <Link href="/" className="font-heading text-xl font-extrabold tracking-tight text-foreground">
+      SM<span className="text-accent">.</span>
+    </Link>
+  );
+
   return (
-    <header className="border-b border-border bg-surface">
-      <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-4 px-4">
-        <div className="flex items-center gap-6">
-          <Link href="/" className="font-heading text-lg font-bold text-primary">
-            StudyMovie
-          </Link>
+    <header className="sticky top-0 z-30 bg-background/80 backdrop-blur">
+      <div className="mx-auto flex w-full max-w-5xl items-center gap-3 px-4 py-3">
+        {/* Nav dạng PILL bo tròn full, nền trắng, shadow nhẹ */}
+        <nav className="flex flex-1 items-center gap-6 rounded-pill border border-border bg-surface px-5 py-2.5 shadow-card">
+          {logo}
           {user ? (
-            <nav className="hidden items-center gap-4 md:flex">
+            <div className="hidden items-center gap-5 md:flex">
               {MAIN_NAV.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="text-sm text-muted-foreground hover:text-foreground"
+                  className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
                 >
                   {item.label}
                 </Link>
               ))}
-            </nav>
+            </div>
           ) : null}
-        </div>
+        </nav>
 
         {user ? (
           <div className="relative flex items-center">

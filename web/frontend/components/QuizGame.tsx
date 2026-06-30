@@ -97,14 +97,20 @@ export function QuizGame({ direction }: { direction: QuizDirection }) {
         </span>
       </div>
 
-      <Card>
-        <p className="mb-4 text-center text-2xl font-semibold">{q.prompt}</p>
-        <div className="grid gap-2">
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Card hỏi (Figma: thẻ trắng bo góc, từ đậm + chấm đen góc dưới) */}
+        <Card className="relative flex min-h-[200px] items-center justify-center">
+          <p className="text-center text-2xl font-bold">{q.prompt}</p>
+          <span className="absolute bottom-4 right-4 h-3 w-3 rounded-full bg-foreground" aria-hidden />
+        </Card>
+
+        {/* 4 đáp án: trắng mặc định, đúng=success, sai-chọn=danger */}
+        <div className="flex flex-col justify-center gap-2">
           {q.options.map((opt, i) => {
             let cls = "border-border bg-surface hover:bg-surface-muted";
             if (selected !== null) {
-              if (i === q.answerIndex) cls = "border-green-600 bg-green-50";
-              else if (i === selected) cls = "border-red-600 bg-red-50";
+              if (i === q.answerIndex) cls = "border-success-foreground bg-success text-success-foreground";
+              else if (i === selected) cls = "border-danger-foreground bg-danger text-danger-foreground";
               else cls = "border-border bg-surface opacity-60";
             }
             return (
@@ -112,19 +118,19 @@ export function QuizGame({ direction }: { direction: QuizDirection }) {
                 key={i}
                 onClick={() => pick(i)}
                 disabled={selected !== null}
-                className={`w-full rounded-btn border px-4 py-2 text-left text-sm transition-colors ${cls}`}
+                className={`w-full rounded-btn border px-4 py-3 text-center text-sm font-medium transition-colors ${cls}`}
               >
                 {opt}
               </button>
             );
           })}
+          {selected !== null ? (
+            <Button className="mt-2 w-full" onClick={next}>
+              {idx + 1 >= questions.length ? "Xem kết quả" : "Câu tiếp →"}
+            </Button>
+          ) : null}
         </div>
-        {selected !== null ? (
-          <Button className="mt-4 w-full" onClick={next}>
-            {idx + 1 >= questions.length ? "Xem kết quả" : "Câu tiếp →"}
-          </Button>
-        ) : null}
-      </Card>
+      </div>
     </div>
   );
 }

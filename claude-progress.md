@@ -7,12 +7,9 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** TIP-019b (WEB-TRIAL) + TIP-020 admin (WEB-ADMIN) **VERIFIED production (2026-06-30)** — migration 008+009 + bootstrap admin đã áp, Homeowner test browser PASS. Đã push origin/main.
-- **Feature đang làm:** TIP-021 reskin (chưa có spec) → QA-01 → INF-02. Chờ Chủ thầu giao TIP-021.
-- **MIGRATION ĐÃ ÁP:** 008 (get_access_status) + 009 (admin: is_admin/app_settings/RPC) + bootstrap `is_admin=true` cho dokhiem562@gmail.com — ÁP XONG production.
-- **019b (chưa làm) — cần khi tới:** RPC `get_access_status` (trial = profiles.created_at+24h, paid_until từ subscriptions) + /api/access-status + guard chặn trang học khi has_access=false → /thanh-toan (biến NEXT_PUBLIC_PAYWALL_REDIRECT). KHÔNG chặn /, /thanh-toan, /cam-on, /ho-tro, /blog. Bảo vệ: /dashboard + /tu-vung + /hoc-tu-vung + /kiem-tra-anh-viet + /kiem-tra-viet-anh + /playlist + /leaderboard + /settings.
-- **Feature đang làm:** (chưa bắt đầu TIP tiếp theo)
-- **ROADMAP (khách cập nhật, thay Task Graph cũ chỉ ghi QA+bàn giao):** TIP-018 flashcard hướng dẫn+audio (đang) → **TIP-019** routing tiếng Việt + redirect → **TIP-020** admin → **TIP-021** reskin → rồi **QA-01** + **INF-02** (đóng gói extension + HANDOVER + transfer). Các TIP gửi tuần tự.
+- **Giai đoạn hiện tại:** TIP-021 reskin web (WEB-RESKIN) **done (self-tested AC-5), CHỜ HOMEOWNER** test visual (AC-2/3/4). 019b+020 đã VERIFIED production + push.
+- **MIGRATION ĐÃ ÁP production:** 008 (get_access_status) + 009 (admin). Bootstrap `is_admin=true` cho dokhiem562@gmail.com xong.
+- **ROADMAP:** ✅018 ✅019a ✅019b ✅020 → **021 reskin (đang chờ verify)** → **QA-01** → **INF-02** (đóng gói extension + HANDOVER + transfer). + nhánh TIP-024/025/026 (vocab list/flashcard restructure — sẽ reskin trong chính các TIP đó, nên 021 KHÔNG reskin sâu /tu-vung, /hoc-tu-vung).
 - **LƯU Ý KỸ THUẬT (quan trọng):** Vercel serverless đọc body POST treo với `@hono/node-server/vercel` (Readable.toWeb deadlock). Đã fix bằng buffer rawBody trong `web/backend/api/index.ts` — **KHÔNG gỡ**. Mọi POST mới (web/extension/webhook) phụ thuộc fix này khi chạy trên Vercel.
 - **URL production:** frontend=`https://studymovie-frontend.vercel.app`, backend=`https://studymovie-backend.vercel.app`. (manifest extension đã trỏ host frontend này; build:prod đọc extension/.env.production.)
 - **Blocker / cần làm:** Khách chốt UI streak "hôm nay chưa đạt" (backend đã có cờ `today_met`).
@@ -20,6 +17,21 @@
 ---
 
 ## Session log
+
+### Session 25 — TIP-021 Reskin web (design system theme sáng + pill nav) (2026-06-30)
+- **TIP/Feature:** TIP-021 — WEB-RESKIN. UI-ONLY (chỉ web/frontend; KHÔNG đụng backend/supabase/extension/route/API/logic/text). Đối chiếu Figma\\Webapp (20 PNG).
+- **Đã làm:**
+  - **Tokens** (`app/globals.css` @theme — đòn bẩy chính, đa số trang tự reskin): theme sáng — primary #111827, accent #f5b301 (chấm logo), background #fafafa, surface #fff, border #e5e7eb, muted #6b7280, semantic info/success/danger, level-ring #7c3aed, chart-bar #60a5fa/base #e5e7eb, radius card16/btn10/pill, shadow-card. Font **Inter** next/font (subsets vietnamese) ở layout.tsx.
+  - **Primitives:** Button +info/success/danger/outline; Badge mới (Từ mới=danger/Đã học=success); Card/Avatar/Spinner đổi qua token.
+  - **Header:** nav PILL bo tròn trắng + shadow, logo 'SM.' đen + chấm accent; giữ MAIN_NAV + dropdown avatar (Playlist/BXH/Cài đặt/Admin/Đăng xuất) — KHÔNG đổi route.
+  - **Dashboard:** ProgressRing tím (stroke-level-ring); BarChart cột cao nhất xanh chart-bar.
+  - **QuizGame:** 2 cột (card hỏi trái + chấm đen, 4 đáp án phải) màu token (đúng=success, sai=danger) — GIỮ logic chấm điểm.
+  - login/leaderboard/settings/playlist/thanh-toan/cam-on/admin reskin qua token.
+- **NGOÀI scope (mục 5):** KHÔNG reskin sâu /tu-vung + /hoc-tu-vung (chỉ token toàn cục — restructure ở TIP-024/025/026).
+- **Verification (AC-5):** lint+typecheck+build PASS (14 route, Inter nạp).
+- **CHỜ HOMEOWNER (AC-2/3/4):** so Figma + thao tác feature không mất chức năng.
+- **DEVIATION (Chủ thầu rà):** token hex suy từ baseline TIP-021 (chưa có hex Figma chính thức); QuizGame 1 cột→2 cột (style, giữ logic).
+- **Commit:** feat(web): TIP-021 reskin web design system + app shell.
 
 ### Session 24 — TIP-019b + TIP-020 VERIFIED production + push (2026-06-30)
 - **TIP/Feature:** WEB-TRIAL (TIP-019b) + WEB-ADMIN (TIP-020) → **verified**.

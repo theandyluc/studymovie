@@ -11,19 +11,23 @@ import { WeeklyPlanTable } from "@/components/WeeklyPlan";
 // Biểu đồ cột bằng div (không thêm thư viện chart — gọn, dễ reskin).
 function BarChart({ data }: { data: DayPoint[] }) {
   const max = Math.max(1, ...data.map((d) => d.minutes));
+  // Theo Figma: cột nền xám, cột cao nhất (>0) tô xanh highlight.
   return (
     <div className="flex h-40 items-end gap-1 overflow-x-auto">
-      {data.map((d) => (
-        <div key={d.date} className="flex min-w-[14px] flex-1 flex-col items-center gap-1" title={`${d.date}: ${d.minutes} phút`}>
-          <div className="flex w-full flex-1 items-end">
-            <div
-              className="w-full rounded-t bg-primary"
-              style={{ height: `${(d.minutes / max) * 100}%`, minHeight: d.minutes > 0 ? "3px" : "0" }}
-            />
+      {data.map((d) => {
+        const peak = d.minutes === max && d.minutes > 0;
+        return (
+          <div key={d.date} className="flex min-w-[14px] flex-1 flex-col items-center gap-1" title={`${d.date}: ${d.minutes} phút`}>
+            <div className="flex w-full flex-1 items-end">
+              <div
+                className={`w-full rounded-t ${peak ? "bg-chart-bar" : "bg-chart-base"}`}
+                style={{ height: `${(d.minutes / max) * 100}%`, minHeight: d.minutes > 0 ? "3px" : "0" }}
+              />
+            </div>
+            <span className="text-[9px] text-muted-foreground">{d.date.slice(5)}</span>
           </div>
-          <span className="text-[9px] text-muted-foreground">{d.date.slice(5)}</span>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -37,7 +41,7 @@ function ProgressRing({ percent, center }: { percent: number; center: string }) 
   return (
     <div className="relative h-28 w-28">
       <svg viewBox="0 0 100 100" className="h-28 w-28 -rotate-90">
-        <circle cx="50" cy="50" r={r} fill="none" strokeWidth="9" className="stroke-surface-muted" />
+        <circle cx="50" cy="50" r={r} fill="none" strokeWidth="9" className="stroke-chart-base" />
         <circle
           cx="50"
           cy="50"
@@ -45,7 +49,7 @@ function ProgressRing({ percent, center }: { percent: number; center: string }) 
           fill="none"
           strokeWidth="9"
           strokeLinecap="round"
-          className="stroke-primary"
+          className="stroke-level-ring"
           strokeDasharray={circ}
           strokeDashoffset={off}
         />

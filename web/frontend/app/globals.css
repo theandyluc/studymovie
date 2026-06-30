@@ -1,35 +1,51 @@
 @import "tailwindcss";
 
 /* ============================================================
-   DESIGN TOKENS — ⚠️ PLACEHOLDER. Sẽ THAY theo Figma của khách.
-   Toàn bộ màu / font / radius / shadow tập trung tại ĐÂY (Tailwind v4 @theme
-   + CSS variables). KHÔNG hardcode màu/spacing rải rác trong component —
-   reskin = chỉnh các token bên dưới là đủ.
+   DESIGN TOKENS — TIP-021 (theme SÁNG, theo Figma khách).
+   Toàn bộ màu / font / radius / shadow tập trung tại ĐÂY (Tailwind v4 @theme).
+   KHÔNG hardcode màu rải rác trong component — reskin = chỉnh token bên dưới.
+   Hex suy từ baseline TIP-021 + đối chiếu ảnh Figma\Webapp.
    ============================================================ */
 @theme {
-  /* Màu thương hiệu (tạm) */
-  --color-primary: #4f46e5;
-  --color-primary-hover: #4338ca;
+  /* Primary = nút tối (đen than) */
+  --color-primary: #111827;
+  --color-primary-hover: #1f2937;
   --color-primary-foreground: #ffffff;
-  --color-accent: #f59e0b;
+  /* Accent = chấm logo "SM." + điểm nhấn (vàng/gold) */
+  --color-accent: #f5b301;
 
-  /* Bề mặt / chữ / viền */
+  /* Nền / bề mặt / chữ / viền */
+  --color-background: #fafafa;
   --color-surface: #ffffff;
-  --color-surface-muted: #f4f4f5;
-  --color-border: #e4e4e7;
-  --color-foreground: #18181b;
-  --color-muted-foreground: #71717a;
+  --color-surface-muted: #f3f4f6;
+  --color-border: #e5e7eb;
+  --color-foreground: #111827;
+  --color-muted-foreground: #6b7280;
 
-  /* Typography */
-  --font-heading: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-body: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Semantic (badge / nút info-success-danger) */
+  --color-info: #dbeafe;
+  --color-info-foreground: #2563eb;
+  --color-success: #dcfce7;
+  --color-success-foreground: #16a34a;
+  --color-danger: #fee2e2;
+  --color-danger-foreground: #dc2626;
+
+  /* Vòng tròn tiến độ Level (tím) + biểu đồ */
+  --color-level-ring: #7c3aed;
+  --color-chart-bar: #60a5fa;
+  --color-chart-base: #e5e7eb;
+
+  /* Typography — Inter (next/font, hỗ trợ tiếng Việt) + fallback system */
+  --font-heading: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-body: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 
   /* Bo góc */
-  --radius-btn: 0.5rem;
-  --radius-card: 0.75rem;
+  --radius-btn: 10px;
+  --radius-card: 16px;
+  --radius-pill: 9999px;
 
-  /* Đổ bóng */
-  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  /* Đổ bóng card */
+  --shadow-card: 0 1px 3px rgb(0 0 0 / 0.08), 0 1px 2px rgb(0 0 0 / 0.06);
 }
 
 :root {
@@ -37,7 +53,7 @@
 }
 
 body {
-  background-color: var(--color-surface-muted);
+  background-color: var(--color-background);
   color: var(--color-foreground);
   font-family: var(--font-body);
 }
