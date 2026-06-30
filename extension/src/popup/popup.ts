@@ -77,14 +77,24 @@ function timerMsg(type: string): Promise<TimerState> {
 
 // Card timer: hiển thị HH:MM:SS đếm lên (state lấy từ background), nút Bắt đầu/Kết thúc.
 function buildTimerCard(onStopped: () => void): HTMLElement {
-  const card = div("timer");
+  const card = div("card timer-card");
   const label = div("timer-label", "Thời gian học");
   const time = div("timer-time", "00:00:00");
   const controls = div("timer-controls");
-  const startBtn = button("▶ Bắt đầu", () => void onStart(), "btn timer-btn");
-  const stopBtn = button("■ Kết thúc", () => void onStop(), "btn ghost timer-btn");
-  controls.appendChild(startBtn);
-  controls.appendChild(stopBtn);
+
+  // Nút TRÒN ▶ / ■ + label dưới (Figma). Giữ logic onStart/onStop.
+  const startWrap = div("tbtn-wrap");
+  const startBtn = button("▶", () => void onStart(), "tbtn");
+  startWrap.appendChild(startBtn);
+  startWrap.appendChild(div("tbtn-label", "Bắt đầu"));
+
+  const stopWrap = div("tbtn-wrap");
+  const stopBtn = button("■", () => void onStop(), "tbtn");
+  stopWrap.appendChild(stopBtn);
+  stopWrap.appendChild(div("tbtn-label", "Kết thúc"));
+
+  controls.appendChild(startWrap);
+  controls.appendChild(stopWrap);
   card.appendChild(label);
   card.appendChild(time);
   card.appendChild(controls);
@@ -153,8 +163,8 @@ function switchRow(label: string, checked: boolean, onChange: (v: boolean) => vo
 }
 
 function buildSettingsCard(): HTMLElement {
-  const card = div("settings");
-  card.appendChild(div("set-title", "Cài đặt"));
+  const card = div("card settings");
+  card.appendChild(div("set-title", "Chế độ phụ đề"));
 
   void getSettings().then((s: Settings) => {
     let bgEnabled = s.bgEnabled;
@@ -245,9 +255,32 @@ function subStatusText(me: Me): { text: string; expired: boolean } {
   return { text: "Đã hết hạn", expired: true };
 }
 
+// Logo "SM." — chữ đậm + chấm accent (vàng), đồng bộ web.
+function logoNode(): HTMLElement {
+  const d = div("logo");
+  const sm = document.createElement("span");
+  sm.textContent = "SM";
+  const dot = document.createElement("span");
+  dot.className = "dot";
+  dot.textContent = ".";
+  d.appendChild(sm);
+  d.appendChild(dot);
+  return d;
+}
+
+// Footer: Đăng xuất + Hỗ trợ (nút Tắt StudyMovie = TIP-028, CHƯA thêm).
+function footerNode(onSignOut: () => void): HTMLElement {
+  const f = div("footer");
+  const out = button("⇥ Đăng xuất", () => void onSignOut(), "footer-link");
+  const help = button("✆ Hỗ trợ", () => openTab(`${SITE_URL}/ho-tro`), "footer-link");
+  f.appendChild(out);
+  f.appendChild(help);
+  return f;
+}
+
 function renderLogin(): void {
   mount(
-    div("title", "StudyMovie"),
+    logoNode(),
     div("muted", "Đăng nhập để đồng bộ tài khoản với web."),
     button("Đăng nhập với Google", () => openTab(SITE_URL))
   );
@@ -302,15 +335,15 @@ function renderUser(me: Me): void {
   // Cài đặt phụ đề (TIP-015): EN/VI toggle, độ đậm nền, cỡ chữ — áp realtime qua chrome.storage.
   const settingsCard = buildSettingsCard();
 
-  const nodes: Node[] = [div("title", "StudyMovie"), row, timerCard, minutesBox, settingsCard, statusBox];
+  const nodes: Node[] = [logoNode(), row, timerCard, minutesBox, settingsCard, statusBox];
   if (!me.is_active) {
     nodes.push(button("Nâng cấp", () => openTab(`${SITE_URL}/upgrade`)));
   }
   nodes.push(
-    button("Đăng xuất", async () => {
+    footerNode(async () => {
       await supabaseExt.auth.signOut();
       renderLogin();
-    }, "btn ghost")
+    })
   );
   mount(...nodes);
 }
@@ -322,13 +355,13 @@ async function render(): Promise<void> {
     renderLogin();
     return;
   }
-  mount(div("title", "StudyMovie"), div("muted", "Đang tải tài khoản…"));
+  mount(logoNode(), div("muted", "Đang tải tài khoản…"));
   try {
     const me = await apiExt<Me>("/api/me");
     renderUser(me);
   } catch (e) {
     mount(
-      div("title", "StudyMovie"),
+      logoNode(),
       div("muted", `Không tải được tài khoản: ${e instanceof Error ? e.message : String(e)}`),
       button("Thử lại", () => void render(), "btn ghost")
     );

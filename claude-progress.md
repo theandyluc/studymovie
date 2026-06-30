@@ -7,11 +7,11 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** TIP-021 reskin web (WEB-RESKIN) **VERIFIED (Homeowner browser local 2026-06-30, AC-2/3/4 PASS)**. 019b+020 đã VERIFIED production + push. Đang giao TIP-022.
+- **Giai đoạn hiện tại:** TIP-022 reskin extension (EXT-RESKIN) **done (self-tested AC-1/5), CHỜ HOMEOWNER** test Chrome (AC-2/3/4). TIP-021 web đã VERIFIED. 019b+020 VERIFIED production + push.
 - **VAI TRÒ:** Phiên chính đóng vai **CHỦ THẦU** (viết TIP, review report, gate verified); Thợ là phiên Claude Code khác thực thi. Giao TIP tuần tự.
 - **MIGRATION ĐÃ ÁP production:** 008 (get_access_status) + 009 (admin). Bootstrap `is_admin=true` cho dokhiem562@gmail.com xong.
 - **SCOPE RESKIN ĐÃ CHỐT (từ Figma, Homeowner duyệt):** TOÀN BỘ web + extension. Gồm 3 thay đổi đảo feature verified: flashcard NÚT→**swipe**, học TẤT CẢ→**chọn từ (tick)**, extension Google-only→**+email/mật khẩu**.
-- **TASK GRAPH reskin:** ✅TIP-021 reskin web → **TIP-022 reskin extension popup+overlay (đang giao)** → TIP-023 phụ đề (màu chữ EN/VI + khoảng cách dòng, VI=80%EN + né control YouTube) → TIP-024 vocab status Từ mới/Đã học + form thêm từ web → TIP-025 vocab search/lọc/phân trang/biểu đồ → TIP-026 flashcard swipe + học từ đã chọn → TIP-027 extension email/mật khẩu+đăng ký → TIP-028 polish (countdown thanh toán + nút Tắt extension + leaderboard top5) → QA-01 → INF-02.
+- **TASK GRAPH reskin:** ✅TIP-021 reskin web → **✅TIP-022 reskin extension popup+overlay (chờ verify)** → TIP-023 phụ đề (màu chữ EN/VI + khoảng cách dòng, VI=80%EN + né control YouTube) → TIP-024 vocab status Từ mới/Đã học + form thêm từ web → TIP-025 vocab search/lọc/phân trang/biểu đồ → TIP-026 flashcard swipe + học từ đã chọn → TIP-027 extension email/mật khẩu+đăng ký → TIP-028 polish (countdown thanh toán + nút Tắt extension + leaderboard top5) → QA-01 → INF-02.
 - **FIGMA:** ảnh export ở `C:\Users\ADMIN\OneDrive\Máy tính\Figma\` (Webapp 20 + Extension 8 + Phụ đề 7). Token hex suy từ ảnh (chưa có Dev Mode chính thức) — rà lại nếu khách đưa hex.
 - **LƯU Ý KỸ THUẬT (quan trọng):** Vercel serverless đọc body POST treo với `@hono/node-server/vercel` (Readable.toWeb deadlock). Đã fix bằng buffer rawBody trong `web/backend/api/index.ts` — **KHÔNG gỡ**. Mọi POST mới (web/extension/webhook) phụ thuộc fix này khi chạy trên Vercel.
 - **URL production:** frontend=`https://studymovie-frontend.vercel.app`, backend=`https://studymovie-backend.vercel.app`. (manifest extension đã trỏ host frontend này; build:prod đọc extension/.env.production.)
@@ -20,6 +20,18 @@
 ---
 
 ## Session log
+
+### Session 26 — TIP-022 Reskin extension (popup + overlay phụ đề) (2026-06-30)
+- **TIP/Feature:** TIP-022 — EXT-RESKIN. UI-ONLY extension (KHÔNG đụng web/backend/supabase; KHÔNG đổi model settings TIP-015/logic timer/auth/lookup). Đối chiếu Figma\\Extension (8) + Phụ đề (7).
+- **Đã làm:**
+  - **popup.html:** tokens theme sáng (primary #111827, accent #f5b301, surface #fff, border #e5e7eb, radius card16/btn10, shadow, Inter). Class .card / .timer-card / .tbtn (nút tròn 52px) / .footer / .logo / restyle switch+stepper.
+  - **popup.ts:** logo 'SM.' chấm vàng (thay title 'StudyMovie' ở mọi state); buildTimerCard → 2 nút TRÒN ▶/■ + label dưới (GIỮ onStart/onStop TIP-014); buildSettingsCard title 'Chế độ phụ đề' (GIỮ control TIP-015: switch EN/VI + Màu nền slider% + cỡ chữ ±); footer Đăng xuất + Hỗ trợ (→ /ho-tro).
+  - **youtube.ts overlay:** 1 PILL bo tròn nền đen (rgba theo bgOpacity%) ôm cả EN+VI; EN đậm trắng (700), VI opacity .82 + 0.9× cỡ; tắt nền → trong suốt + text-shadow. GIỮ logic cue max-start / anti-bot VI / click-từ tra-lưu / ẩn-hiện theo settings.
+- **NGOÀI scope (để TIP sau):** email/mật khẩu login = TIP-027 (giữ Google-only); field settings mới + tab 'Tiếng Anh/Song ngữ/Tiếng Việt' + reposition né control + VI=80%/khoảng cách chính xác = TIP-023; nút 'Tắt StudyMovie' = TIP-028.
+- **Verification (AC-1/5):** init.sh exit 0 (lint+typecheck 3 pkg); ext build OK (popup.js 766k, youtube.js 13.1k).
+- **CHỜ HOMEOWNER (AC-2/3/4 Chrome):** load extension/dist → popup khớp Figma + timer/settings chạy; overlay pill EN/VI + biến thể không nền khớp + click-từ/đổi video chạy.
+- **DEVIATION:** VI nhỏ/nhạt tĩnh (0.9×/.82) — tinh chỉnh chính xác = TIP-023; footer thêm Hỗ trợ (khớp Figma); login Google-only (email = TIP-027).
+- **Commit:** feat(ext): TIP-022 reskin extension popup + subtitle overlay.
 
 ### Session 25 — TIP-021 Reskin web (design system theme sáng + pill nav) (2026-06-30)
 - **TIP/Feature:** TIP-021 — WEB-RESKIN. UI-ONLY (chỉ web/frontend; KHÔNG đụng backend/supabase/extension/route/API/logic/text). Đối chiếu Figma\\Webapp (20 PNG).

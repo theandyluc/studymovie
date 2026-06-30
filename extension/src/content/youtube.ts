@@ -111,21 +111,31 @@ function buildOverlay(): void {
   activeIndex = -1;
 }
 
-function applyLineStyle(el: HTMLElement): void {
+// TIP-022 reskin — 1 PILL bo tròn nền tối ôm cả EN+VI (Figma). Tắt nền → trong suốt + text-shadow.
+function styleBubble(bubble: HTMLElement): void {
   const bg = settings.bgEnabled;
-  Object.assign(el.style, {
+  Object.assign(bubble.style, {
     display: "inline-block",
     maxWidth: "92%",
-    margin: "2px auto",
-    padding: bg ? "2px 8px" : "2px 4px",
-    borderRadius: "4px",
-    fontSize: `${settings.fontSizePx}px`,
-    lineHeight: "1.3",
-    color: "#ffffff",
-    // "Màu nền" = ĐỘ ĐẬM nền đen (rgba black, opacity %); tắt → trong suốt + textShadow cho dễ đọc.
+    padding: bg ? "4px 14px" : "2px 6px",
+    borderRadius: "10px",
+    // "Màu nền" = độ đậm nền đen (rgba black theo %); tắt → trong suốt.
     background: bg ? `rgba(0,0,0,${settings.bgOpacity / 100})` : "transparent",
-    textShadow: bg ? "none" : "0 1px 3px rgba(0,0,0,0.9)",
+    textAlign: "center",
     fontFamily: "Arial, sans-serif",
+  } as Partial<CSSStyleDeclaration>);
+}
+
+// EN đậm trắng; VI nhạt + nhỏ hơn (reskin TIP-022; tinh chỉnh chính xác = TIP-023).
+function styleLine(el: HTMLElement, vi: boolean): void {
+  Object.assign(el.style, {
+    display: "block",
+    fontSize: vi ? `${Math.round(settings.fontSizePx * 0.9)}px` : `${settings.fontSizePx}px`,
+    lineHeight: "1.35",
+    color: "#ffffff",
+    fontWeight: vi ? "400" : "700",
+    opacity: vi ? "0.82" : "1",
+    textShadow: settings.bgEnabled ? "none" : "0 1px 3px rgba(0,0,0,0.95)",
   } as Partial<CSSStyleDeclaration>);
 }
 
@@ -137,9 +147,16 @@ function renderCue(idx: number): void {
   const cue = cues[idx];
   if (!cue) return;
 
-  if (settings.showEn && cue.en) {
+  const showEn = settings.showEn && !!cue.en;
+  const showVi = settings.showVi && !!cue.vi;
+  if (!showEn && !showVi) return;
+
+  const bubble = document.createElement("div");
+  styleBubble(bubble);
+
+  if (showEn) {
     const en = document.createElement("div");
-    applyLineStyle(en);
+    styleLine(en, false);
     en.style.pointerEvents = "auto";
     for (const token of cue.en.split(/(\s+)/)) {
       if (/^\s+$/.test(token)) {
@@ -157,16 +174,15 @@ function renderCue(idx: number): void {
       });
       en.appendChild(w);
     }
-    box.appendChild(en);
+    bubble.appendChild(en);
   }
-  if (settings.showVi && cue.vi) {
-    if (box.childNodes.length) box.appendChild(document.createElement("br")); // ngăn cách chỉ khi có cả EN
+  if (showVi) {
     const vi = document.createElement("div");
-    applyLineStyle(vi);
-    vi.style.opacity = "0.95";
+    styleLine(vi, true);
     vi.textContent = cue.vi;
-    box.appendChild(vi);
+    bubble.appendChild(vi);
   }
+  box.appendChild(bubble);
 }
 
 function syncTick(): void {
