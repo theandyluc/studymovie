@@ -12,6 +12,7 @@ import { postStudySession } from "./api/study-session.js";
 import { getPlaylist, postPlaylist, patchPlaylist, deletePlaylist } from "./api/playlist.js";
 import { postCreateOrder, getOrder, postSepayWebhook } from "./api/payment.js";
 import { getLevel, setLevel } from "./api/level.js";
+import { getAccessStatus } from "./api/access.js";
 import {
   getWeeklyPlan,
   postWeeklyPlan,
@@ -52,6 +53,7 @@ app.post("/api/sepay-webhook", postSepayWebhook);
 
 // Protected (cần Bearer token hợp lệ)
 app.get("/api/me", requireAuth, getMe);
+app.get("/api/access-status", requireAuth, getAccessStatus); // WEB-TRIAL TIP-019b
 app.get("/api/lookup", requireAuth, getLookup); // EXT-02: tra nghĩa
 app.post("/api/vocabulary", requireAuth, postVocabulary); // EXT-02: lưu từ
 app.get("/api/vocabulary", requireAuth, getVocabulary); // WEB-03: danh sách

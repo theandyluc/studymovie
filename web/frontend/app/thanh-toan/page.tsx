@@ -5,6 +5,8 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { createOrder, fetchOrderStatus, type PaymentOrder } from "@/lib/payment";
+import { fetchAccessStatus, type AccessStatus } from "@/lib/access";
+import { PageLoading } from "@/components/ui/Spinner";
 
 const POLL_MS = 4000; // poll trạng thái đơn mỗi 4s
 const VND = (n: number) => n.toLocaleString("vi-VN") + "đ";
@@ -18,6 +20,16 @@ function UpgradeInner() {
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const router = useRouter();
+  // Pro guard (TIP-019b): user đã trả tiền → không cho tạo đơn mới.
+  const [access, setAccess] = useState<AccessStatus | null>(null);
+  const [accChecked, setAccChecked] = useState(false);
+
+  useEffect(() => {
+    fetchAccessStatus()
+      .then(setAccess)
+      .catch(() => undefined)
+      .finally(() => setAccChecked(true));
+  }, []);
 
   const stopPoll = useCallback(() => {
     if (timer.current) {
@@ -81,6 +93,27 @@ function UpgradeInner() {
         <Card className="w-full max-w-md text-center">
           <div className="text-4xl">🎉</div>
           <p className="mt-2 text-sm text-muted-foreground">Thanh toán thành công, đang chuyển trang…</p>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!accChecked) return <PageLoading label="Đang kiểm tra tài khoản…" />;
+
+  // Pro guard: đã là Pro → không cho mua tiếp.
+  if (access?.reason === "paid") {
+    const until = access.paid_until ? new Date(access.paid_until).toLocaleDateString("vi-VN") : null;
+    return (
+      <div className="mx-auto max-w-md">
+        <Card className="text-center">
+          <div className="text-4xl">⭐</div>
+          <h1 className="mt-2 font-heading text-xl font-bold">Bạn đã là Pro</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {until ? `Gói Pro của bạn có hạn đến ${until}.` : "Tài khoản của bạn đang là Pro."}
+          </p>
+          <a href="/dashboard" className="mt-4 inline-block">
+            <Button>Vào học</Button>
+          </a>
         </Card>
       </div>
     );

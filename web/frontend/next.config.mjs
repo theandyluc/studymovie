@@ -28,6 +28,7 @@ const nextConfig = {
     NEXT_PUBLIC_BACKEND_URL: process.env.NEXT_PUBLIC_BACKEND_URL,
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
     NEXT_PUBLIC_BLOG_URL: process.env.NEXT_PUBLIC_BLOG_URL,
+    NEXT_PUBLIC_PAYWALL_REDIRECT: process.env.NEXT_PUBLIC_PAYWALL_REDIRECT,
   },
   // TIP-019a — Routing tiếng Việt: route cũ tiếng Anh → redirect sang route VN canonical;
   // /ho-tro, /blog → redirect ngoài. (Route VN canonical = thư mục page thật, không nhân đôi.)

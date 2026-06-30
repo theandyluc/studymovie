@@ -7,8 +7,9 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** TIP-019a routing VN (WEB-ROUTE) **VERIFIED** (dev PASS; QR /thanh-toan chỉ vỡ trên dev do thiếu BANK_* local, test production sau push). Tiếp: **019b trial guard** (WEB-TRIAL).
-- **Feature đang làm:** TIP-019b (trial guard) — chưa bắt đầu; chờ Homeowner xác nhận production QR ổn.
+- **Giai đoạn hiện tại:** TIP-019a VERIFIED production. **TIP-019b trial guard (WEB-TRIAL) done (self-tested), CHỜ HOMEOWNER** áp migration 008 + test web.
+- **Feature đang làm:** (sau 019b verified → TIP-020 admin, 021 reskin, QA, INF-02).
+- **CẦN ÁP MIGRATION:** `20260629000008_access_status.sql` (RPC get_access_status) — Homeowner chạy Supabase SQL Editor.
 - **019b (chưa làm) — cần khi tới:** RPC `get_access_status` (trial = profiles.created_at+24h, paid_until từ subscriptions) + /api/access-status + guard chặn trang học khi has_access=false → /thanh-toan (biến NEXT_PUBLIC_PAYWALL_REDIRECT). KHÔNG chặn /, /thanh-toan, /cam-on, /ho-tro, /blog. Bảo vệ: /dashboard + /tu-vung + /hoc-tu-vung + /kiem-tra-anh-viet + /kiem-tra-viet-anh + /playlist + /leaderboard + /settings.
 - **Feature đang làm:** (chưa bắt đầu TIP tiếp theo)
 - **ROADMAP (khách cập nhật, thay Task Graph cũ chỉ ghi QA+bàn giao):** TIP-018 flashcard hướng dẫn+audio (đang) → **TIP-019** routing tiếng Việt + redirect → **TIP-020** admin → **TIP-021** reskin → rồi **QA-01** + **INF-02** (đóng gói extension + HANDOVER + transfer). Các TIP gửi tuần tự.
@@ -19,6 +20,18 @@
 ---
 
 ## Session log
+
+### Session 22 — TIP-019b Trial 24h + access guard + Pro guard (2026-06-30)
+- **TIP/Feature:** TIP-019b — WEB-TRIAL (mảnh 2 của TIP-019). Self-tested; chờ Homeowner áp migration 008 + test web.
+- **Đã làm:**
+  - **DB** (migration `20260629000008_access_status.sql`): RPC `get_access_status` (security definer, auth.uid) — profiles.created_at + subscriptions.paid_until (left join); has_access = paid_until>now (paid) OR now<created_at+24h (trial) else expired; trả trial_expires_at/paid_until.
+  - **Backend** `api/access.ts` GET `/api/access-status` (getUserClient→RPC), wire app.ts.
+  - **Frontend** `lib/access.ts`; `components/AccessGuard.tsx` đặt trong `app/layout.tsx` bọc {children}: pathname-based, chỉ chặn 8 trang học → has_access=false → router.replace(/thanh-toan). KHÔNG chặn /,/thanh-toan,/cam-on,/ho-tro,/blog (tránh loop); chưa login để AuthGuard lo; lỗi API fail-open; loading nhẹ.
+  - **Pro guard** /thanh-toan: reason=paid → 'Bạn đã là Pro (hạn đến X)' + Vào học, không tạo đơn.
+  - Config `NEXT_PUBLIC_PAYWALL_REDIRECT` (next.config env + .env.example).
+- **Verification (tự test):** backend lint+typecheck+20test; FE lint+typecheck sạch; /api/access-status 401 no-auth. (Không next build vì dev đang chạy.)
+- **CHỜ HOMEOWNER:** áp migration 008 + test (trial còn/hết → chặn, paid vào được, public không chặn, Pro guard). Giả lập expired: tạm paid_until=null + created_at lùi >24h cho tài khoản test.
+- **Commit:** feat(web): TIP-019b 24h trial + access guard + pro guard.
 
 ### Session 21 — TIP-019a Routing tiếng Việt + /cam-on + redirect + nav (2026-06-29)
 - **TIP/Feature:** TIP-019a — WEB-ROUTE (mảnh 1 của TIP-019 đã tách; 019b trial guard làm sau). Self-tested; chờ Homeowner test web. Frontend-only, không migration.
