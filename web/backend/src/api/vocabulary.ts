@@ -28,11 +28,13 @@ export async function postVocabulary(c: Context) {
   const row = {
     user_id: user.id,
     word,
-    lemma: body.lemma ?? null,
+    // TIP-024: thêm thủ công từ web có thể không gửi lemma → fallback = word viết thường.
+    lemma: body.lemma ?? word.toLowerCase(),
     ipa: body.ipa ?? null,
     meaning_vi: body.meaning_vi ?? null,
     example: body.example ?? null,
     audio_url: body.audio_url ?? null,
+    // learned_at để DB default (null = "Từ mới"); KHÔNG set ở đây.
   };
 
   const { data, error } = await getServiceClient()
@@ -52,9 +54,9 @@ export async function getVocabulary(c: Context) {
   const user = c.get("user");
   const { data, error } = await getServiceClient()
     .from("vocabulary")
-    .select("id, word, lemma, ipa, meaning_vi, example, audio_url, created_at")
+    .select("id, word, lemma, ipa, meaning_vi, example, audio_url, learned_at, created_at")
     .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false }); // mới nhất trước
   if (error) return c.json({ error: error.message }, 500);
   return c.json({ items: data ?? [] });
 }

@@ -7,11 +7,11 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** TIP-021+022+023 **VERIFIED (Homeowner 2026-06-30)**. Đang giao TIP-024 (vocab status Từ mới/Đã học + form thêm từ web — có migration DB mới).
+- **Giai đoạn hiện tại:** TIP-024 vocab (WEB-VOCAB) **done (self-tested AC-6), CHỜ HOMEOWNER** áp migration 010 + test web. TIP-021+022+023 VERIFIED.
 - **VAI TRÒ:** Phiên chính đóng vai **CHỦ THẦU** (viết TIP, review report, gate verified); Thợ là phiên Claude Code khác thực thi. Giao TIP tuần tự.
-- **MIGRATION ĐÃ ÁP production:** 008 (get_access_status) + 009 (admin). Bootstrap `is_admin=true` cho dokhiem562@gmail.com xong.
+- **MIGRATION ĐÃ ÁP production:** 008 (get_access_status) + 009 (admin). Bootstrap `is_admin=true` cho dokhiem562@gmail.com xong. **CẦN ÁP:** 010 (vocab learned_at) — Homeowner chạy Supabase SQL Editor.
 - **SCOPE RESKIN ĐÃ CHỐT (từ Figma, Homeowner duyệt):** TOÀN BỘ web + extension. Gồm 3 thay đổi đảo feature verified: flashcard NÚT→**swipe**, học TẤT CẢ→**chọn từ (tick)**, extension Google-only→**+email/mật khẩu**.
-- **TASK GRAPH reskin:** ✅TIP-021 reskin web → ✅TIP-022 reskin extension → ✅TIP-023 phụ đề ext (màu chữ EN/VI + khoảng cách VI=80%EN + né control) → **TIP-024 (đang giao)** vocab status Từ mới/Đã học + form thêm từ web → TIP-025 vocab search/lọc/phân trang/biểu đồ → TIP-026 flashcard swipe + học từ đã chọn → TIP-027 extension email/mật khẩu+đăng ký → TIP-028 polish (countdown thanh toán + nút Tắt extension + leaderboard top5) → QA-01 → INF-02.
+- **TASK GRAPH reskin:** ✅TIP-021 reskin web → ✅TIP-022 reskin extension → ✅TIP-023 phụ đề ext → **✅TIP-024 vocab status (chờ verify)** Từ mới/Đã học + form thêm từ web → TIP-025 vocab search/lọc/phân trang/biểu đồ → TIP-026 flashcard swipe + học từ đã chọn → TIP-027 extension email/mật khẩu+đăng ký → TIP-028 polish (countdown thanh toán + nút Tắt extension + leaderboard top5) → QA-01 → INF-02.
 - **FIGMA:** ảnh export ở `C:\Users\ADMIN\OneDrive\Máy tính\Figma\` (Webapp 20 + Extension 8 + Phụ đề 7). Token hex suy từ ảnh (chưa có Dev Mode chính thức) — rà lại nếu khách đưa hex.
 - **LƯU Ý KỸ THUẬT (quan trọng):** Vercel serverless đọc body POST treo với `@hono/node-server/vercel` (Readable.toWeb deadlock). Đã fix bằng buffer rawBody trong `web/backend/api/index.ts` — **KHÔNG gỡ**. Mọi POST mới (web/extension/webhook) phụ thuộc fix này khi chạy trên Vercel.
 - **URL production:** frontend=`https://studymovie-frontend.vercel.app`, backend=`https://studymovie-backend.vercel.app`. (manifest extension đã trỏ host frontend này; build:prod đọc extension/.env.production.)
@@ -20,6 +20,17 @@
 ---
 
 ## Session log
+
+### Session 28 — TIP-024 Vocab status Từ mới/Đã học + thêm từ web + reskin bảng (2026-06-30)
+- **TIP/Feature:** TIP-024 — WEB-VOCAB. supabase migration + backend + frontend. Self-tested; chờ Homeowner áp migration 010 + test.
+- **Đã làm:**
+  - **DB** (migration `20260629000010_vocab_learned.sql`): vocabulary + `learned_at timestamptz` (null='Từ mới', có='Đã học'). KHÔNG đổi RLS.
+  - **Backend** vocabulary.ts: GET select thêm learned_at (giữ order created_at desc); POST giữ idempotent + lemma fallback word.toLowerCase() khi thêm thủ công; learned_at để DB default null.
+  - **Frontend** lib/vocabulary.ts (+learned_at, addVocab) + app/tu-vung reskin: bảng STT|Từ vựng(+ipa/🔊)|Nghĩa|Ngày thêm|Trạng thái<Badge Từ mới=danger/Đã học=success>|🗑️ mới-nhất-trước; form 'Thêm từ vựng' (Từ EN + Nghĩa VI + Lưu) → addVocab → list refresh + clear; trùng→'đã có từ này'; validate rỗng; giữ 3 nút Flashcard/Quiz + empty state.
+- **NGOÀI scope:** search/lọc/phân trang/biểu đồ = TIP-025; checkbox chọn-từ/mark-learned = TIP-026.
+- **Verification (AC-6):** init.sh exit 0 (lint+typecheck 3 pkg); FE build (/tu-vung 3.97kB); backend 20/20.
+- **CHỜ HOMEOWNER:** áp migration 010 (SQL in trong report) + test (thêm từ→Từ mới ở đầu; trùng báo; pill trạng thái; xóa; 3 nút). Giả lập 'Đã học': `update vocabulary set learned_at=now() where word='...'`.
+- **Commit:** feat(web): TIP-024 vocab learned status + manual add + list reskin.
 
 ### Session 27 — TIP-023 Phụ đề ext: chế độ + màu chữ EN/VI + khoảng cách + né control (2026-06-30)
 - **TIP/Feature:** TIP-023 — EXT-SUBTITLE. CHỈ extension (settings.ts + popup.ts + youtube.ts; KHÔNG đụng web/backend/supabase; KHÔNG đổi logic cue/click-từ/auth/timer).

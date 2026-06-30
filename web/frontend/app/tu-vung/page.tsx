@@ -4,8 +4,9 @@ import Link from "next/link";
 import { AuthGuard } from "@/components/AuthGuard";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
 import { PageLoading } from "@/components/ui/Spinner";
-import { fetchVocab, deleteVocab, type VocabItem } from "@/lib/vocabulary";
+import { fetchVocab, addVocab, deleteVocab, type VocabItem } from "@/lib/vocabulary";
 
 function playAudio(url: string): void {
   try {
@@ -14,18 +15,50 @@ function playAudio(url: string): void {
     /* ignore */
   }
 }
+const fmtDate = (s: string): string => new Date(s).toLocaleDateString("vi-VN");
+const inputCls = "rounded-btn border border-border px-3 py-2 text-sm";
 
-// WEB-03 — danh sách từ + xóa + 3 nút ôn (học TẤT CẢ từ, không tick chọn).
+// WEB-03 / TIP-024 — danh sách từ (bảng + trạng thái Từ mới/Đã học) + thêm từ thủ công + 3 nút ôn.
 function VocabList() {
   const [items, setItems] = useState<VocabItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  // Form thêm từ
+  const [word, setWord] = useState("");
+  const [meaning, setMeaning] = useState("");
+  const [adding, setAdding] = useState(false);
+  const [addMsg, setAddMsg] = useState<string | null>(null);
 
   useEffect(() => {
     fetchVocab()
       .then(setItems)
       .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
   }, []);
+
+  const onAdd = async () => {
+    const w = word.trim();
+    const m = meaning.trim();
+    if (!w || !m) {
+      setAddMsg("Nhập đủ Từ Tiếng Anh và Nghĩa Tiếng Việt.");
+      return;
+    }
+    setAdding(true);
+    setAddMsg(null);
+    try {
+      const r = await addVocab(w, m);
+      if (r.duplicate || !r.item) {
+        setAddMsg(`Đã có từ "${w}" trong danh sách.`);
+      } else {
+        setItems((cur) => [r.item as VocabItem, ...(cur ?? [])]); // mới nhất lên đầu
+        setWord("");
+        setMeaning("");
+      }
+    } catch (e) {
+      setAddMsg("Không thêm được từ: " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setAdding(false);
+    }
+  };
 
   const onDelete = async (it: VocabItem) => {
     if (!confirm(`Xóa từ "${it.word}"?`)) return;
@@ -66,44 +99,104 @@ function VocabList() {
         </div>
       </div>
 
+      {/* Form thêm từ vựng */}
+      <Card className="space-y-2">
+        <p className="text-sm font-medium">Thêm từ vựng</p>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <input
+            className={inputCls}
+            placeholder="Từ Tiếng Anh"
+            value={word}
+            onChange={(e) => {
+              setWord(e.target.value);
+              setAddMsg(null);
+            }}
+          />
+          <input
+            className={inputCls}
+            placeholder="Nghĩa Tiếng Việt"
+            value={meaning}
+            onChange={(e) => {
+              setMeaning(e.target.value);
+              setAddMsg(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") void onAdd();
+            }}
+          />
+        </div>
+        <div className="flex items-center gap-3">
+          <Button onClick={onAdd} disabled={adding}>
+            {adding ? "Đang lưu…" : "Lưu"}
+          </Button>
+          {addMsg ? <span className="text-sm text-muted-foreground">{addMsg}</span> : null}
+        </div>
+      </Card>
+
+      {/* Danh sách từ vựng */}
       {items.length === 0 ? (
         <Card>
           <p className="text-muted-foreground">
-            Chưa có từ nào. Hãy lưu từ khi xem video bằng extension StudyMovie (click từ trong phụ đề → Lưu).
+            Chưa có từ nào. Thêm thủ công ở trên, hoặc lưu từ khi xem video bằng extension StudyMovie.
           </p>
         </Card>
       ) : (
-        <ul className="space-y-2">
-          {items.map((it) => {
-            const audio = it.audio_url;
-            return (
-              <li key={it.id}>
-                <Card className="flex items-start justify-between gap-3 p-4">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
+        <Card>
+          <h2 className="mb-3 font-medium">Danh sách từ vựng</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-muted-foreground">
+                  <th className="w-12 py-2 pr-2">STT</th>
+                  <th className="py-2 pr-2">Từ vựng</th>
+                  <th className="py-2 pr-2">Nghĩa</th>
+                  <th className="py-2 pr-2">Ngày thêm</th>
+                  <th className="py-2 pr-2">Trạng thái</th>
+                  <th className="w-12 py-2 pr-2"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((it, i) => (
+                  <tr key={it.id} className="border-b border-border">
+                    <td className="py-2 pr-2 text-muted-foreground">{String(i + 1).padStart(3, "0")}</td>
+                    <td className="py-2 pr-2">
                       <span className="font-medium">{it.word}</span>
-                      {it.ipa ? <span className="text-sm text-muted-foreground">/{it.ipa}/</span> : null}
-                      {audio ? (
-                        <button onClick={() => playAudio(audio)} aria-label="Phát âm" className="text-sm">
+                      {it.ipa ? <span className="ml-1 text-xs text-muted-foreground">/{it.ipa}/</span> : null}
+                      {it.audio_url ? (
+                        <button
+                          onClick={() => playAudio(it.audio_url as string)}
+                          aria-label="Phát âm"
+                          className="ml-1 align-middle text-sm"
+                        >
                           🔊
                         </button>
                       ) : null}
-                    </div>
-                    <p className="text-sm">
-                      {it.meaning_vi || <span className="text-muted-foreground">(chưa có nghĩa)</span>}
-                    </p>
-                    {it.example ? (
-                      <p className="mt-1 truncate text-xs italic text-muted-foreground">{it.example}</p>
-                    ) : null}
-                  </div>
-                  <Button variant="ghost" disabled={busy === it.id} onClick={() => onDelete(it)}>
-                    {busy === it.id ? "Đang xóa…" : "Xóa"}
-                  </Button>
-                </Card>
-              </li>
-            );
-          })}
-        </ul>
+                    </td>
+                    <td className="py-2 pr-2">{it.meaning_vi || <span className="text-muted-foreground">—</span>}</td>
+                    <td className="py-2 pr-2">{fmtDate(it.created_at)}</td>
+                    <td className="py-2 pr-2">
+                      {it.learned_at ? (
+                        <Badge tone="success">Đã học</Badge>
+                      ) : (
+                        <Badge tone="danger">Từ mới</Badge>
+                      )}
+                    </td>
+                    <td className="py-2 pr-2">
+                      <button
+                        disabled={busy === it.id}
+                        onClick={() => onDelete(it)}
+                        title="Xóa"
+                        className="text-muted-foreground hover:text-foreground"
+                      >
+                        🗑️
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
       )}
     </div>
   );

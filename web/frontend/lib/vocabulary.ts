@@ -9,12 +9,24 @@ export interface VocabItem {
   meaning_vi: string | null;
   example: string | null;
   audio_url: string | null;
+  learned_at: string | null; // TIP-024: null = "Từ mới"; có giá trị = "Đã học"
   created_at: string;
 }
 
 export async function fetchVocab(): Promise<VocabItem[]> {
   const { items } = await apiFetch<{ items: VocabItem[] }>("/api/vocabulary");
   return items;
+}
+
+// TIP-024 — thêm từ thủ công từ web ({word, meaning_vi}). Idempotent: trùng → duplicate=true.
+export async function addVocab(
+  word: string,
+  meaning_vi: string
+): Promise<{ saved: boolean; duplicate: boolean; item: VocabItem | null }> {
+  return apiFetch("/api/vocabulary", {
+    method: "POST",
+    body: JSON.stringify({ word, meaning_vi }),
+  });
 }
 
 export async function deleteVocab(id: string): Promise<boolean> {
