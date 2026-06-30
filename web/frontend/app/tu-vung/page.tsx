@@ -54,13 +54,13 @@ function VocabList() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-heading text-2xl font-bold">Từ vựng ({items.length})</h1>
         <div className="flex flex-wrap gap-2">
-          <Link href="/vocabulary/flashcard">
+          <Link href="/hoc-tu-vung">
             <Button>Flashcard</Button>
           </Link>
-          <Link href="/vocabulary/quiz?mode=en2vi">
+          <Link href="/kiem-tra-anh-viet">
             <Button variant="ghost">Quiz EN→VI</Button>
           </Link>
-          <Link href="/vocabulary/quiz?mode=vi2en">
+          <Link href="/kiem-tra-viet-anh">
             <Button variant="ghost">Quiz VI→EN</Button>
           </Link>
         </div>

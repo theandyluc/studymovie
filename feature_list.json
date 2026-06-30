@@ -244,6 +244,16 @@
       "depends_on": ["WEB-04"],
       "acceptance": "Lần đầu hiện overlay hướng dẫn khớp tương tác thật; lần sau bỏ qua; audio tự phát thẻ mới (URL/speechSynthesis); nút loa thủ công; autoplay chặn không vỡ UI; flashcard cũ không đổi.",
       "evidence": "VERIFIED (Homeowner web 2026-06-29): hướng dẫn lần đầu + bỏ qua lần sau, audio tự phát thẻ mới, nút loa, flashcard cũ chạy đúng — PASS. | Flashcard hiện tại = NÚT bấm (click thẻ lật + ← Trước/Sau →), KHÔNG kéo → hướng dẫn mô tả đúng nút (không ghi 'kéo', đúng AC-3). Thêm: overlay hướng dẫn lần đầu (localStorage key sm-flashcard-tutorial-seen; lần sau vào thẳng) + nút nhỏ 'Hướng dẫn' xem lại. Audio TỰ PHÁT mỗi thẻ mới qua useEffect [idx] (không phát khi đang xem hướng dẫn, không phát lại khi lật): playWord ưu tiên audio_url (TIP-009), lỗi/không có → fallback speechSynthesis en-US; try/catch + p.catch nuốt lỗi autoplay (AC-5 không vỡ UI). Nút loa 🔊 thủ công giữ (giờ luôn hiện, gọi playWord). KHÔNG đổi tương tác/logic flashcard (lật/chuyển/học tất cả/2 chiều). TỰ TEST: lint+typecheck sạch, FE build OK (/vocabulary/flashcard 3.61kB). CẦN HOMEOWNER: web test — xóa localStorage → vào thấy hướng dẫn → Bắt đầu → học; chuyển thẻ nghe audio tự phát; nút loa phát lại; vào lại không hiện hướng dẫn; flashcard cũ chạy đúng."
+    },
+    {
+      "id": "WEB-ROUTE",
+      "title": "Routing tiếng Việt (alias + redirect cũ) + /cam-on + redirect /ho-tro,/blog + nav VN",
+      "area": "web",
+      "tip": "TIP-019a",
+      "status": "done",
+      "depends_on": ["WEB-06"],
+      "acceptance": "Route VN canonical hoạt động; route cũ redirect; /cam-on sau thanh toán; /ho-tro,/blog redirect ngoài; nav VN giữ Settings/Playlist; không phá tính năng cũ.",
+      "evidence": "TÁCH từ TIP-019 (019a routing, 019b trial guard sau). Route VN canonical (đổi tên thư mục page, git mv giữ history): /tu-vung (←vocabulary), /hoc-tu-vung (←vocabulary/flashcard), /thanh-toan (←upgrade); quiz 1 route+?mode → 2 route VN /kiem-tra-anh-viet + /kiem-tra-viet-anh dùng CHUNG components/QuizGame.tsx (direction prop, không nhân đôi). Redirect route cũ→VN + /ho-tro→FB thaytruongtienganh + /blog→NEXT_PUBLIC_BLOG_URL qua next.config redirects() (vi2en match query trước). Trang /cam-on (mới); /thanh-toan khi paid → router.push('/cam-on'). Nav (Header): Tiến độ học(/dashboard)/Từ vựng(/tu-vung)/Blog/Hỗ trợ + dropdown avatar giữ Playlist/Bảng xếp hạng/Cài đặt + Đăng xuất (không mất truy cập). Cập nhật mọi link nội bộ (tu-vung/hoc-tu-vung/quiz). KHÔNG đụng dashboard/, login /, leaderboard, settings, playlist path; KHÔNG trial guard (019b); KHÔNG reskin (021); extension /upgrade tự redirect. TỰ TEST: lint+typecheck sạch, FE build OK (route /cam-on,/hoc-tu-vung,/kiem-tra-anh-viet,/kiem-tra-viet-anh,/thanh-toan,/tu-vung). CẦN HOMEOWNER: web test route VN + path cũ redirect + /cam-on + /ho-tro/blog + nav + Settings/Playlist."
     }
   ]
 }

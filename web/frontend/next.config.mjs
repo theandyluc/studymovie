@@ -27,6 +27,28 @@ const nextConfig = {
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     NEXT_PUBLIC_BACKEND_URL: process.env.NEXT_PUBLIC_BACKEND_URL,
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+    NEXT_PUBLIC_BLOG_URL: process.env.NEXT_PUBLIC_BLOG_URL,
+  },
+  // TIP-019a — Routing tiếng Việt: route cũ tiếng Anh → redirect sang route VN canonical;
+  // /ho-tro, /blog → redirect ngoài. (Route VN canonical = thư mục page thật, không nhân đôi.)
+  async redirects() {
+    const blog = process.env.NEXT_PUBLIC_BLOG_URL ?? "https://studymovie.com/blog";
+    return [
+      { source: "/vocabulary", destination: "/tu-vung", permanent: false },
+      { source: "/vocabulary/flashcard", destination: "/hoc-tu-vung", permanent: false },
+      // Quiz cũ 1 route + ?mode → 2 route VN (vi2en trước vì khớp cụ thể hơn).
+      {
+        source: "/vocabulary/quiz",
+        has: [{ type: "query", key: "mode", value: "vi2en" }],
+        destination: "/kiem-tra-viet-anh",
+        permanent: false,
+      },
+      { source: "/vocabulary/quiz", destination: "/kiem-tra-anh-viet", permanent: false },
+      { source: "/upgrade", destination: "/thanh-toan", permanent: false },
+      // Redirect ngoài
+      { source: "/ho-tro", destination: "https://www.facebook.com/thaytruongtienganh", permanent: false },
+      { source: "/blog", destination: blog, permanent: false },
+    ];
   },
 };
 

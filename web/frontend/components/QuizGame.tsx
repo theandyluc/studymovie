@@ -1,15 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { AuthGuard } from "@/components/AuthGuard";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PageLoading } from "@/components/ui/Spinner";
 import { fetchVocab, buildQuiz, quizableItems, type QuizDirection, type QuizQuestion } from "@/lib/vocabulary";
 
-// WEB-05 — Quiz 2 chiều EN→VI / VI→EN. 4 đáp án (1 đúng + 3 sai random từ vocab user).
-function Quiz() {
-  const [dir, setDir] = useState<QuizDirection>("en2vi");
+// WEB-05 / TIP-019a — Quiz 2 chiều dùng chung. `direction` truyền qua prop (route VN cố định
+// /kiem-tra-anh-viet=en2vi, /kiem-tra-viet-anh=vi2en). KHÔNG nhân đôi code (1 component).
+export function QuizGame({ direction }: { direction: QuizDirection }) {
   const [questions, setQuestions] = useState<QuizQuestion[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tooFew, setTooFew] = useState(false);
@@ -19,19 +18,16 @@ function Quiz() {
   const [done, setDone] = useState(false);
 
   useEffect(() => {
-    const mode = new URLSearchParams(window.location.search).get("mode");
-    const d: QuizDirection = mode === "vi2en" ? "vi2en" : "en2vi";
-    setDir(d);
     fetchVocab()
       .then((items) => {
         if (quizableItems(items).length < 4) {
           setTooFew(true);
           return;
         }
-        setQuestions(buildQuiz(items, d));
+        setQuestions(buildQuiz(items, direction));
       })
       .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
-  }, []);
+  }, [direction]);
 
   if (error) return <Card><p className="text-sm text-red-600">Lỗi: {error}</p></Card>;
 
@@ -40,7 +36,7 @@ function Quiz() {
       <Card className="text-center">
         <p className="font-medium">Cần ít nhất 4 từ để làm quiz.</p>
         <p className="mt-1 text-sm text-muted-foreground">Hãy lưu thêm từ qua extension khi xem video.</p>
-        <Link href="/vocabulary">
+        <Link href="/tu-vung">
           <Button className="mt-4" variant="ghost">Quay lại</Button>
         </Link>
       </Card>
@@ -67,7 +63,7 @@ function Quiz() {
           >
             Làm lại
           </Button>
-          <Link href="/vocabulary">
+          <Link href="/tu-vung">
             <Button variant="ghost">Về từ vựng</Button>
           </Link>
         </div>
@@ -93,11 +89,11 @@ function Quiz() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <Link href="/vocabulary" className="text-sm text-muted-foreground hover:text-foreground">
+        <Link href="/tu-vung" className="text-sm text-muted-foreground hover:text-foreground">
           ← Từ vựng
         </Link>
         <span className="text-sm text-muted-foreground">
-          {dir === "en2vi" ? "EN → VI" : "VI → EN"} · Câu {idx + 1}/{questions.length} · Điểm {score}
+          {direction === "en2vi" ? "EN → VI" : "VI → EN"} · Câu {idx + 1}/{questions.length} · Điểm {score}
         </span>
       </div>
 
@@ -130,13 +126,5 @@ function Quiz() {
         ) : null}
       </Card>
     </div>
-  );
-}
-
-export default function QuizPage() {
-  return (
-    <AuthGuard>
-      <Quiz />
-    </AuthGuard>
   );
 }

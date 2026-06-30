@@ -7,7 +7,9 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** TIP-018 — Flashcard hướng dẫn lần đầu + audio tự phát (WEB-FLASH) **VERIFIED** (Homeowner web PASS). Tiếp theo TIP-019 routing VI.
+- **Giai đoạn hiện tại:** TIP-019 ĐÃ TÁCH → **019a routing VN** (WEB-ROUTE) **done (self-tested), CHỜ HOMEOWNER** test web; **019b trial guard** (WEB-TRIAL) làm SAU khi 019a verified.
+- **Feature đang làm:** TIP-019a routing (chờ verify) → rồi 019b.
+- **019b (chưa làm) — cần khi tới:** RPC `get_access_status` (trial = profiles.created_at+24h, paid_until từ subscriptions) + /api/access-status + guard chặn trang học khi has_access=false → /thanh-toan (biến NEXT_PUBLIC_PAYWALL_REDIRECT). KHÔNG chặn /, /thanh-toan, /cam-on, /ho-tro, /blog. Bảo vệ: /dashboard + /tu-vung + /hoc-tu-vung + /kiem-tra-anh-viet + /kiem-tra-viet-anh + /playlist + /leaderboard + /settings.
 - **Feature đang làm:** (chưa bắt đầu TIP tiếp theo)
 - **ROADMAP (khách cập nhật, thay Task Graph cũ chỉ ghi QA+bàn giao):** TIP-018 flashcard hướng dẫn+audio (đang) → **TIP-019** routing tiếng Việt + redirect → **TIP-020** admin → **TIP-021** reskin → rồi **QA-01** + **INF-02** (đóng gói extension + HANDOVER + transfer). Các TIP gửi tuần tự.
 - **LƯU Ý KỸ THUẬT (quan trọng):** Vercel serverless đọc body POST treo với `@hono/node-server/vercel` (Readable.toWeb deadlock). Đã fix bằng buffer rawBody trong `web/backend/api/index.ts` — **KHÔNG gỡ**. Mọi POST mới (web/extension/webhook) phụ thuộc fix này khi chạy trên Vercel.
@@ -17,6 +19,20 @@
 ---
 
 ## Session log
+
+### Session 21 — TIP-019a Routing tiếng Việt + /cam-on + redirect + nav (2026-06-29)
+- **TIP/Feature:** TIP-019a — WEB-ROUTE (mảnh 1 của TIP-019 đã tách; 019b trial guard làm sau). Self-tested; chờ Homeowner test web. Frontend-only, không migration.
+- **3 điểm lệch giả định TIP (đã chốt với khách trước khi làm):** (1) quiz 1 route+?mode chứ không 2; (2) `/`=login, dashboard ở /dashboard; (3) paid_until ở subscriptions không phải profiles. Cả 3 đã duyệt.
+- **Đã làm:**
+  - **Route VN canonical** (git mv giữ history): /tu-vung(←vocabulary), /hoc-tu-vung(←vocabulary/flashcard), /thanh-toan(←upgrade). Quiz: `components/QuizGame.tsx` (direction prop) dùng chung cho /kiem-tra-anh-viet (en2vi) + /kiem-tra-viet-anh (vi2en); xóa app/vocabulary/quiz.
+  - **Redirect** (next.config `redirects()`): /vocabulary→/tu-vung, /vocabulary/flashcard→/hoc-tu-vung, /vocabulary/quiz(?mode=vi2en→/kiem-tra-viet-anh; else→/kiem-tra-anh-viet), /upgrade→/thanh-toan, /ho-tro→FB thaytruongtienganh, /blog→NEXT_PUBLIC_BLOG_URL (mặc định studymovie.com/blog).
+  - **/cam-on** (mới): trang cảm ơn + "Vào học"→/dashboard. /thanh-toan khi paid → router.push('/cam-on').
+  - **Nav** (Header): Tiến độ học(/dashboard)/Từ vựng(/tu-vung)/Blog/Hỗ trợ + dropdown avatar (Playlist/Bảng xếp hạng/Cài đặt/Đăng xuất) — không mất truy cập.
+  - Cập nhật mọi link nội bộ; .env.example thêm NEXT_PUBLIC_BLOG_URL.
+- **KHÔNG đụng:** dashboard/login/leaderboard/settings/playlist path, trial guard (019b), reskin (021), extension (/upgrade tự redirect).
+- **Verification (tự test):** lint+typecheck sạch; FE build OK (6 route VN xuất hiện, route cũ thành redirect).
+- **CHỜ HOMEOWNER (web):** route VN đúng trang; path cũ redirect; /cam-on sau thanh toán; /ho-tro→FB, /blog→blog; nav + Settings/Playlist còn vào; tính năng cũ chạy.
+- **Commit:** feat(web): TIP-019a vietnamese routing + /cam-on + redirects + nav.
 
 ### Session 20 — TIP-018 Flashcard hướng dẫn lần đầu + audio tự phát (2026-06-29)
 - **TIP/Feature:** TIP-018 — WEB-FLASH: thêm overlay hướng dẫn lần đầu + audio tự phát cho trang flashcard. Self-tested; chờ Homeowner test web. (Frontend-only, không migration.)

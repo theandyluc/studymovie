@@ -86,7 +86,7 @@ function Flashcards() {
     return (
       <Card className="text-center">
         <p className="text-muted-foreground">Chưa có từ nào để học.</p>
-        <Link href="/vocabulary">
+        <Link href="/tu-vung">
           <Button className="mt-4" variant="ghost">Quay lại</Button>
         </Link>
       </Card>
@@ -119,7 +119,7 @@ function Flashcards() {
       ) : null}
 
       <div className="flex items-center justify-between">
-        <Link href="/vocabulary" className="text-sm text-muted-foreground hover:text-foreground">
+        <Link href="/tu-vung" className="text-sm text-muted-foreground hover:text-foreground">
           ← Từ vựng
         </Link>
         <div className="flex items-center gap-3">

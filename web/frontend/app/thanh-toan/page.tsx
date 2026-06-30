@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { AuthGuard } from "@/components/AuthGuard";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -16,6 +17,7 @@ function UpgradeInner() {
   const [paid, setPaid] = useState(false);
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const router = useRouter();
 
   const stopPoll = useCallback(() => {
     if (timer.current) {
@@ -31,12 +33,13 @@ function UpgradeInner() {
         if (s.status === "paid") {
           setPaid(true);
           stopPoll();
+          router.push("/cam-on"); // TIP-019a: thanh toán thành công → trang cảm ơn
         }
       } catch {
         /* lỗi tạm thời khi poll — bỏ qua, lần sau thử lại */
       }
     },
-    [stopPoll]
+    [stopPoll, router]
   );
 
   const onCreate = async () => {
@@ -72,17 +75,12 @@ function UpgradeInner() {
   };
 
   if (paid) {
+    // Đã thanh toán → đang điều hướng sang /cam-on (router.push trong checkStatus).
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <Card className="w-full max-w-md text-center">
           <div className="text-4xl">🎉</div>
-          <h1 className="mt-2 font-heading text-xl font-bold">Thanh toán thành công!</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Tài khoản của bạn đã được kích hoạt Pro. Cảm ơn bạn đã ủng hộ StudyMovie.
-          </p>
-          <a href="/dashboard" className="mt-4 inline-block">
-            <Button>Về Dashboard</Button>
-          </a>
+          <p className="mt-2 text-sm text-muted-foreground">Thanh toán thành công, đang chuyển trang…</p>
         </Card>
       </div>
     );
