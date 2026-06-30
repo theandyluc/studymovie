@@ -76,12 +76,26 @@ export function verifyApiKey(authHeader: string | undefined): boolean {
   return diff === 0;
 }
 
+// TIP-020 — Giá Pro lấy từ DB (app_settings.pro_price), fallback env PRO_PRICE (không vỡ
+// thanh toán đang chạy nếu chưa set DB). Dùng service client (bypass RLS).
+async function getProPrice(sb: ReturnType<typeof getServiceClient>): Promise<number> {
+  try {
+    const { data } = await sb.from("app_settings").select("value").eq("key", "pro_price").maybeSingle();
+    const v = data?.value != null ? parseInt(String(data.value), 10) : NaN;
+    if (Number.isFinite(v) && v > 0) return v;
+  } catch {
+    /* lỗi đọc settings → fallback env */
+  }
+  return PRO_PRICE;
+}
+
 // ── Handlers ────────────────────────────────────────────────────────────────
 
 // POST /api/payment/create-order (protected): tạo đơn pending + trả VietQR + thông tin CK.
 export async function postCreateOrder(c: Context) {
   const user = c.get("user");
   const sb = getServiceClient();
+  const price = await getProPrice(sb); // TIP-020: giá từ DB, fallback env
 
   // Sinh code duy nhất (retry vài lần phòng trùng — cực hiếm với 8 ký tự base36).
   let code = "";
@@ -90,7 +104,7 @@ export async function postCreateOrder(c: Context) {
     code = generateOrderCode();
     const { error } = await sb
       .from("payment_orders")
-      .insert({ code, user_id: user.id, amount: PRO_PRICE, status: "pending" });
+      .insert({ code, user_id: user.id, amount: price, status: "pending" });
     if (!error) {
       inserted = true;
     } else if (!/duplicate|unique/i.test(error.message)) {
@@ -101,8 +115,8 @@ export async function postCreateOrder(c: Context) {
 
   return c.json({
     code,
-    amount: PRO_PRICE,
-    qr_url: buildVietQrUrl(PRO_PRICE, code),
+    amount: price,
+    qr_url: buildVietQrUrl(price, code),
     bank: { bank_id: BANK_ID, account_no: BANK_ACCOUNT_NO, account_name: BANK_ACCOUNT_NAME },
     content: code, // nội dung chuyển khoản user phải ghi
   });

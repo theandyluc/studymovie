@@ -7,9 +7,10 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** TIP-019a VERIFIED production. **TIP-019b trial guard (WEB-TRIAL) done (self-tested), CHỜ HOMEOWNER** áp migration 008 + test web.
-- **Feature đang làm:** (sau 019b verified → TIP-020 admin, 021 reskin, QA, INF-02).
-- **CẦN ÁP MIGRATION:** `20260629000008_access_status.sql` (RPC get_access_status) — Homeowner chạy Supabase SQL Editor.
+- **Giai đoạn hiện tại:** TIP-019b (WEB-TRIAL) + TIP-020 admin (WEB-ADMIN) **done (self-tested), CHỜ HOMEOWNER** áp migration 008+009 + bootstrap admin + test. 019a đã verified production.
+- **Feature đang làm:** (sau 019b+020 verified → TIP-021 reskin, QA-01, INF-02).
+- **CẦN ÁP MIGRATION:** `20260629000008_access_status.sql` (RPC get_access_status) + `20260629000009_admin.sql` (is_admin/app_settings/RPC admin) + **bootstrap** `update profiles set is_admin=true where email='dokhiem562@gmail.com'`. Homeowner chạy Supabase SQL Editor.
+- **⚠️ ĐANG CHỜ REVIEW NHIỀU MẢNH (local, chưa push):** 019b (f245086) + 020 (commit kế). Push khi Homeowner chốt.
 - **019b (chưa làm) — cần khi tới:** RPC `get_access_status` (trial = profiles.created_at+24h, paid_until từ subscriptions) + /api/access-status + guard chặn trang học khi has_access=false → /thanh-toan (biến NEXT_PUBLIC_PAYWALL_REDIRECT). KHÔNG chặn /, /thanh-toan, /cam-on, /ho-tro, /blog. Bảo vệ: /dashboard + /tu-vung + /hoc-tu-vung + /kiem-tra-anh-viet + /kiem-tra-viet-anh + /playlist + /leaderboard + /settings.
 - **Feature đang làm:** (chưa bắt đầu TIP tiếp theo)
 - **ROADMAP (khách cập nhật, thay Task Graph cũ chỉ ghi QA+bàn giao):** TIP-018 flashcard hướng dẫn+audio (đang) → **TIP-019** routing tiếng Việt + redirect → **TIP-020** admin → **TIP-021** reskin → rồi **QA-01** + **INF-02** (đóng gói extension + HANDOVER + transfer). Các TIP gửi tuần tự.
@@ -20,6 +21,16 @@
 ---
 
 ## Session log
+
+### Session 23 — TIP-020 Admin panel (stats, users, giá Pro DB, gán Pro, quản admin) (2026-06-30)
+- **TIP/Feature:** TIP-020 — WEB-ADMIN. Không tách (chủ yếu additive; điểm chạm rủi ro = giá Pro→DB, đã giữ fallback env). Self-tested; chờ Homeowner áp migration + bootstrap + test.
+- **⚠️ BẢO MẬT (trọng tâm) — FAIL-CLOSED:** migration `20260629000009_admin.sql`: profiles.is_admin (default false) + app_settings (key-value, RLS bật KHÔNG policy authenticated → client không đọc/ghi trực tiếp) + helper `is_caller_admin()` (coalesce false). MỌI RPC admin (security definer) check `if not is_caller_admin() then raise 'forbidden'` ở ĐẦU hàm — không dựa UI. RPC: admin_get_stats, admin_list_users, admin_set_pro_price, admin_grant_pro (cộng dồn max(now,paid)+days), admin_set_admin (KHÔNG cho tự gỡ admin chính mình → tránh tự khóa). Grant execute authenticated nhưng bảo mật ở TRONG hàm.
+- **Backend:** `api/admin.ts` proxy 5 RPC qua getUserClient; 'forbidden'→403. Routes /api/admin/{stats,users,price,grant-pro,set-admin}.
+- **Giá Pro → DB:** `payment.ts` getProPrice đọc app_settings.pro_price (service client) → fallback env PRO_PRICE (KHÔNG vỡ TIP-013); create-order dùng price cho amount + buildVietQrUrl.
+- **Frontend:** `lib/admin.ts` + `app/admin/page.tsx` (AuthGuard + 403→/dashboard): thống kê (total/pro/revenue), bảng user (email/ngày/status/hạn Pro/admin toggle/gán Pro+ngày), form set giá. Header dropdown thêm link Admin chỉ khi me.profile.is_admin. account.ts Me.profile thêm is_admin. me.ts select('*') tự có is_admin.
+- **Verification (tự test):** backend lint+typecheck+20test; FE lint+typecheck sạch; admin routes 401 no-auth (không 404). (Không next build vì dev chạy.)
+- **CHỜ HOMEOWNER:** áp migration 009 + BOOTSTRAP `update profiles set is_admin=true where email='dokhiem562@gmail.com'` + test admin/bảo mật (user thường /admin bị chặn + API 403) + set giá→tạo đơn áp giá mới + QR chạy + gán Pro + toggle admin.
+- **Commit:** feat(web): TIP-020 admin panel.
 
 ### Session 22 — TIP-019b Trial 24h + access guard + Pro guard (2026-06-30)
 - **TIP/Feature:** TIP-019b — WEB-TRIAL (mảnh 2 của TIP-019). Self-tested; chờ Homeowner áp migration 008 + test web.

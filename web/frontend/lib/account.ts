@@ -40,7 +40,7 @@ export interface Subscription {
 }
 export interface Me {
   user: { id: string; email: string | null };
-  profile: { nickname: string | null; avatar_url: string | null } | null;
+  profile: { nickname: string | null; avatar_url: string | null; is_admin?: boolean } | null;
   subscription: Subscription | null;
   is_active: boolean;
 }

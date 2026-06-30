@@ -14,6 +14,13 @@ import { postCreateOrder, getOrder, postSepayWebhook } from "./api/payment.js";
 import { getLevel, setLevel } from "./api/level.js";
 import { getAccessStatus } from "./api/access.js";
 import {
+  getAdminStats,
+  getAdminUsers,
+  postAdminPrice,
+  postAdminGrantPro,
+  postAdminSetAdmin,
+} from "./api/admin.js";
+import {
   getWeeklyPlan,
   postWeeklyPlan,
   patchWeeklyPlan,
@@ -61,6 +68,11 @@ app.delete("/api/vocabulary/:id", requireAuth, deleteVocabulary); // WEB-03: xó
 app.get("/api/dashboard", requireAuth, getDashboard); // WEB-02
 app.get("/api/level", requireAuth, getLevel); // WEB-LEVEL TIP-016
 app.post("/api/level", requireAuth, setLevel); // WEB-LEVEL TIP-016
+app.get("/api/admin/stats", requireAuth, getAdminStats); // WEB-ADMIN TIP-020 (RPC fail-closed)
+app.get("/api/admin/users", requireAuth, getAdminUsers); // WEB-ADMIN TIP-020
+app.post("/api/admin/price", requireAuth, postAdminPrice); // WEB-ADMIN TIP-020
+app.post("/api/admin/grant-pro", requireAuth, postAdminGrantPro); // WEB-ADMIN TIP-020
+app.post("/api/admin/set-admin", requireAuth, postAdminSetAdmin); // WEB-ADMIN TIP-020
 app.get("/api/weekly-plan", requireAuth, getWeeklyPlan); // WEB-PLAN TIP-017
 app.post("/api/weekly-plan", requireAuth, postWeeklyPlan); // WEB-PLAN TIP-017
 app.patch("/api/weekly-plan/:id", requireAuth, patchWeeklyPlan); // WEB-PLAN TIP-017

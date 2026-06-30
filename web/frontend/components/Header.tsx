@@ -1,9 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabaseClient";
 import { useUser } from "@/hooks/useUser";
+import { fetchMe } from "@/lib/account";
 import { Avatar } from "@/components/ui/Avatar";
 
 // TIP-019a — Nav route VN: Tiến độ học / Từ vựng / Blog / Hỗ trợ.
@@ -24,6 +25,24 @@ export function Header() {
   const { user } = useUser();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Chỉ hiện link /admin cho admin (is_admin từ /api/me). Server vẫn chặn API nếu không phải admin.
+  useEffect(() => {
+    if (!user) {
+      setIsAdmin(false);
+      return;
+    }
+    let active = true;
+    fetchMe()
+      .then((me) => {
+        if (active) setIsAdmin(!!me.profile?.is_admin);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [user]);
 
   const signOut = async () => {
     const sb = getSupabase();
@@ -85,6 +104,15 @@ export function Header() {
                       {m.label}
                     </Link>
                   ))}
+                  {isAdmin ? (
+                    <Link
+                      href="/admin"
+                      onClick={() => setOpen(false)}
+                      className="block px-4 py-2 text-sm text-foreground hover:bg-surface-muted"
+                    >
+                      Admin
+                    </Link>
+                  ) : null}
                   <button
                     onClick={signOut}
                     className="block w-full px-4 py-2 text-left text-sm text-foreground hover:bg-surface-muted"
