@@ -7,9 +7,9 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** TIP-017 — Kế hoạch tuần (WEB-PLAN) **VERIFIED** (Homeowner web PASS; migration 007 đã áp production). TIP-015/016 đã verified+push trước đó.
+- **Giai đoạn hiện tại:** TIP-018 — Flashcard hướng dẫn lần đầu + audio tự phát (WEB-FLASH) **done (self-tested), CHỜ HOMEOWNER** test web.
 - **Feature đang làm:** (chưa bắt đầu TIP tiếp theo)
-- **Next:** QA-01 (QA tổng flow thật), INF-02 (đóng gói extension Chrome Web Store + HANDOVER.md + transfer ownership).
+- **ROADMAP (khách cập nhật, thay Task Graph cũ chỉ ghi QA+bàn giao):** TIP-018 flashcard hướng dẫn+audio (đang) → **TIP-019** routing tiếng Việt + redirect → **TIP-020** admin → **TIP-021** reskin → rồi **QA-01** + **INF-02** (đóng gói extension + HANDOVER + transfer). Các TIP gửi tuần tự.
 - **LƯU Ý KỸ THUẬT (quan trọng):** Vercel serverless đọc body POST treo với `@hono/node-server/vercel` (Readable.toWeb deadlock). Đã fix bằng buffer rawBody trong `web/backend/api/index.ts` — **KHÔNG gỡ**. Mọi POST mới (web/extension/webhook) phụ thuộc fix này khi chạy trên Vercel.
 - **URL production:** frontend=`https://studymovie-frontend.vercel.app`, backend=`https://studymovie-backend.vercel.app`. (manifest extension đã trỏ host frontend này; build:prod đọc extension/.env.production.)
 - **Blocker / cần làm:** Khách chốt UI streak "hôm nay chưa đạt" (backend đã có cờ `today_met`).
@@ -17,6 +17,17 @@
 ---
 
 ## Session log
+
+### Session 20 — TIP-018 Flashcard hướng dẫn lần đầu + audio tự phát (2026-06-29)
+- **TIP/Feature:** TIP-018 — WEB-FLASH: thêm overlay hướng dẫn lần đầu + audio tự phát cho trang flashcard. Self-tested; chờ Homeowner test web. (Frontend-only, không migration.)
+- **Đọc code cũ:** flashcard (`app/vocabulary/flashcard/page.tsx`) tương tác = NÚT (click thẻ lật + ← Trước/Sau →), KHÔNG kéo; đã có nút 🔊 thủ công (new Audio(audio_url)) chỉ hiện khi có URL; chưa tự phát.
+- **Đã làm (chỉ page flashcard):**
+  - **Hướng dẫn lần đầu:** localStorage `sm-flashcard-tutorial-seen`; chưa có → overlay (nền mờ) mô tả ĐÚNG nút bấm (không ghi 'kéo' — AC-3) + "Bắt đầu" → set key → vào học; lần sau bỏ qua. Nút nhỏ "Hướng dẫn" xem lại.
+  - **Audio tự phát:** useEffect [idx, items, showTutorial] → playWord khi sang thẻ mới (không phát khi đang xem hướng dẫn / không phát lại khi lật). playWord: ưu tiên audio_url → lỗi/không có → fallback speechSynthesis (en-US). try/catch + p.catch() nuốt lỗi autoplay (AC-5 không vỡ UI). Nút loa thủ công giữ (luôn hiện, gọi playWord).
+  - KHÔNG đổi tương tác/logic flashcard (lật/chuyển/học tất cả/2 chiều/quiz).
+- **Verification (tự test):** lint+typecheck sạch; FE build OK (/vocabulary/flashcard 3.61kB). (Không init.sh đầy đủ vì chỉ đụng FE — nhưng FE gate đã chạy.)
+- **CHỜ HOMEOWNER (web):** xóa localStorage → hướng dẫn lần đầu → Bắt đầu → học; chuyển thẻ nghe audio tự phát; nút loa phát lại; vào lại không hiện; flashcard cũ chạy đúng.
+- **Commit:** feat(web): TIP-018 flashcard first-time tutorial + auto audio.
 
 ### Session 19 — TIP-017 Kế hoạch tuần này (Dashboard) (2026-06-29)
 - **TIP/Feature:** TIP-017 — WEB-PLAN: bảng "Kế hoạch tuần này" dưới Dashboard. Self-tested; chờ Homeowner áp migration 007 + test web.
