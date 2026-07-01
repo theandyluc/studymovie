@@ -131,7 +131,7 @@ export function QuizGame({ direction }: { direction: QuizDirection }) {
             if (selected !== null) {
               if (!revealed) {
                 // Pha đang chọn: ô vừa chọn = xanh dương, còn lại mờ.
-                cls = i === selected ? "border-info-foreground bg-info text-info-foreground" : "border-border bg-surface opacity-70";
+                cls = i === selected ? "border-[#3b82f6] bg-[#a9d1fb] font-semibold text-[#1e3a8a]" : "border-border bg-surface opacity-70";
               } else if (i === q.answerIndex) {
                 cls = "border-success-foreground bg-success text-success-foreground"; // đúng = xanh lá
               } else if (i === selected) {
