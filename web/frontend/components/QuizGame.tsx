@@ -26,9 +26,11 @@ export function QuizGame({ direction }: { direction: QuizDirection }) {
   const [tooFew, setTooFew] = useState(false);
   const [idx, setIdx] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
+  const [revealed, setRevealed] = useState(false); // false = pha "đang chọn" (xanh dương); true = hiện đúng/sai
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const revealRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -45,6 +47,7 @@ export function QuizGame({ direction }: { direction: QuizDirection }) {
 
   useEffect(() => () => {
     if (timerRef.current) clearTimeout(timerRef.current);
+    if (revealRef.current) clearTimeout(revealRef.current);
   }, []);
 
   if (error) return <Card><p className="text-sm text-red-600">Lỗi: {error}</p></Card>;
@@ -93,13 +96,16 @@ export function QuizGame({ direction }: { direction: QuizDirection }) {
   const pick = (i: number) => {
     if (selected !== null) return;
     setSelected(i);
+    setRevealed(false);
     if (i === q.answerIndex) setScore((s) => s + 1);
-    // Figma: không có nút "Câu tiếp" → tự sang câu sau khi hiện đúng/sai.
+    // Pha 1: xanh dương (đang chọn) → Pha 2: hiện đúng/sai → tự sang câu (Figma không có nút).
+    revealRef.current = setTimeout(() => setRevealed(true), 450);
     timerRef.current = setTimeout(() => {
       setSelected(null);
+      setRevealed(false);
       if (idx + 1 >= questions.length) setDone(true);
       else setIdx(idx + 1);
-    }, 1300);
+    }, 1600);
   };
 
   return (
@@ -121,11 +127,18 @@ export function QuizGame({ direction }: { direction: QuizDirection }) {
         {/* 4 đáp án: trắng mặc định → đúng=xanh lá, sai-chọn=hồng */}
         <div className="flex flex-col justify-center gap-3">
           {q.options.map((opt, i) => {
-            let cls = "border-border bg-surface hover:bg-surface-muted";
+            let cls = "border-border bg-surface hover:bg-surface-muted"; // mặc định: trắng
             if (selected !== null) {
-              if (i === q.answerIndex) cls = "border-success-foreground bg-success text-success-foreground";
-              else if (i === selected) cls = "border-danger-foreground bg-danger text-danger-foreground";
-              else cls = "border-border bg-surface opacity-60";
+              if (!revealed) {
+                // Pha đang chọn: ô vừa chọn = xanh dương, còn lại mờ.
+                cls = i === selected ? "border-info-foreground bg-info text-info-foreground" : "border-border bg-surface opacity-70";
+              } else if (i === q.answerIndex) {
+                cls = "border-success-foreground bg-success text-success-foreground"; // đúng = xanh lá
+              } else if (i === selected) {
+                cls = "border-danger-foreground bg-danger text-danger-foreground"; // chọn sai = hồng
+              } else {
+                cls = "border-border bg-surface opacity-60";
+              }
             }
             return (
               <button
