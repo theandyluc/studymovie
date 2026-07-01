@@ -263,6 +263,19 @@ function VocabList() {
   const start = (pageSafe - 1) * PAGE_SIZE;
   const pageItems = filtered.slice(start, start + PAGE_SIZE);
 
+  // Chọn tất cả (theo bộ lọc hiện tại, mọi trang).
+  const filteredIds = filtered.map((i) => i.id);
+  const allSelected = filteredIds.length > 0 && filteredIds.every((id) => selected.has(id));
+  const someSelected = filteredIds.some((id) => selected.has(id));
+  const toggleAll = () => {
+    setSelected((cur) => {
+      const next = new Set(cur);
+      if (allSelected) filteredIds.forEach((id) => next.delete(id));
+      else filteredIds.forEach((id) => next.add(id));
+      return next;
+    });
+  };
+
   return (
     <div className="space-y-4">
       {/* Hàng 1: biểu đồ + vòng tròn tổng */}
@@ -387,7 +400,20 @@ function VocabList() {
                         </div>
                       ) : null}
                     </th>
-                    <th className="py-2 pr-2 text-center">Học từ này?</th>
+                    <th className="py-2 pr-2 text-center">
+                      <label className="inline-flex cursor-pointer items-center gap-1.5">
+                        <input
+                          type="checkbox"
+                          checked={allSelected}
+                          ref={(el) => {
+                            if (el) el.indeterminate = someSelected && !allSelected;
+                          }}
+                          onChange={toggleAll}
+                          aria-label="Chọn tất cả từ (theo bộ lọc)"
+                        />
+                        <span>Học từ này?</span>
+                      </label>
+                    </th>
                     <th className="w-10 py-2"></th>
                   </tr>
                 </thead>
@@ -400,7 +426,12 @@ function VocabList() {
                     </tr>
                   ) : (
                     pageItems.map((it, i) => (
-                      <tr key={it.id} className="group border-b border-border">
+                      <tr
+                      key={it.id}
+                      className={`group border-b border-border transition-colors hover:bg-surface-muted ${
+                        selected.has(it.id) ? "bg-info/60" : ""
+                      }`}
+                    >
                         <td className="py-2 pr-2 text-center">
                           <span className="inline-flex min-w-[36px] justify-center rounded-pill border border-border px-2 py-0.5 text-xs text-muted-foreground">
                             {String(start + i + 1).padStart(3, "0")}
