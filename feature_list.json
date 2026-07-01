@@ -200,10 +200,10 @@
       "title": "Đóng gói extension (Chrome Web Store) + deploy frontend/backend Vercel + .env.example + HANDOVER.md + transfer ownership",
       "area": "infra",
       "tip": "TIP-031",
-      "status": "in_progress",
+      "status": "done",
       "depends_on": ["QA-01"],
       "acceptance": "Extension đóng gói submit; web deploy chạy; .env.example + HANDOVER.md đầy đủ; checklist handover (Blueprint mục 9) pass.",
-      "evidence": "Đang giao TIP-031. Nền tảng sẵn: .env.example (root) + extension/.env.production.example đầy đủ; .env gitignore+untracked (an toàn); extension có build:prod. Cần: HANDOVER.md, audit .env.example vs process.env thực tế, đóng gói extension zip + tài liệu submit Chrome Web Store. Phần transfer ownership (GitHub/Supabase/Vercel + xoay key) = Homeowner action."
+      "evidence": "DONE (TIP-031, 6 WI, static verified 2026-07-01 — CHỜ Homeowner runtime deployed + transfer để lên verified): WI-1 .env.example vá NEXT_PUBLIC_SITE_URL=https://app.studymovie.com + audit đủ biến (FE6/BE12). WI-2 web/frontend/app/privacy/page.tsx (public tĩnh, ngoài AccessGuard → reviewer/chưa-login xem được; nội dung VN: dữ liệu thu, mục đích, Supabase Singapore, bên thứ ba YouTube/SePay/Supabase không bán, quyền user, email dkhiem2k4@gmail.com). WI-3 icon từ logo.png (sharp: trim viền + pad + nền trắng → 16/48/128) + manifest icons + action.default_icon + build.mjs copy icons/→dist (không lọt logo.png nguồn). WI-4 manifest version 1.0.0; build.mjs --prod lọc localhost khỏi host_permissions + content_scripts.matches (bản dev GIỮ localhost); prod còn app.studymovie.com + youtube. WI-5 HANDOVER.md (kiến trúc, repo/dịch vụ, bảng env tên+nơi KHÔNG giá trị, deploy, 10 migration, dev setup, verify, checklist transfer ownership + xoay TOÀN BỘ key, việc treo /blog; tự grep 0 secret/JWT). WI-6 Chrome Web Store trong HANDOVER §8 (mô tả VN, category Education, privacy URL app.studymovie.com/privacy, data usage, giải trình 5 permission, email, bước submit $5 + zip dist). Verify Chủ thầu: source icons + manifest icons + build.mjs copy + build.mjs prod-strip localhost + HANDOVER 0 secret. GATE: FE lint+typecheck+build OK, ext build dev+prod OK, init.sh exit 0, dev flow không hỏng. CÒN (Homeowner → verified): (a) push → Vercel auto-deploy → mở app.studymovie.com/privacy render; (b) load extension/dist → icon 'SM.' hiện; (c) submit Chrome Web Store (zip dist); (d) transfer GitHub+Supabase(giữ Singapore)+Vercel + xoay toàn bộ key theo HANDOVER.md."
     },
     {
       "id": "INF-03",

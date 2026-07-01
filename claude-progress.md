@@ -7,7 +7,7 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** TIP-021→028 tính năng + **QA-01 VERIFIED** + **INF-04 VERIFIED** (đổi domain 2-domain: landing `studymovie.com` khách tự làm + web app `app.studymovie.com`). **Việc CUỐI: INF-02** — đóng gói extension (Chrome Web Store) + `.env.example` (vá dòng SITE_URL→app.studymovie.com) + `HANDOVER.md` + checklist transfer ownership (GitHub+Supabase+Vercel, đổi key sang khách — Blueprint mục 9, Cách B).
+- **Giai đoạn hiện tại:** TIP-021→028 + **QA-01 VERIFIED** + **INF-04 VERIFIED** (domain app.studymovie.com) + **INF-02 DONE** (TIP-031: HANDOVER.md + /privacy + icon + manifest store v1.0.0 + audit .env.example). **KỸ THUẬT XONG.** Còn lại = **Homeowner action** để INF-02 → verified: push→auto-deploy→check /privacy + icon extension; submit Chrome Web Store (zip dist); **transfer ownership** GitHub+Supabase(giữ Singapore)+Vercel + **xoay TOÀN BỘ key** theo `HANDOVER.md`. Việc treo: `/blog` (khách cấp URL → đặt NEXT_PUBLIC_BLOG_URL + redeploy).
 - **VAI TRÒ:** Phiên chính đóng vai **CHỦ THẦU** (viết TIP, review report, gate verified); Thợ là phiên Claude Code khác thực thi. Giao TIP tuần tự.
 - **MIGRATION ĐÃ ÁP production:** 008 (get_access_status) + 009 (admin) + 010 (vocab learned_at). Bootstrap `is_admin=true` cho dokhiem562@gmail.com xong.
 - **SCOPE RESKIN ĐÃ CHỐT (từ Figma, Homeowner duyệt):** TOÀN BỘ web + extension. Gồm 3 thay đổi đảo feature verified: flashcard NÚT→**swipe**, học TẤT CẢ→**chọn từ (tick)**, extension Google-only→**+email/mật khẩu**.
