@@ -21,6 +21,12 @@
 
 ## Session log
 
+### Session 35 — TIP-031 (INF-02): đóng gói bàn giao + Chrome Web Store (2026-07-01)
+- **6 WI, commit riêng từng cái (local, CHƯA push, ahead 4):** WI-1 `.env.example` SITE_URL→app.studymovie.com + audit env (đủ biến runtime; PORT/DICT_LIMIT optional; GOOGLE_OAUTH_* là tài liệu). WI-2 trang `/privacy` (web/frontend/app/privacy/page.tsx) public render tĩnh, ngoài PROTECTED của AccessGuard → reviewer xem được. WI-4 manifest bản store: version 0.0.1→1.0.0 + build.mjs khi `--prod` lọc entry `localhost` (dev giữ). WI-5 `HANDOVER.md` (kiến trúc + bảng env không secret + deploy + migrations + transfer ownership + xoay key + dev setup + verify). WI-6 mục Chrome Web Store submission trong HANDOVER (mô tả + privacy URL app.studymovie.com/privacy + data usage + giải trình 5 permission + email dkhiem2k4@gmail.com).
+- **WI-3 VẮNG MẶT trong TIP** (nhảy WI-2→WI-4) + WI-2 gốc bị cắt câu — Thợ báo Chủ thầu, KHÔNG tự bịa. Nghi WI-3 = icon/logo.png (khách cấp logo "SM." đen+chấm vàng) — chờ Chủ thầu xác nhận.
+- **Gate cuối PASS:** FE lint+typecheck+build OK (/privacy = ○ static 162B); ext `npm run build` (dev, localhost + v1.0.0) + `build:prod` (bỏ localhost, app.studymovie.com×2, youtube, v1.0.0, service_role KHÔNG lộ) OK; init.sh exit 0. HANDOVER.md tự grep: 0 secret thật, 0 JWT.
+- **CHỜ HOMEOWNER:** load unpacked extension/dist xem icon/popup; mở app.studymovie.com/privacy (prod). Rồi Chủ thầu gate INF-02 → verified + push 4 commit. Việc còn lại = Homeowner transfer ownership + xoay key theo HANDOVER.md.
+
 ### Session 34 — INF-04 VERIFIED: đổi domain 2-domain app.studymovie.com (2026-07-01)
 - **Quyết định (khách chốt):** `studymovie.com` (apex) = landing page khách tự làm (không login); `app.studymovie.com` (subdomain) = web app nơi user đăng nhập & học. Backend GIỮ `studymovie-backend.vercel.app` (webhook SePay không đổi).
 - **Code (fix-forward):** TIP-032 (a0276e3, trỏ apex studymovie.com) → sửa TIP-032b (af69955, trỏ app.studymovie.com) sau khi khách làm rõ 2-domain. manifest host_permissions + auth-bridge matches + extension/.env.production.example → `https://app.studymovie.com` (giữ youtube + localhost). Kèm D-01 (auth-bridge context invalidated) + D-02 (popup /api/me 401 → về màn login thay vì hộp lỗi, phát hiện ở R-3).
