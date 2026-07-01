@@ -4,7 +4,7 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { CircleStat } from "@/components/ui/CircleStat";
-import { PageLoading } from "@/components/ui/Spinner";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { fetchDashboard, type Dashboard } from "@/lib/account";
 import { fetchLevel, setLevel, LEVELS, type LevelProgress } from "@/lib/level";
 import { WeeklyPlanTable } from "@/components/WeeklyPlan";
@@ -165,7 +165,20 @@ function DashboardInner() {
   }, []);
 
   if (error) return <Card><p className="text-sm text-red-600">Không tải được dashboard: {error}</p></Card>;
-  if (!data) return <PageLoading label="Đang tải dashboard…" />;
+  if (!data)
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-8 w-40" />
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Skeleton className="h-40" />
+          <Skeleton className="h-40" />
+        </div>
+        <div className="grid gap-4 lg:grid-cols-3">
+          <Skeleton className="h-72 lg:col-span-2" />
+          <Skeleton className="h-72" />
+        </div>
+      </div>
+    );
 
   return (
     <div className="space-y-4">

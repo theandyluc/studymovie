@@ -5,7 +5,7 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { PageLoading } from "@/components/ui/Spinner";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { fetchVocab, addVocab, deleteVocab, STUDY_SELECTION_KEY, type VocabItem } from "@/lib/vocabulary";
 import { toast, confirmDialog } from "@/components/ui/feedback";
 
@@ -246,7 +246,16 @@ function VocabList() {
       </Card>
     );
   }
-  if (!items) return <PageLoading label="Đang tải từ vựng…" />;
+  if (!items)
+    return (
+      <div className="space-y-4">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Skeleton className="h-56" />
+          <Skeleton className="h-56" />
+        </div>
+        <Skeleton className="h-96" />
+      </div>
+    );
 
   const totalLearned = items.filter((i) => i.learned_at).length;
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
