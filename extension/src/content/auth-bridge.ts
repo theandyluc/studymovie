@@ -18,7 +18,32 @@ function extractSession(raw: string | null): unknown {
   }
 }
 
+// D-01 — Khi extension bị reload/update, context cũ vô hiệu → chrome.runtime.sendMessage()
+// NÉM LỖI ĐỒNG BỘ (không phải promise-reject) → .catch() không bắt được → văng uncaught lặp mãi.
+// Fix: phát hiện context chết (chrome.runtime?.id undefined) → stop() poll; bọc sendMessage try/catch đồng bộ.
+let timer: ReturnType<typeof setInterval> | null = null;
+
+function contextAlive(): boolean {
+  try {
+    return !!chrome.runtime?.id;
+  } catch {
+    return false;
+  }
+}
+
+function stop(): void {
+  if (timer != null) {
+    clearInterval(timer);
+    timer = null;
+  }
+  window.removeEventListener("storage", sync);
+}
+
 function sync(): void {
+  if (!contextAlive()) {
+    stop(); // context invalidated (extension reload) → ngừng poll; refresh tab sẽ nạp bridge mới
+    return;
+  }
   let raw: string | null = null;
   try {
     raw = window.localStorage.getItem(KEY);
@@ -27,11 +52,15 @@ function sync(): void {
   }
   if (raw === last) return;
   last = raw ?? "";
-  chrome.runtime.sendMessage({ type: "SM_AUTH", session: extractSession(raw) }).catch(() => {
-    /* background có thể đang ngủ; lần poll sau sẽ gửi lại */
-  });
+  try {
+    chrome.runtime.sendMessage({ type: "SM_AUTH", session: extractSession(raw) }).catch(() => {
+      /* background có thể đang ngủ; lần poll sau sẽ gửi lại */
+    });
+  } catch {
+    stop(); // sendMessage ném đồng bộ (context invalidated) → ngừng, tránh văng uncaught
+  }
 }
 
 sync();
-setInterval(sync, 1000);
+timer = setInterval(sync, 1000);
 window.addEventListener("storage", sync);

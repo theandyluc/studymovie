@@ -21,6 +21,13 @@
 
 ## Session log
 
+### Session 33 — DEBUG D-01: auth-bridge "Extension context invalidated" (2026-07-01)
+- **Bug:** console tab web văng liên tục "Uncaught Error: Extension context invalidated" tại auth-bridge khi reload extension (chrome://extensions → Reload) mà KHÔNG refresh tab. Fire ~1s/lần.
+- **Root cause:** khi context cũ vô hiệu, `chrome.runtime.sendMessage()` NÉM LỖI ĐỒNG BỘ (không phải promise-reject) → `.catch()` async không bắt được → `setInterval(sync,1000)` văng uncaught mãi.
+- **Fix (CHỈ extension/src/content/auth-bridge.ts):** thêm `timer` handle + `stop()` (clearInterval + removeEventListener 'storage'); `contextAlive()` qua `chrome.runtime?.id`; đầu `sync()` nếu context chết → stop()+return; bọc sendMessage try/catch ĐỒNG BỘ → catch → stop(). GIỮ `.catch(()=>{})` cho case background ngủ. KHÔNG đổi giao thức (type 'SM_AUTH', extractSession).
+- **Verification (AC-3):** ext typecheck sạch + lint No issues + build OK (auth-bridge.js 1.4kb); init.sh exit 0. AC-1 (reload ext không văng uncaught) + AC-2 (login/logout web vẫn đồng bộ sang popup sau khi refresh tab) = Homeowner test trên Chrome.
+- **Commit:** fix(ext): D-01 stop auth-bridge poll khi extension context invalidated.
+
 ### Session 32 — TIP-028 Polish: countdown thanh toán + Tắt StudyMovie + leaderboard top5 (2026-06-30)
 - **TIP/Feature:** TIP-028 — POLISH-01. 3 hạng mục ĐỘC LẬP, KHÔNG migration. TIP tính năng CUỐI trước QA.
 - **A — countdown thanh toán** (app/thanh-toan): state secondsLeft=300 (QR_TTL, reset mỗi tạo đơn) + expired; setInterval 1s giảm (dừng khi paid/order null/expired/unmount); 'Mã QR hết hạn sau MM:SS' dưới QR; về 0 → 'Mã QR đã hết hạn' + 'Tạo mã mới' (order=null) + dừng poll; paid→/cam-on giữ nguyên.
