@@ -7,19 +7,27 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** TIP-021→028 tính năng + **QA-01 VERIFIED** (TIP-029 sweep security/gate/review + TIP-030 smoke tự động 44/44 + Homeowner smoke browser gộp). **Việc CUỐI: INF-02** — đóng gói extension (Chrome Web Store) + `.env.example` + `HANDOVER.md` + checklist transfer ownership (GitHub+Supabase+Vercel, đổi key sang khách — Blueprint mục 9, Cách B).
+- **Giai đoạn hiện tại:** TIP-021→028 tính năng + **QA-01 VERIFIED** + **INF-04 VERIFIED** (đổi domain 2-domain: landing `studymovie.com` khách tự làm + web app `app.studymovie.com`). **Việc CUỐI: INF-02** — đóng gói extension (Chrome Web Store) + `.env.example` (vá dòng SITE_URL→app.studymovie.com) + `HANDOVER.md` + checklist transfer ownership (GitHub+Supabase+Vercel, đổi key sang khách — Blueprint mục 9, Cách B).
 - **VAI TRÒ:** Phiên chính đóng vai **CHỦ THẦU** (viết TIP, review report, gate verified); Thợ là phiên Claude Code khác thực thi. Giao TIP tuần tự.
 - **MIGRATION ĐÃ ÁP production:** 008 (get_access_status) + 009 (admin) + 010 (vocab learned_at). Bootstrap `is_admin=true` cho dokhiem562@gmail.com xong.
 - **SCOPE RESKIN ĐÃ CHỐT (từ Figma, Homeowner duyệt):** TOÀN BỘ web + extension. Gồm 3 thay đổi đảo feature verified: flashcard NÚT→**swipe**, học TẤT CẢ→**chọn từ (tick)**, extension Google-only→**+email/mật khẩu**.
 - **TASK GRAPH reskin:** ✅TIP-021 reskin web → ✅TIP-022 reskin extension → ✅TIP-023 phụ đề ext → ✅TIP-024 vocab status + form thêm từ web → ✅TIP-025 vocab search/lọc/phân trang/biểu đồ → ✅TIP-026 flashcard swipe + chọn-từ + mark-learned → ✅TIP-027 extension email/mật khẩu+đăng ký → ✅TIP-028 polish (countdown thanh toán + nút Tắt extension + leaderboard top5) → ✅QA-01 (sweep + smoke) → **INF-02 (kế tiếp — bàn giao)**.
 - **FIGMA:** ảnh export ở `C:\Users\ADMIN\OneDrive\Máy tính\Figma\` (Webapp 20 + Extension 8 + Phụ đề 7). Token hex suy từ ảnh (chưa có Dev Mode chính thức) — rà lại nếu khách đưa hex.
 - **LƯU Ý KỸ THUẬT (quan trọng):** Vercel serverless đọc body POST treo với `@hono/node-server/vercel` (Readable.toWeb deadlock). Đã fix bằng buffer rawBody trong `web/backend/api/index.ts` — **KHÔNG gỡ**. Mọi POST mới (web/extension/webhook) phụ thuộc fix này khi chạy trên Vercel.
-- **URL production:** frontend=`https://studymovie-frontend.vercel.app`, backend=`https://studymovie-backend.vercel.app`. (manifest extension đã trỏ host frontend này; build:prod đọc extension/.env.production.)
+- **URL production (INF-04):** web app=`https://app.studymovie.com` (Vercel project studymovie-frontend; apex `studymovie.com` = landing của KHÁCH, đã gỡ khỏi project), backend=`https://studymovie-backend.vercel.app` (GIỮ nguyên). Extension manifest + build:prod trỏ `app.studymovie.com`. env `NEXT_PUBLIC_SITE_URL=https://app.studymovie.com` ở CẢ 2 Vercel project (backend=CORS). Supabase Site URL + redirect + Google OAuth origin đã thêm app.studymovie.com.
 - **Blocker / cần làm:** Khách chốt UI streak "hôm nay chưa đạt" (backend đã có cờ `today_met`).
 
 ---
 
 ## Session log
+
+### Session 34 — INF-04 VERIFIED: đổi domain 2-domain app.studymovie.com (2026-07-01)
+- **Quyết định (khách chốt):** `studymovie.com` (apex) = landing page khách tự làm (không login); `app.studymovie.com` (subdomain) = web app nơi user đăng nhập & học. Backend GIỮ `studymovie-backend.vercel.app` (webhook SePay không đổi).
+- **Code (fix-forward):** TIP-032 (a0276e3, trỏ apex studymovie.com) → sửa TIP-032b (af69955, trỏ app.studymovie.com) sau khi khách làm rõ 2-domain. manifest host_permissions + auth-bridge matches + extension/.env.production.example → `https://app.studymovie.com` (giữ youtube + localhost). Kèm D-01 (auth-bridge context invalidated) + D-02 (popup /api/me 401 → về màn login thay vì hộp lỗi, phát hiện ở R-3).
+- **Homeowner Runbook (đã làm):** NhanHoa DNS thêm CNAME `app`→cname.vercel-dns.com (giữ @/www cho khách); Vercel frontend GỠ studymovie.com+www, ADD app.studymovie.com; env `NEXT_PUBLIC_SITE_URL=https://app.studymovie.com` ở frontend+backend + redeploy; Supabase Site URL + redirect `app.studymovie.com/**`; Google OAuth JS origin. Sự cố dọc đường: gõ nhầm `studymove.com` (thiếu 'i') trong Vercel → sửa; DNS negative-cache máy tính (điện thoại 4G vào được).
+- **Verify:** Chủ thầu curl server-side — app.studymovie.com HTTP 200 + SSL hợp lệ; backend CORS trả `Access-Control-Allow-Origin: https://app.studymovie.com` (origin cũ bị cắt). Homeowner runtime extension bản prod: R-2 sync ✓, R-3 logout→login ✓ (D-02), R-4 phụ đề song ngữ ✓, guard lỗi mạng ✓. Web login Google+email ✓.
+- **TREO:** (1) `/blog` vòng lặp cũ tự HẾT vì app ở subdomain (BLOG_URL=studymovie.com/blog khác host) — khách sẽ cấp URL blog thật, đặt env + redeploy là xong. (2) `.env.example` (root) dòng SITE_URL còn `studymovie.com` → vá thành `app.studymovie.com` trong TIP-031 (bước audit .env.example).
+- **Commit (push kèm session này):** TIP-032, TIP-032b, INF-04 update, D-02. (D-01 đã push trước.)
 
 ### Session 33 — DEBUG D-01: auth-bridge "Extension context invalidated" (2026-07-01)
 - **Bug:** console tab web văng liên tục "Uncaught Error: Extension context invalidated" tại auth-bridge khi reload extension (chrome://extensions → Reload) mà KHÔNG refresh tab. Fire ~1s/lần.
