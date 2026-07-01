@@ -1,4 +1,4 @@
-import { cp, mkdir, readFile, rm } from "node:fs/promises";
+import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import * as esbuild from "esbuild";
@@ -69,7 +69,19 @@ await esbuild.build({
   logLevel: "info",
 });
 
-await cp("manifest.json", "dist/manifest.json");
+// TIP-031 WI-4 — bản PROD (store): loại mọi entry chứa "localhost" khỏi host_permissions
+// và content_scripts[*].matches (Chrome Web Store không chấp nhận localhost). Bản dev GIỮ nguyên.
+const manifest = JSON.parse(await readFile("manifest.json", "utf8"));
+if (PROD) {
+  const noLocalhost = (arr) => (Array.isArray(arr) ? arr.filter((m) => !/localhost/.test(m)) : arr);
+  if (manifest.host_permissions) manifest.host_permissions = noLocalhost(manifest.host_permissions);
+  if (Array.isArray(manifest.content_scripts)) {
+    for (const cs of manifest.content_scripts) {
+      if (cs.matches) cs.matches = noLocalhost(cs.matches);
+    }
+  }
+}
+await writeFile("dist/manifest.json", JSON.stringify(manifest, null, 2));
 await cp("src/popup/popup.html", "dist/popup/popup.html");
 
 console.log("[StudyMovie] extension built → dist/ (background + content + popup)");
