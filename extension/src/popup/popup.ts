@@ -367,11 +367,107 @@ function footerNode(onSignOut: () => void): HTMLElement {
   return f;
 }
 
-function renderLogin(): void {
+// TIP-027 — Auth email/mật khẩu (bổ sung Google). Chế độ đăng nhập ↔ đăng ký.
+let authMode: "login" | "register" = "login";
+
+// Map lỗi Supabase → thông báo tiếng Việt thân thiện.
+function mapAuthError(m: string): string {
+  if (/invalid login credentials/i.test(m)) return "Email hoặc mật khẩu không đúng.";
+  if (/email not confirmed/i.test(m)) return "Email chưa được xác nhận. Vui lòng mở hộp thư và bấm link xác nhận.";
+  if (/already registered|already exists/i.test(m)) return "Email đã được đăng ký. Vui lòng đăng nhập.";
+  return m;
+}
+
+// notice: thông báo hiện ngay khi vẽ (vd sau đăng ký thành công).
+function renderLogin(notice?: { text: string; ok: boolean }): void {
+  const isReg = authMode === "register";
+
+  const msg = div("auth-msg");
+  const showMsg = (text: string, ok: boolean): void => {
+    msg.textContent = text;
+    msg.className = `auth-msg ${ok ? "ok" : "err"}`;
+    msg.style.display = "block";
+  };
+  msg.style.display = "none";
+  if (notice) showMsg(notice.text, notice.ok);
+
+  const email = document.createElement("input");
+  email.type = "email";
+  email.placeholder = "Nhập chính xác email của bạn";
+  email.className = "auth-input";
+  const pass = document.createElement("input");
+  pass.type = "password";
+  pass.placeholder = "Nhập mật khẩu";
+  pass.className = "auth-input";
+  pass.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") void onSubmit();
+  });
+
+  const submit = button(isReg ? "Tạo tài khoản" : "Đăng nhập", () => void onSubmit(), "btn");
+
+  async function onSubmit(): Promise<void> {
+    const em = email.value.trim();
+    const pw = pass.value;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) {
+      showMsg("Email không hợp lệ.", false);
+      return;
+    }
+    if (pw.length < 6) {
+      showMsg("Mật khẩu tối thiểu 6 ký tự.", false);
+      return;
+    }
+    submit.disabled = true;
+    submit.textContent = isReg ? "Đang tạo…" : "Đang đăng nhập…";
+    try {
+      if (isReg) {
+        const { data, error } = await supabaseExt.auth.signUp({ email: em, password: pw });
+        if (error) {
+          showMsg(mapAuthError(error.message), false);
+        } else if (!data.session) {
+          // Confirm email ON → chưa có session → về mode đăng nhập + báo.
+          authMode = "login";
+          renderLogin({ text: "Đã gửi email xác nhận. Vui lòng mở hộp thư và bấm link để kích hoạt.", ok: true });
+          return;
+        }
+        // (Nếu có session ngay = confirm off → onChanged listener sẽ tự render user view.)
+      } else {
+        const { error } = await supabaseExt.auth.signInWithPassword({ email: em, password: pw });
+        if (error) showMsg(mapAuthError(error.message), false);
+        // Thành công → session ghi chrome.storage → onChanged listener tự render user view.
+      }
+    } catch (e) {
+      showMsg(e instanceof Error ? e.message : String(e), false);
+    } finally {
+      submit.disabled = false;
+      submit.textContent = isReg ? "Tạo tài khoản" : "Đăng nhập";
+    }
+  }
+
+  // Link đổi mode
+  const toggle = button(
+    isReg ? "Đã có tài khoản? Đăng nhập" : "Chưa có tài khoản? Đăng ký",
+    () => {
+      authMode = isReg ? "login" : "register";
+      renderLogin();
+    },
+    "auth-link"
+  );
+
+  const divider = div("auth-divider");
+  divider.appendChild(document.createElement("span")).textContent = "hoặc";
+
+  const google = button("Đăng nhập với Google", () => openTab(SITE_URL), "btn ghost");
+
   mount(
     logoNode(),
-    div("muted", "Đăng nhập để đồng bộ tài khoản với web."),
-    button("Đăng nhập với Google", () => openTab(SITE_URL))
+    div("auth-title", isReg ? "Đăng ký tài khoản" : "Đăng nhập"),
+    email,
+    pass,
+    submit,
+    msg,
+    toggle,
+    divider,
+    google
   );
 }
 

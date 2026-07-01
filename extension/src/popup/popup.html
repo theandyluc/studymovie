@@ -86,6 +86,18 @@
       .step-btn { width: 28px; height: 28px; border: 1px solid var(--border); background: var(--surface); border-radius: var(--radius-btn); font-size: 16px; font-weight: 600; cursor: pointer; color: var(--fg); line-height: 1; }
       .step-btn:hover:not(:disabled) { background: var(--surface-muted); }
       .step-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+      /* Auth email/mật khẩu (TIP-027) */
+      .auth-title { font-size: 18px; font-weight: 700; text-align: center; margin: 4px 0 10px; }
+      .auth-input { width: 100%; border: 1px solid var(--border); border-radius: var(--radius-btn); padding: 10px 12px; font-size: 14px; margin-bottom: 8px; color: var(--fg); background: var(--surface); }
+      .auth-input:focus { outline: 2px solid var(--primary); outline-offset: -1px; }
+      .auth-msg { font-size: 13px; margin: 8px 0; padding: 8px 10px; border-radius: var(--radius-btn); }
+      .auth-msg.err { color: var(--danger); background: #fee2e2; }
+      .auth-msg.ok { color: var(--success); background: #dcfce7; }
+      .auth-link { width: auto; margin: 6px auto 0; padding: 4px; display: block; background: none; border: 0; color: var(--muted); font-size: 13px; cursor: pointer; }
+      .auth-link:hover { color: var(--fg); background: none; }
+      .auth-divider { display: flex; align-items: center; text-align: center; color: var(--muted); font-size: 12px; margin: 12px 0 8px; }
+      .auth-divider::before, .auth-divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+      .auth-divider span { padding: 0 10px; }
       /* Footer: Đăng xuất / Hỗ trợ */
       .footer { display: flex; justify-content: center; gap: 18px; padding-top: 10px; margin-top: 4px; border-top: 1px solid var(--border); }
       .footer-link { width: auto; margin: 0; padding: 4px 6px; background: none; border: 0; color: var(--muted); font-size: 13px; font-weight: 500; cursor: pointer; }

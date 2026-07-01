@@ -7,11 +7,11 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** TIP-021→026 VERIFIED (reskin web+ext, phụ đề ext, vocab status/form/search/lọc/phân trang/biểu đồ, flashcard swipe+chọn-từ+mark-learned). **Đang giao TIP-027** (extension email/mật khẩu + đăng ký — ĐẢO QĐ Google-only, Homeowner duyệt).
+- **Giai đoạn hiện tại:** TIP-027 extension email/mật khẩu (EXT-AUTH2) **done (self-tested AC-8 build+security), CHỜ HOMEOWNER** bật Supabase Email provider + Confirm email + Redirect URLs, rồi test Chrome. TIP-021→026 VERIFIED.
 - **VAI TRÒ:** Phiên chính đóng vai **CHỦ THẦU** (viết TIP, review report, gate verified); Thợ là phiên Claude Code khác thực thi. Giao TIP tuần tự.
 - **MIGRATION ĐÃ ÁP production:** 008 (get_access_status) + 009 (admin) + 010 (vocab learned_at). Bootstrap `is_admin=true` cho dokhiem562@gmail.com xong.
 - **SCOPE RESKIN ĐÃ CHỐT (từ Figma, Homeowner duyệt):** TOÀN BỘ web + extension. Gồm 3 thay đổi đảo feature verified: flashcard NÚT→**swipe**, học TẤT CẢ→**chọn từ (tick)**, extension Google-only→**+email/mật khẩu**.
-- **TASK GRAPH reskin:** ✅TIP-021 reskin web → ✅TIP-022 reskin extension → ✅TIP-023 phụ đề ext → ✅TIP-024 vocab status + form thêm từ web → ✅TIP-025 vocab search/lọc/phân trang/biểu đồ → ✅TIP-026 flashcard swipe + chọn-từ + mark-learned → **TIP-027 extension email/mật khẩu+đăng ký (đang giao)** → TIP-028 polish (countdown thanh toán + nút Tắt extension + leaderboard top5) → QA-01 → INF-02.
+- **TASK GRAPH reskin:** ✅TIP-021 reskin web → ✅TIP-022 reskin extension → ✅TIP-023 phụ đề ext → ✅TIP-024 vocab status + form thêm từ web → ✅TIP-025 vocab search/lọc/phân trang/biểu đồ → ✅TIP-026 flashcard swipe + chọn-từ + mark-learned → **✅TIP-027 extension email/mật khẩu+đăng ký (chờ verify)** → TIP-028 polish (countdown thanh toán + nút Tắt extension + leaderboard top5) → QA-01 → INF-02.
 - **FIGMA:** ảnh export ở `C:\Users\ADMIN\OneDrive\Máy tính\Figma\` (Webapp 20 + Extension 8 + Phụ đề 7). Token hex suy từ ảnh (chưa có Dev Mode chính thức) — rà lại nếu khách đưa hex.
 - **LƯU Ý KỸ THUẬT (quan trọng):** Vercel serverless đọc body POST treo với `@hono/node-server/vercel` (Readable.toWeb deadlock). Đã fix bằng buffer rawBody trong `web/backend/api/index.ts` — **KHÔNG gỡ**. Mọi POST mới (web/extension/webhook) phụ thuộc fix này khi chạy trên Vercel.
 - **URL production:** frontend=`https://studymovie-frontend.vercel.app`, backend=`https://studymovie-backend.vercel.app`. (manifest extension đã trỏ host frontend này; build:prod đọc extension/.env.production.)
@@ -20,6 +20,17 @@
 ---
 
 ## Session log
+
+### Session 31 — TIP-027 Extension đăng nhập/đăng ký email+mật khẩu (2026-06-30)
+- **TIP/Feature:** TIP-027 — EXT-AUTH2. ĐẢO QĐ Google-only → THÊM email/mật khẩu (CÓ xác nhận email). CHỈ sửa popup (popup.ts renderLogin + popup.html CSS; KHÔNG đụng auth-bridge/service-worker/apiExt/supabaseExt/settings).
+- **Đã làm:**
+  - `renderLogin(notice?)` mới: authMode login↔register; ô email + mật khẩu + submit 'Đăng nhập'/'Tạo tài khoản' + link đổi mode + phân cách 'hoặc' + nút Google (giữ openTab(SITE_URL)) + auth-msg (ok/err).
+  - Đăng nhập: `supabaseExt.auth.signInWithPassword` → session ghi chrome.storage → onChanged listener tự render user view (không tự render). Đăng ký: `signUp`; confirm ON → !session → về mode login + báo 'Đã gửi email xác nhận…'.
+  - Validate client: email regex + mật khẩu ≥6. mapAuthError (Invalid credentials/Email not confirmed/already registered → tiếng Việt). CSS auth-input/title/msg/divider/link.
+- **Verification (AC-8):** init.sh exit 0; ext build OK (popup.js 772k); **SECURITY: KEY service_role thật KHÔNG có trong dist** (17 match chỉ là chuỗi cảnh báo lib supabase-js), anon key inline OK.
+- **CHỜ HOMEOWNER (Supabase TRƯỚC test):** Authentication→Providers→Email: bật + Confirm email ON; URL Configuration→Redirect URLs: thêm SITE_URL (localhost:3000 + Vercel prod). Rồi test Chrome AC-1..7 (form, đăng ký email thật→mail xác nhận→đăng nhập→user view, sai mật khẩu, Google mở web, đăng xuất về form).
+- **Lưu ý:** bật Email provider dùng chung Supabase với web — web chưa có form email nên không đổi (vẫn Google), đúng scope.
+- **Commit:** feat(ext): TIP-027 email/password auth in popup.
 
 ### Session 30 — TIP-026 Flashcard swipe + học từ đã chọn + mark-learned (2026-06-30)
 - **TIP/Feature:** TIP-026 — WEB-FLASH2. ĐẢO QĐ cũ (Homeowner duyệt): flashcard NÚT→SWIPE, học TẤT CẢ→thêm chọn-từ. backend endpoint + frontend (KHÔNG migration).
