@@ -1,13 +1,25 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PageLoading } from "@/components/ui/Spinner";
 import { fetchVocab, buildQuiz, quizableItems, type QuizDirection, type QuizQuestion } from "@/lib/vocabulary";
 
-// WEB-05 / TIP-019a — Quiz 2 chiều dùng chung. `direction` truyền qua prop (route VN cố định
-// /kiem-tra-anh-viet=en2vi, /kiem-tra-viet-anh=vi2en). KHÔNG nhân đôi code (1 component).
+function speak(text: string): void {
+  try {
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "en-US";
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+  } catch {
+    /* ignore */
+  }
+}
+
+// WEB-05 / TIP-019a / TIP-033 — Quiz 2 chiều dùng chung (Figma: thẻ hỏi dọc bên trái,
+// 4 đáp án bên phải, tự sang câu sau khi chọn, menu ≡ dưới). direction qua prop.
 export function QuizGame({ direction }: { direction: QuizDirection }) {
   const [questions, setQuestions] = useState<QuizQuestion[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -16,6 +28,8 @@ export function QuizGame({ direction }: { direction: QuizDirection }) {
   const [selected, setSelected] = useState<number | null>(null);
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     fetchVocab()
@@ -28,6 +42,10 @@ export function QuizGame({ direction }: { direction: QuizDirection }) {
       })
       .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
   }, [direction]);
+
+  useEffect(() => () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+  }, []);
 
   if (error) return <Card><p className="text-sm text-red-600">Lỗi: {error}</p></Card>;
 
@@ -47,7 +65,7 @@ export function QuizGame({ direction }: { direction: QuizDirection }) {
 
   if (done) {
     return (
-      <Card className="text-center">
+      <Card className="mx-auto max-w-sm text-center">
         <h1 className="font-heading text-xl font-bold">Kết quả</h1>
         <p className="mt-2 text-3xl font-bold text-primary">
           {score}/{questions.length}
@@ -76,36 +94,32 @@ export function QuizGame({ direction }: { direction: QuizDirection }) {
     if (selected !== null) return;
     setSelected(i);
     if (i === q.answerIndex) setScore((s) => s + 1);
-  };
-  const next = () => {
-    if (idx + 1 >= questions.length) {
-      setDone(true);
-    } else {
-      setIdx((i) => i + 1);
+    // Figma: không có nút "Câu tiếp" → tự sang câu sau khi hiện đúng/sai.
+    timerRef.current = setTimeout(() => {
       setSelected(null);
-    }
+      if (idx + 1 >= questions.length) setDone(true);
+      else setIdx(idx + 1);
+    }, 1300);
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <Link href="/tu-vung" className="text-sm text-muted-foreground hover:text-foreground">
-          ← Từ vựng
-        </Link>
-        <span className="text-sm text-muted-foreground">
-          {direction === "en2vi" ? "EN → VI" : "VI → EN"} · Câu {idx + 1}/{questions.length} · Điểm {score}
-        </span>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        {/* Card hỏi (Figma: thẻ trắng bo góc, từ đậm + chấm đen góc dưới) */}
-        <Card className="relative flex min-h-[200px] items-center justify-center">
-          <p className="text-center text-2xl font-bold">{q.prompt}</p>
+    <div className="flex flex-col items-center gap-6 py-6">
+      <div className="grid w-full max-w-3xl items-center gap-6 md:grid-cols-2">
+        {/* Thẻ hỏi (Figma: dọc, chữ trên-trái + loa nếu là từ tiếng Anh, chấm đen góc dưới) */}
+        <div className="relative flex min-h-[300px] flex-col rounded-card border border-border bg-surface p-6 shadow-card">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl font-bold">{q.prompt}</span>
+            {direction === "en2vi" ? (
+              <button onClick={() => speak(q.prompt)} className="text-lg" aria-label="Phát âm">
+                🔊
+              </button>
+            ) : null}
+          </div>
           <span className="absolute bottom-4 right-4 h-3 w-3 rounded-full bg-foreground" aria-hidden />
-        </Card>
+        </div>
 
-        {/* 4 đáp án: trắng mặc định, đúng=success, sai-chọn=danger */}
-        <div className="flex flex-col justify-center gap-2">
+        {/* 4 đáp án: trắng mặc định → đúng=xanh lá, sai-chọn=hồng */}
+        <div className="flex flex-col justify-center gap-3">
           {q.options.map((opt, i) => {
             let cls = "border-border bg-surface hover:bg-surface-muted";
             if (selected !== null) {
@@ -118,18 +132,47 @@ export function QuizGame({ direction }: { direction: QuizDirection }) {
                 key={i}
                 onClick={() => pick(i)}
                 disabled={selected !== null}
-                className={`w-full rounded-btn border px-4 py-3 text-center text-sm font-medium transition-colors ${cls}`}
+                className={`w-full rounded-card border px-4 py-4 text-center text-sm font-medium transition-colors ${cls}`}
               >
                 {opt}
               </button>
             );
           })}
-          {selected !== null ? (
-            <Button className="mt-2 w-full" onClick={next}>
-              {idx + 1 >= questions.length ? "Xem kết quả" : "Câu tiếp →"}
-            </Button>
-          ) : null}
         </div>
+      </div>
+
+      {/* ≡ menu chuyển Học từ vựng / Kiểm tra Anh-Việt / Kiểm tra Việt-Anh */}
+      <div className="relative flex justify-center">
+        <button
+          onClick={() => setMenuOpen((o) => !o)}
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-border bg-surface text-lg shadow-card hover:bg-surface-muted"
+          title="Menu"
+        >
+          ≡
+        </button>
+        {menuOpen ? (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} aria-hidden />
+            <div className="absolute bottom-14 z-50 w-56 overflow-hidden rounded-card bg-primary py-1 text-primary-foreground shadow-lg">
+              {[
+                { href: "/kiem-tra-anh-viet", label: "Kiểm tra Anh-Việt" },
+                { href: "/hoc-tu-vung", label: "Học từ vựng" },
+                { href: "/kiem-tra-viet-anh", label: "Kiểm tra Việt-Anh" },
+              ].map((m) => (
+                <Link
+                  key={m.href}
+                  href={m.href}
+                  onClick={() => setMenuOpen(false)}
+                  className="block px-4 py-2.5 text-center text-sm hover:bg-white/10"
+                >
+                  {m.label}
+                </Link>
+              ))}
+            </div>
+          </>
+        ) : null}
       </div>
     </div>
   );
