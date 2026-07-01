@@ -3,63 +3,18 @@ import { useCallback, useEffect, useState } from "react";
 import { AuthGuard } from "@/components/AuthGuard";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { CircleStat } from "@/components/ui/CircleStat";
 import { PageLoading } from "@/components/ui/Spinner";
-import { fetchDashboard, type Dashboard, type DayPoint } from "@/lib/account";
+import { fetchDashboard, type Dashboard } from "@/lib/account";
 import { fetchLevel, setLevel, LEVELS, type LevelProgress } from "@/lib/level";
 import { WeeklyPlanTable } from "@/components/WeeklyPlan";
+import { LeaderboardCard } from "@/components/LeaderboardCard";
 
-// Biểu đồ cột bằng div (không thêm thư viện chart — gọn, dễ reskin).
-function BarChart({ data }: { data: DayPoint[] }) {
-  const max = Math.max(1, ...data.map((d) => d.minutes));
-  // Theo Figma: cột nền xám, cột cao nhất (>0) tô xanh highlight.
-  return (
-    <div className="flex h-40 items-end gap-1 overflow-x-auto">
-      {data.map((d) => {
-        const peak = d.minutes === max && d.minutes > 0;
-        return (
-          <div key={d.date} className="flex min-w-[14px] flex-1 flex-col items-center gap-1" title={`${d.date}: ${d.minutes} phút`}>
-            <div className="flex w-full flex-1 items-end">
-              <div
-                className={`w-full rounded-t ${peak ? "bg-chart-bar" : "bg-chart-base"}`}
-                style={{ height: `${(d.minutes / max) * 100}%`, minHeight: d.minutes > 0 ? "3px" : "0" }}
-              />
-            </div>
-            <span className="text-[9px] text-muted-foreground">{d.date.slice(5)}</span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-// Vòng tròn tiến độ (SVG) — % giờ đã học / giờ mục tiêu.
-function ProgressRing({ percent, center }: { percent: number; center: string }) {
-  const r = 42;
-  const circ = 2 * Math.PI * r;
-  const p = Math.min(100, Math.max(0, percent));
-  const off = circ * (1 - p / 100);
-  return (
-    <div className="relative h-28 w-28">
-      <svg viewBox="0 0 100 100" className="h-28 w-28 -rotate-90">
-        <circle cx="50" cy="50" r={r} fill="none" strokeWidth="9" className="stroke-chart-base" />
-        <circle
-          cx="50"
-          cy="50"
-          r={r}
-          fill="none"
-          strokeWidth="9"
-          strokeLinecap="round"
-          className="stroke-level-ring"
-          strokeDasharray={circ}
-          strokeDashoffset={off}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-xl font-bold">{center}</span>
-        <span className="text-xs text-muted-foreground">{Math.round(p)}%</span>
-      </div>
-    </div>
-  );
+// TIP-033 — format tổng phút → "12h30m" (theo Figma).
+function fmtStudy(min: number): string {
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return h > 0 ? `${h}h${m.toString().padStart(2, "0")}m` : `${m}m`;
 }
 
 // Form chọn level (dùng cho nhập lần đầu + đổi level).
@@ -100,8 +55,8 @@ function LevelPicker({
   );
 }
 
-// Section Level: 2 card (Level hiện tại + Mục tiêu tiếp theo) + nhập lần đầu + thông báo lên cấp.
-function LevelSection() {
+// Card Level (Figma): 1 card, 2 vòng tròn — Level hiện tại (ring trơn) + Mục tiêu (ring cung tím).
+function LevelCard() {
   const [lv, setLv] = useState<LevelProgress | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -137,84 +92,71 @@ function LevelSection() {
   if (err) return <Card><p className="text-sm text-red-600">Không tải được level: {err}</p></Card>;
   if (!lv) return <Card><p className="text-sm text-muted-foreground">Đang tải level…</p></Card>;
 
-  const congratsBanner = congrats ? (
-    <div className="flex items-center justify-between rounded-card border border-primary bg-primary/10 px-4 py-3">
-      <p className="text-sm font-medium">🎉 Chúc mừng! Bạn đã lên cấp {congrats}.</p>
-      <button onClick={() => setCongrats(null)} className="text-sm text-muted-foreground hover:text-foreground">
-        ✕
-      </button>
-    </div>
-  ) : null;
-
-  // Chưa nhập level → 1 card cho chọn.
+  // Chưa nhập level → card cho chọn.
   if (lv.needs_input) {
     return (
-      <div className="space-y-4">
-        {congratsBanner}
-        <Card>
-          <p className="text-sm text-muted-foreground">Level hiện tại</p>
-          <p className="mt-1 text-sm">Chọn trình độ tiếng Anh hiện tại của bạn (A0–C2) để theo dõi mục tiêu.</p>
-          <LevelPicker initial="A1" saving={saving} onSave={save} />
-        </Card>
-      </div>
+      <Card>
+        <p className="text-sm text-muted-foreground">Level hiện tại</p>
+        <p className="mt-1 text-sm">Chọn trình độ tiếng Anh hiện tại của bạn (A0–C2) để theo dõi mục tiêu.</p>
+        <LevelPicker initial="A1" saving={saving} onSave={save} />
+      </Card>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {congratsBanner}
-      <div className="grid gap-4 sm:grid-cols-2">
-        {/* Card Level hiện tại */}
-        <Card>
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">Level hiện tại</p>
-            {!editing ? (
-              <button onClick={() => setEditing(true)} className="text-xs text-muted-foreground hover:text-foreground">
-                Đổi level
-              </button>
-            ) : null}
-          </div>
-          {editing ? (
-            <LevelPicker initial={lv.current_level ?? "A1"} saving={saving} onSave={save} onCancel={() => setEditing(false)} />
-          ) : (
-            <p className="mt-1 text-4xl font-bold">{lv.current_level}</p>
-          )}
-        </Card>
+    <Card>
+      {congrats ? (
+        <div className="mb-3 flex items-center justify-between rounded-btn border border-primary bg-primary/10 px-3 py-2">
+          <p className="text-sm font-medium">🎉 Chúc mừng! Bạn đã lên cấp {congrats}.</p>
+          <button onClick={() => setCongrats(null)} className="text-muted-foreground hover:text-foreground">
+            ✕
+          </button>
+        </div>
+      ) : null}
 
-        {/* Card Mục tiêu tiếp theo */}
-        <Card className="flex items-center gap-4">
-          {lv.is_max ? (
-            <div>
-              <p className="text-sm text-muted-foreground">Mục tiêu tiếp theo</p>
-              <p className="mt-1 text-lg font-semibold">🏆 Đã đạt cấp cao nhất (C2)</p>
-            </div>
-          ) : (
-            <>
-              <div
-                title={`Số giờ mục tiêu: ${lv.target_hours}h / Số giờ còn lại: ${lv.remaining_hours}h`}
-              >
-                <ProgressRing percent={lv.percent ?? 0} center={lv.target_level ?? ""} />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Mục tiêu tiếp theo</p>
-                <p className="mt-1 text-2xl font-bold">{lv.target_level}</p>
-                <p className="mt-1 text-sm text-muted-foreground">
+      {editing ? (
+        <div>
+          <p className="text-sm text-muted-foreground">Đổi level hiện tại</p>
+          <LevelPicker initial={lv.current_level ?? "A1"} saving={saving} onSave={save} onCancel={() => setEditing(false)} />
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 items-start gap-4">
+          {/* Level hiện tại */}
+          <div className="flex flex-col items-center gap-1">
+            <CircleStat value={lv.current_level ?? "—"} label="Level hiện tại" />
+            <button onClick={() => setEditing(true)} className="text-xs text-muted-foreground hover:text-foreground">
+              Đổi level
+            </button>
+          </div>
+
+          {/* Mục tiêu tiếp theo */}
+          <div className="flex flex-col items-center gap-1">
+            {lv.is_max ? (
+              <>
+                <span className="text-sm text-muted-foreground">Mục tiêu tiếp theo</span>
+                <div className="flex h-[104px] items-center px-2 text-center text-base font-semibold">
+                  🏆 Đã đạt cấp cao nhất (C2)
+                </div>
+              </>
+            ) : (
+              <>
+                <CircleStat value={lv.target_level ?? "—"} label="Mục tiêu tiếp theo" percent={lv.percent ?? 0} />
+                <p className="text-sm text-muted-foreground">
                   {lv.studied_hours}h / {lv.target_hours}h
                 </p>
-                <p className="text-sm text-muted-foreground">Còn lại {lv.remaining_hours}h</p>
-              </div>
-            </>
-          )}
-        </Card>
-      </div>
-    </div>
+                <p className="text-xs text-muted-foreground">Còn lại {lv.remaining_hours}h</p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </Card>
   );
 }
 
 function DashboardInner() {
   const [data, setData] = useState<Dashboard | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [range, setRange] = useState<"week" | "month">("week");
 
   useEffect(() => {
     fetchDashboard()
@@ -225,68 +167,32 @@ function DashboardInner() {
   if (error) return <Card><p className="text-sm text-red-600">Không tải được dashboard: {error}</p></Card>;
   if (!data) return <PageLoading label="Đang tải dashboard…" />;
 
-  const goal = data.daily_commit_minutes || 30;
-  const pct = Math.min(100, Math.round((data.today_minutes / goal) * 100));
-  const points = range === "week" ? data.week : data.month;
-
   return (
     <div className="space-y-4">
-      <h1 className="font-heading text-2xl font-bold">Dashboard</h1>
+      <h1 className="font-heading text-2xl font-bold">Tiến độ học</h1>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card className="flex items-center gap-4">
-          <span className={`text-4xl ${data.today_met ? "" : "grayscale opacity-50"}`} aria-hidden>
-            🔥
-          </span>
-          <div>
-            <p className="text-3xl font-bold">{data.streak}</p>
-            <p className="text-sm text-muted-foreground">
-              ngày streak {data.today_met ? "· hôm nay đã đạt" : "· hôm nay chưa đạt"}
-            </p>
-          </div>
-        </Card>
-
+      {/* Hàng 1: 3 vòng stat | Level */}
+      <div className="grid gap-4 lg:grid-cols-2">
         <Card>
-          <p className="text-sm text-muted-foreground">Hôm nay</p>
-          <p className="mt-1 font-medium">
-            {data.today_minutes} / {goal} phút
-          </p>
-          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-surface-muted">
-            <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
+          <div className="grid grid-cols-3 gap-2">
+            <CircleStat label="Thời gian đã học" value={fmtStudy(data.total_minutes ?? 0)} />
+            <CircleStat label="Từ vựng đã học" value={String(data.vocab_learned ?? 0)} />
+            <CircleStat label="Số ngày liên tiếp" value={String(data.streak)} />
           </div>
         </Card>
+
+        <LevelCard />
       </div>
 
-      <LevelSection />
-
-      <Card>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-medium">Giờ học theo ngày (phút)</h2>
-          <div className="flex gap-1">
-            <button
-              onClick={() => setRange("week")}
-              className={`rounded-btn px-3 py-1 text-sm ${range === "week" ? "bg-primary text-primary-foreground" : "border border-border"}`}
-            >
-              Tuần
-            </button>
-            <button
-              onClick={() => setRange("month")}
-              className={`rounded-btn px-3 py-1 text-sm ${range === "month" ? "bg-primary text-primary-foreground" : "border border-border"}`}
-            >
-              Tháng
-            </button>
-          </div>
+      {/* Hàng 2: Kế hoạch tuần | Bảng xếp hạng */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <WeeklyPlanTable />
         </div>
-        {points.some((d) => d.minutes > 0) ? (
-          <BarChart data={points} />
-        ) : (
-          <p className="py-8 text-center text-sm text-muted-foreground">
-            Chưa có dữ liệu giờ học. Hãy học qua extension (timer) để thấy biểu đồ.
-          </p>
-        )}
-      </Card>
-
-      <WeeklyPlanTable />
+        <div className="lg:col-span-1">
+          <LeaderboardCard />
+        </div>
+      </div>
     </div>
   );
 }

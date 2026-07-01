@@ -12,6 +12,8 @@ export interface Dashboard {
   daily_commit_minutes: number;
   week: DayPoint[];
   month: DayPoint[];
+  total_minutes?: number; // TIP-033 (có sau khi áp migration 011; fallback 0 nếu chưa)
+  vocab_learned?: number; // TIP-033
 }
 
 export interface LeaderRow {

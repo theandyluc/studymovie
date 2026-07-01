@@ -200,6 +200,10 @@ export function WeeklyPlanTable() {
               )}
             </tbody>
           </table>
+          {/* TIP-033 — quote động viên (theo Figma) */}
+          <p className="mt-3 text-center text-xs italic text-muted-foreground">
+            “Bạn sẽ thành công thôi, bởi vì hầu hết mọi người đều rất lười.” — Shahir Zag
+          </p>
         </div>
       )}
 
