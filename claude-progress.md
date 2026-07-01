@@ -7,11 +7,11 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** TIP-026 flashcard swipe + chọn-từ + mark-learned (WEB-FLASH2) **done (self-tested AC-8), CHỜ HOMEOWNER** test web. TIP-021→025 VERIFIED. (endpoint mark-learned mới, KHÔNG migration.)
+- **Giai đoạn hiện tại:** TIP-021→026 VERIFIED (reskin web+ext, phụ đề ext, vocab status/form/search/lọc/phân trang/biểu đồ, flashcard swipe+chọn-từ+mark-learned). **Đang giao TIP-027** (extension email/mật khẩu + đăng ký — ĐẢO QĐ Google-only, Homeowner duyệt).
 - **VAI TRÒ:** Phiên chính đóng vai **CHỦ THẦU** (viết TIP, review report, gate verified); Thợ là phiên Claude Code khác thực thi. Giao TIP tuần tự.
 - **MIGRATION ĐÃ ÁP production:** 008 (get_access_status) + 009 (admin) + 010 (vocab learned_at). Bootstrap `is_admin=true` cho dokhiem562@gmail.com xong.
 - **SCOPE RESKIN ĐÃ CHỐT (từ Figma, Homeowner duyệt):** TOÀN BỘ web + extension. Gồm 3 thay đổi đảo feature verified: flashcard NÚT→**swipe**, học TẤT CẢ→**chọn từ (tick)**, extension Google-only→**+email/mật khẩu**.
-- **TASK GRAPH reskin:** ✅TIP-021 reskin web → ✅TIP-022 reskin extension → ✅TIP-023 phụ đề ext → ✅TIP-024 vocab status + form thêm từ web → ✅TIP-025 vocab search/lọc/phân trang/biểu đồ → **✅TIP-026 flashcard swipe + chọn-từ + mark-learned (chờ verify)** → TIP-027 extension email/mật khẩu+đăng ký → TIP-028 polish (countdown thanh toán + nút Tắt extension + leaderboard top5) → QA-01 → INF-02.
+- **TASK GRAPH reskin:** ✅TIP-021 reskin web → ✅TIP-022 reskin extension → ✅TIP-023 phụ đề ext → ✅TIP-024 vocab status + form thêm từ web → ✅TIP-025 vocab search/lọc/phân trang/biểu đồ → ✅TIP-026 flashcard swipe + chọn-từ + mark-learned → **TIP-027 extension email/mật khẩu+đăng ký (đang giao)** → TIP-028 polish (countdown thanh toán + nút Tắt extension + leaderboard top5) → QA-01 → INF-02.
 - **FIGMA:** ảnh export ở `C:\Users\ADMIN\OneDrive\Máy tính\Figma\` (Webapp 20 + Extension 8 + Phụ đề 7). Token hex suy từ ảnh (chưa có Dev Mode chính thức) — rà lại nếu khách đưa hex.
 - **LƯU Ý KỸ THUẬT (quan trọng):** Vercel serverless đọc body POST treo với `@hono/node-server/vercel` (Readable.toWeb deadlock). Đã fix bằng buffer rawBody trong `web/backend/api/index.ts` — **KHÔNG gỡ**. Mọi POST mới (web/extension/webhook) phụ thuộc fix này khi chạy trên Vercel.
 - **URL production:** frontend=`https://studymovie-frontend.vercel.app`, backend=`https://studymovie-backend.vercel.app`. (manifest extension đã trỏ host frontend này; build:prod đọc extension/.env.production.)
