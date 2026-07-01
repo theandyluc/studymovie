@@ -224,16 +224,38 @@ function Flashcards() {
         </div>
       ) : null}
 
-      {/* Thẻ chính */}
-      <div
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
-        style={cardStyle}
-        className="cursor-grab select-none active:cursor-grabbing"
-      >
-        {renderCard(false)}
+      {/* Thẻ chính + nút ‹ › HIỆN KHI HOVER (giữ UI sạch lúc nghỉ; mobile dùng swipe) */}
+      <div className="group relative">
+        {idx > 0 ? (
+          <button
+            onClick={() => go(-1)}
+            aria-label="Thẻ trước"
+            className="absolute -left-12 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface text-lg opacity-0 shadow-card transition-opacity hover:bg-surface-muted group-hover:opacity-100 sm:flex"
+          >
+            ‹
+          </button>
+        ) : null}
+
+        <div
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+          style={cardStyle}
+          className="cursor-grab select-none active:cursor-grabbing"
+        >
+          {renderCard(false)}
+        </div>
+
+        {idx < items.length - 1 ? (
+          <button
+            onClick={() => go(1)}
+            aria-label="Thẻ tiếp theo"
+            className="absolute -right-12 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface text-lg opacity-0 shadow-card transition-opacity hover:bg-surface-muted group-hover:opacity-100 sm:flex"
+          >
+            ›
+          </button>
+        ) : null}
       </div>
 
       {/* ≡ menu chuyển Học từ vựng / Kiểm tra Anh-Việt / Kiểm tra Việt-Anh */}
