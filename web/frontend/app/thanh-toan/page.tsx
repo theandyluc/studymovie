@@ -9,7 +9,9 @@ import { fetchAccessStatus, type AccessStatus } from "@/lib/access";
 import { PageLoading } from "@/components/ui/Spinner";
 
 const POLL_MS = 4000; // poll trạng thái đơn mỗi 4s
+const QR_TTL = 300; // TIP-028: đồng hồ đếm ngược 5:00 (cosmetic, KHÔNG huỷ đơn server)
 const VND = (n: number) => n.toLocaleString("vi-VN") + "đ";
+const fmtMMSS = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
 // WEB-08/BE-05 — Trang nâng cấp Pro: tạo đơn → QR VietQR + thông tin CK → poll tới khi paid.
 function UpgradeInner() {
@@ -18,6 +20,8 @@ function UpgradeInner() {
   const [err, setErr] = useState<string | null>(null);
   const [paid, setPaid] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [secondsLeft, setSecondsLeft] = useState(QR_TTL); // TIP-028 countdown
+  const [expired, setExpired] = useState(false);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const router = useRouter();
   // Pro guard (TIP-019b): user đã trả tiền → không cho tạo đơn mới.
@@ -60,6 +64,8 @@ function UpgradeInner() {
     try {
       const o = await createOrder();
       setOrder(o);
+      setSecondsLeft(QR_TTL); // reset đồng hồ mỗi lần tạo đơn mới
+      setExpired(false);
     } catch {
       setErr("Không tạo được đơn. Vui lòng thử lại.");
     } finally {
@@ -67,13 +73,29 @@ function UpgradeInner() {
     }
   };
 
-  // Bắt đầu poll khi có đơn (và chưa paid).
+  // Bắt đầu poll khi có đơn (chưa paid, chưa hết hạn).
   useEffect(() => {
-    if (!order || paid) return;
+    if (!order || paid || expired) return;
     void checkStatus(order.code);
     timer.current = setInterval(() => void checkStatus(order.code), POLL_MS);
     return stopPoll;
-  }, [order, paid, checkStatus, stopPoll]);
+  }, [order, paid, expired, checkStatus, stopPoll]);
+
+  // TIP-028 — đồng hồ đếm ngược 5:00 khi đang chờ; về 0 → hết hạn (dừng poll).
+  useEffect(() => {
+    if (!order || paid || expired) return;
+    const iv = setInterval(() => {
+      setSecondsLeft((s) => {
+        if (s <= 1) {
+          setExpired(true);
+          stopPoll();
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+    return () => clearInterval(iv);
+  }, [order, paid, expired, stopPoll]);
 
   const copyContent = async () => {
     if (!order) return;
@@ -172,12 +194,31 @@ function UpgradeInner() {
             </div>
           </dl>
 
-          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-            <Spinner /> Đang chờ thanh toán… (tự động cập nhật sau khi chuyển khoản)
-          </div>
-          <Button variant="ghost" className="w-full" onClick={() => void checkStatus(order.code)}>
-            Tôi đã chuyển khoản — kiểm tra lại
-          </Button>
+          {expired ? (
+            <div className="space-y-2 text-center">
+              <p className="text-sm font-medium text-red-600">Mã QR đã hết hạn</p>
+              <Button
+                className="w-full"
+                onClick={() => {
+                  setOrder(null); // về màn tạo đơn để bấm 'Mua Pro' lại
+                }}
+              >
+                Tạo mã mới
+              </Button>
+            </div>
+          ) : (
+            <>
+              <p className="text-center text-sm text-muted-foreground">
+                Mã QR hết hạn sau <span className="font-mono font-semibold text-foreground">{fmtMMSS(secondsLeft)}</span>
+              </p>
+              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                <Spinner /> Đang chờ thanh toán… (tự động cập nhật sau khi chuyển khoản)
+              </div>
+              <Button variant="ghost" className="w-full" onClick={() => void checkStatus(order.code)}>
+                Tôi đã chuyển khoản — kiểm tra lại
+              </Button>
+            </>
+          )}
         </Card>
       )}
     </div>

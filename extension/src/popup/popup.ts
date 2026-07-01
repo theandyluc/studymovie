@@ -357,13 +357,33 @@ function logoNode(): HTMLElement {
   return d;
 }
 
-// Footer: Đăng xuất + Hỗ trợ (nút Tắt StudyMovie = TIP-028, CHƯA thêm).
+// Footer: Đăng xuất + Hỗ trợ + Tắt/Bật StudyMovie (TIP-028, công tắc tổng phụ đề).
 function footerNode(onSignOut: () => void): HTMLElement {
   const f = div("footer");
   const out = button("⇥ Đăng xuất", () => void onSignOut(), "footer-link");
   const help = button("✆ Hỗ trợ", () => openTab(`${SITE_URL}/ho-tro`), "footer-link");
+
+  let enabled = true;
+  const paint = (): void => {
+    power.textContent = enabled ? "⏻ Tắt StudyMovie" : "⏻ Bật StudyMovie";
+  };
+  const power = button(
+    "⏻ Tắt StudyMovie",
+    () => {
+      enabled = !enabled;
+      paint();
+      void setSettings({ enabled }); // áp realtime qua chrome.storage → content script
+    },
+    "footer-link"
+  );
+  void getSettings().then((s) => {
+    enabled = s.enabled;
+    paint();
+  });
+
   f.appendChild(out);
   f.appendChild(help);
+  f.appendChild(power);
   return f;
 }
 

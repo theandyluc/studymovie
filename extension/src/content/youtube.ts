@@ -77,8 +77,9 @@ function ensureHideNativeStyle(): void {
     s.textContent = ".ytp-caption-window-container{display:none !important;}";
     document.documentElement.appendChild(s);
   }
-  // Ẩn caption gốc YouTube khi overlay của ta đang phụ trách (có cue).
-  s.toggleAttribute("disabled", !(cues.length > 0));
+  // Ẩn caption gốc YouTube khi StudyMovie BẬT và đang phụ trách (có cue).
+  // Tắt StudyMovie (TIP-028) → gỡ style ẩn → caption gốc YouTube trở lại.
+  s.toggleAttribute("disabled", !(settings.enabled && cues.length > 0));
 }
 
 function cleanWord(raw: string): string {
@@ -212,6 +213,7 @@ function renderCue(idx: number): void {
 }
 
 function syncTick(): void {
+  if (!settings.enabled) return; // TIP-028: tắt StudyMovie → không xử lý phụ đề
   const video = getVideo();
   if (!video || !document.getElementById(ID)) return;
   updateOverlayPosition(); // TIP-023: né control YouTube (ẩn/hiện + full screen), poll 250ms
@@ -429,7 +431,8 @@ document.addEventListener("click", () => {
 // Cài đặt phụ đề giờ nằm ở POPUP extension (gỡ panel gear trong player của TIP-005).
 function applySettings(): void {
   ensureHideNativeStyle();
-  if (!cues.length) {
+  // TIP-028: Tắt StudyMovie → gỡ overlay + trả caption gốc (ensureHideNativeStyle đã gỡ style ẩn).
+  if (!settings.enabled || !cues.length) {
     removeOverlay();
     return;
   }
@@ -449,7 +452,8 @@ function onMessage(e: MessageEvent): void {
   activeIndex = -1;
   ensureHideNativeStyle();
   removeOverlay(); // dựng lại để gắn vào #movie_player hiện tại (YouTube có thể thay DOM player)
-  if (cues.length) {
+  if (settings.enabled && cues.length) {
+    // TIP-028: Tắt StudyMovie → vẫn lưu cues (để bật lại dựng ngay) nhưng KHÔNG build overlay.
     buildOverlay();
     // Nhãn khi không có VI: phân biệt bị-chặn (Sorry) vs video thật sự không có VI.
     const hasVi = cues.some((c) => c.vi);

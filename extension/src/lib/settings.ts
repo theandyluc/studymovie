@@ -5,6 +5,7 @@ export type SubMode = "en" | "both" | "vi";
 export type SubColor = "white" | "black" | "yellow";
 
 export interface Settings {
+  enabled: boolean; // TIP-028: công tắc TỔNG bật/tắt toàn bộ phụ đề StudyMovie
   mode: SubMode; // Tiếng Anh / Song ngữ / Tiếng Việt
   enColor: SubColor; // màu chữ dòng EN
   viColor: SubColor; // màu chữ dòng VI
@@ -17,6 +18,7 @@ export interface Settings {
 export const SETTINGS_KEY = "sm-ext-settings";
 
 export const DEFAULT_SETTINGS: Settings = {
+  enabled: true,
   mode: "both",
   enColor: "white",
   viColor: "white",
@@ -74,6 +76,7 @@ function normalize(raw: Record<string, unknown> | undefined): Settings {
     typeof v === "string" && COLORS.includes(v as SubColor) ? (v as SubColor) : "white";
 
   return {
+    enabled: r.enabled !== false, // mặc định true nếu thiếu
     mode,
     enColor: color(r.enColor),
     viColor: color(r.viColor),

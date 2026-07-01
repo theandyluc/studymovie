@@ -7,11 +7,11 @@
 
 ## Trạng thái tổng quan
 
-- **Giai đoạn hiện tại:** TIP-021→027 VERIFIED (reskin web+ext, phụ đề ext, vocab, flashcard swipe, extension email/mật khẩu+đăng ký có xác nhận email). **Đang giao TIP-028** (polish: countdown thanh toán 5:00 + nút 'Tắt StudyMovie' + leaderboard top5). Sau đó QA-01 → INF-02.
+- **Giai đoạn hiện tại:** TIP-028 polish (POLISH-01) **done (self-tested AC-D), CHỜ HOMEOWNER** test web+Chrome. TIP-021→027 VERIFIED. **Đây là TIP tính năng CUỐI** → sau verify là QA-01 (gstack /qa + /cso) → INF-02 (đóng gói extension + HANDOVER + bàn giao).
 - **VAI TRÒ:** Phiên chính đóng vai **CHỦ THẦU** (viết TIP, review report, gate verified); Thợ là phiên Claude Code khác thực thi. Giao TIP tuần tự.
 - **MIGRATION ĐÃ ÁP production:** 008 (get_access_status) + 009 (admin) + 010 (vocab learned_at). Bootstrap `is_admin=true` cho dokhiem562@gmail.com xong.
 - **SCOPE RESKIN ĐÃ CHỐT (từ Figma, Homeowner duyệt):** TOÀN BỘ web + extension. Gồm 3 thay đổi đảo feature verified: flashcard NÚT→**swipe**, học TẤT CẢ→**chọn từ (tick)**, extension Google-only→**+email/mật khẩu**.
-- **TASK GRAPH reskin:** ✅TIP-021 reskin web → ✅TIP-022 reskin extension → ✅TIP-023 phụ đề ext → ✅TIP-024 vocab status + form thêm từ web → ✅TIP-025 vocab search/lọc/phân trang/biểu đồ → ✅TIP-026 flashcard swipe + chọn-từ + mark-learned → ✅TIP-027 extension email/mật khẩu+đăng ký → **TIP-028 polish (đang giao)** — polish (countdown thanh toán + nút Tắt extension + leaderboard top5) → QA-01 → INF-02.
+- **TASK GRAPH reskin:** ✅TIP-021 reskin web → ✅TIP-022 reskin extension → ✅TIP-023 phụ đề ext → ✅TIP-024 vocab status + form thêm từ web → ✅TIP-025 vocab search/lọc/phân trang/biểu đồ → ✅TIP-026 flashcard swipe + chọn-từ + mark-learned → ✅TIP-027 extension email/mật khẩu+đăng ký → **✅TIP-028 polish (chờ verify)** countdown thanh toán + nút Tắt extension + leaderboard top5 → QA-01 → INF-02.
 - **FIGMA:** ảnh export ở `C:\Users\ADMIN\OneDrive\Máy tính\Figma\` (Webapp 20 + Extension 8 + Phụ đề 7). Token hex suy từ ảnh (chưa có Dev Mode chính thức) — rà lại nếu khách đưa hex.
 - **LƯU Ý KỸ THUẬT (quan trọng):** Vercel serverless đọc body POST treo với `@hono/node-server/vercel` (Readable.toWeb deadlock). Đã fix bằng buffer rawBody trong `web/backend/api/index.ts` — **KHÔNG gỡ**. Mọi POST mới (web/extension/webhook) phụ thuộc fix này khi chạy trên Vercel.
 - **URL production:** frontend=`https://studymovie-frontend.vercel.app`, backend=`https://studymovie-backend.vercel.app`. (manifest extension đã trỏ host frontend này; build:prod đọc extension/.env.production.)
@@ -20,6 +20,15 @@
 ---
 
 ## Session log
+
+### Session 32 — TIP-028 Polish: countdown thanh toán + Tắt StudyMovie + leaderboard top5 (2026-06-30)
+- **TIP/Feature:** TIP-028 — POLISH-01. 3 hạng mục ĐỘC LẬP, KHÔNG migration. TIP tính năng CUỐI trước QA.
+- **A — countdown thanh toán** (app/thanh-toan): state secondsLeft=300 (QR_TTL, reset mỗi tạo đơn) + expired; setInterval 1s giảm (dừng khi paid/order null/expired/unmount); 'Mã QR hết hạn sau MM:SS' dưới QR; về 0 → 'Mã QR đã hết hạn' + 'Tạo mã mới' (order=null) + dừng poll; paid→/cam-on giữ nguyên.
+- **B — Tắt StudyMovie** (settings.ts + youtube.ts + popup): settings.enabled (default true, normalize r.enabled!==false, key sm-ext-settings giữ). youtube.ts: ensureHideNativeStyle gỡ style ẩn khi !enabled → caption gốc trở lại; applySettings/onMessage/syncTick guard (tắt→removeOverlay, vẫn lưu cues; bật lại→dựng NGAY qua onSettingsChange→applySettings). popup footerNode +nút '⏻ Tắt/Bật StudyMovie' (getSettings label + setSettings realtime).
+- **C — leaderboard top5** (app/leaderboard): top5=data.top.slice(0,5); ghim dòng user nếu ngoài top5 (meInTop hạng 6-20, hoặc data.caller ngoài 20); trong top5→không ghim; giữ zero-state. KHÔNG đổi backend/RPC.
+- **Verification (AC-D):** init.sh exit 0; FE build (/thanh-toan 3.79k, /leaderboard 3.13k); backend 21/21; ext build OK + KEY service_role thật KHÔNG trong dist.
+- **CHỜ HOMEOWNER:** A countdown→hết hạn→tạo mã mới (+CK OK vẫn /cam-on); B bật/tắt overlay realtime + caption gốc trở lại + bền reload; C bảng ≤5 + ghim đúng.
+- **Commit:** feat: TIP-028 payment countdown + master subtitle toggle + leaderboard top5.
 
 ### Session 31 — TIP-027 Extension đăng nhập/đăng ký email+mật khẩu (2026-06-30)
 - **TIP/Feature:** TIP-027 — EXT-AUTH2. ĐẢO QĐ Google-only → THÊM email/mật khẩu (CÓ xác nhận email). CHỈ sửa popup (popup.ts renderLogin + popup.html CSS; KHÔNG đụng auth-bridge/service-worker/apiExt/supabaseExt/settings).

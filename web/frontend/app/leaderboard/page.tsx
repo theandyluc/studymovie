@@ -46,6 +46,11 @@ function LeaderboardInner() {
   if (!data) return <PageLoading label="Đang tải bảng xếp hạng…" />;
 
   const uid = user?.id;
+  // TIP-028 — chỉ hiện TOP 5; user hạng 6–20 hoặc ngoài 20 → ghim dòng riêng bên dưới.
+  const top5 = data.top.slice(0, 5);
+  const meInTop = uid ? data.top.find((r) => r.user_id === uid) : undefined;
+  const inTop5 = !!meInTop && (meInTop.rank ?? 999) <= 5;
+  const pinRow: LeaderRow | null = inTop5 ? null : (meInTop ?? data.caller ?? null);
 
   return (
     <div className="space-y-4">
@@ -54,23 +59,23 @@ function LeaderboardInner() {
         <span className="text-xs text-muted-foreground">Reset mỗi thứ Hai (tuần ISO) · từ {data.week_start}</span>
       </div>
 
-      {data.top.length === 0 ? (
+      {top5.length === 0 ? (
         <Card>
           <p className="text-muted-foreground">Tuần này chưa ai có giờ học. Hãy học để lên bảng!</p>
         </Card>
       ) : (
         <div className="space-y-2">
-          {data.top.map((r) => (
+          {top5.map((r) => (
             <Row key={r.user_id} row={r} me={!!uid && r.user_id === uid} />
           ))}
         </div>
       )}
 
-      {/* Ghim dòng caller nếu ngoài top */}
-      {data.caller ? (
+      {/* Ghim dòng của user nếu ngoài top 5 */}
+      {pinRow ? (
         <>
           <p className="pt-2 text-center text-xs text-muted-foreground">— Vị trí của bạn —</p>
-          <Row row={data.caller} me />
+          <Row row={pinRow} me />
         </>
       ) : null}
     </div>
