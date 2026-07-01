@@ -9,13 +9,13 @@ import { fetchAccessStatus, type AccessStatus } from "@/lib/access";
 import { PageLoading } from "@/components/ui/Spinner";
 
 const POLL_MS = 4000; // poll trạng thái đơn mỗi 4s
-const QR_TTL = 300; // đồng hồ đếm ngược 5:00 (cosmetic — thúc đẩy hành động; về 0 KHÔNG huỷ đơn)
+const QR_TTL = 300; // TIP-028: đồng hồ đếm ngược 5:00; về 0 → hết hạn (dừng poll) + nút "Tạo mã mới"
 const VND = (n: number) => n.toLocaleString("vi-VN") + "đ";
 const fmtMMSS = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
 // WEB-08/BE-05/TIP-033 — Trang nâng cấp Pro theo Figma: tiêu đề "Quét mã QR bên dưới" +
 // countdown lớn + ảnh VietQR (compact2 đã có logo+thông tin CK) → poll tới khi paid.
-// Figma: countdown về 0 KHÔNG có gì xảy ra, user vẫn quét được (bỏ trạng thái "hết hạn").
+// TIP-028: countdown về 0 → hết hạn (dừng poll) + nút "Tạo mã mới".
 function UpgradeInner() {
   const [order, setOrder] = useState<PaymentOrder | null>(null);
   const [creating, setCreating] = useState(false);
@@ -23,6 +23,7 @@ function UpgradeInner() {
   const [paid, setPaid] = useState(false);
   const [copied, setCopied] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(QR_TTL);
+  const [expired, setExpired] = useState(false);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const router = useRouter();
   const [access, setAccess] = useState<AccessStatus | null>(null);
@@ -65,6 +66,7 @@ function UpgradeInner() {
       const o = await createOrder();
       setOrder(o);
       setSecondsLeft(QR_TTL); // reset đồng hồ mỗi lần tạo đơn mới
+      setExpired(false);
     } catch {
       setErr("Không tạo được đơn. Vui lòng thử lại.");
     } finally {
@@ -72,20 +74,29 @@ function UpgradeInner() {
     }
   };
 
-  // Poll khi có đơn (chưa paid). Countdown về 0 KHÔNG dừng poll (Figma).
+  // Poll khi có đơn (chưa paid, chưa hết hạn).
   useEffect(() => {
-    if (!order || paid) return;
+    if (!order || paid || expired) return;
     void checkStatus(order.code);
     timer.current = setInterval(() => void checkStatus(order.code), POLL_MS);
     return stopPoll;
-  }, [order, paid, checkStatus, stopPoll]);
+  }, [order, paid, expired, checkStatus, stopPoll]);
 
-  // Đồng hồ đếm ngược 5:00 → về 0 rồi giữ nguyên (không huỷ đơn, không đổi hành vi quét).
+  // TIP-028 — Đồng hồ đếm ngược 5:00; về 0 → hết hạn (dừng poll).
   useEffect(() => {
-    if (!order || paid) return;
-    const iv = setInterval(() => setSecondsLeft((s) => (s <= 1 ? 0 : s - 1)), 1000);
+    if (!order || paid || expired) return;
+    const iv = setInterval(() => {
+      setSecondsLeft((s) => {
+        if (s <= 1) {
+          setExpired(true);
+          stopPoll();
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
     return () => clearInterval(iv);
-  }, [order, paid]);
+  }, [order, paid, expired, stopPoll]);
 
   const copyContent = async () => {
     if (!order) return;
@@ -161,35 +172,47 @@ function UpgradeInner() {
         </p>
       </div>
 
-      {/* Countdown lớn (Figma) */}
-      <p className="font-heading text-4xl font-bold tabular-nums">{fmtMMSS(secondsLeft)}</p>
+      {expired ? (
+        /* TIP-028 — hết hạn: dừng poll, cho tạo mã mới */
+        <div className="space-y-3">
+          <p className="text-sm font-medium text-red-600">Mã QR đã hết hạn</p>
+          <Button className="w-full" onClick={() => setOrder(null)}>
+            Tạo mã mới
+          </Button>
+        </div>
+      ) : (
+        <>
+          {/* Countdown lớn (Figma) */}
+          <p className="font-heading text-4xl font-bold tabular-nums">{fmtMMSS(secondsLeft)}</p>
 
-      {/* Ảnh VietQR compact2 — đã gồm logo + tên TK + số TK + số tiền + nội dung CK */}
-      <div className="flex justify-center">
-        <Card className="inline-block p-3">
-          <img
-            src={order.qr_url}
-            alt={`Mã QR chuyển khoản ${VND(order.amount)} — nội dung ${order.content}`}
-            className="mx-auto block h-auto w-72 rounded object-contain"
-          />
-        </Card>
-      </div>
+          {/* Ảnh VietQR compact2 — đã gồm logo + tên TK + số TK + số tiền + nội dung CK */}
+          <div className="flex justify-center">
+            <Card className="inline-block p-3">
+              <img
+                src={order.qr_url}
+                alt={`Mã QR chuyển khoản ${VND(order.amount)} — nội dung ${order.content}`}
+                className="mx-auto block h-auto w-72 rounded object-contain"
+              />
+            </Card>
+          </div>
 
-      {/* Nội dung CK + chép (không copy được từ ảnh) */}
-      <div className="flex items-center justify-center gap-2 text-sm">
-        <span className="text-muted-foreground">Nội dung CK:</span>
-        <span className="font-mono font-semibold">{order.content}</span>
-        <Button variant="ghost" className="px-2 py-1 text-xs" onClick={copyContent}>
-          {copied ? "Đã chép" : "Chép"}
-        </Button>
-      </div>
+          {/* Nội dung CK + chép (không copy được từ ảnh) */}
+          <div className="flex items-center justify-center gap-2 text-sm">
+            <span className="text-muted-foreground">Nội dung CK:</span>
+            <span className="font-mono font-semibold">{order.content}</span>
+            <Button variant="ghost" className="px-2 py-1 text-xs" onClick={copyContent}>
+              {copied ? "Đã chép" : "Chép"}
+            </Button>
+          </div>
 
-      <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-        <Spinner /> Đang chờ thanh toán… (tự động cập nhật sau khi chuyển khoản)
-      </div>
-      <Button variant="ghost" onClick={() => void checkStatus(order.code)}>
-        Tôi đã chuyển khoản — kiểm tra lại
-      </Button>
+          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+            <Spinner /> Đang chờ thanh toán… (tự động cập nhật sau khi chuyển khoản)
+          </div>
+          <Button variant="ghost" onClick={() => void checkStatus(order.code)}>
+            Tôi đã chuyển khoản — kiểm tra lại
+          </Button>
+        </>
+      )}
     </div>
   );
 }
