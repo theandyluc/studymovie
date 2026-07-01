@@ -20,8 +20,12 @@ export function useUser(): { user: User | null; loading: boolean } {
       setUser(data.session?.user ?? null);
       setLoading(false);
     });
+    // Supabase fire lại SIGNED_IN/TOKEN_REFRESHED mỗi lần tab được focus → nếu setUser với
+    // object mới (dù cùng user) sẽ khiến AccessGuard refetch + flash loading ("auto reload").
+    // → Chỉ đổi khi ID user THẬT SỰ khác; cùng user thì giữ nguyên reference.
     const { data: sub } = sb.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+      const next = session?.user ?? null;
+      setUser((prev) => (prev?.id === next?.id ? prev : next));
     });
     return () => {
       active = false;
