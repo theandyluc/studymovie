@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AuthGuard } from "@/components/AuthGuard";
 import { Button } from "@/components/ui/Button";
@@ -454,17 +453,9 @@ function VocabList() {
                   ›
                 </Button>
               </div>
-              <div className="flex items-center gap-2">
-                <Link href="/kiem-tra-anh-viet">
-                  <Button variant="ghost">Quiz EN→VI</Button>
-                </Link>
-                <Link href="/kiem-tra-viet-anh">
-                  <Button variant="ghost">Quiz VI→EN</Button>
-                </Link>
-                <Button variant="info" onClick={studySelected}>
-                  {selected.size > 0 ? `Học các từ đã chọn (${selected.size})` : "Học flashcard"}
-                </Button>
-              </div>
+              <Button variant="info" onClick={studySelected}>
+                Học các từ đã chọn{selected.size > 0 ? ` (${selected.size})` : ""}
+              </Button>
             </div>
           </>
         )}
