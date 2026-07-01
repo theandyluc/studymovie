@@ -84,4 +84,10 @@ if (PROD) {
 await writeFile("dist/manifest.json", JSON.stringify(manifest, null, 2));
 await cp("src/popup/popup.html", "dist/popup/popup.html");
 
+// TIP-031 WI-3 — copy 3 icon (16/48/128) vào dist (cả dev lẫn prod). KHÔNG copy logo.png nguồn.
+await mkdir("dist/icons", { recursive: true });
+for (const size of [16, 48, 128]) {
+  await cp(`icons/icon-${size}.png`, `dist/icons/icon-${size}.png`);
+}
+
 console.log("[StudyMovie] extension built → dist/ (background + content + popup)");
