@@ -104,6 +104,26 @@ function Flashcards() {
     void markLearned([cur.id]).catch(() => undefined);
   }, [idx, items, showTutorial]);
 
+  // UX #3 — phím tắt: ← → đổi thẻ, Space/Enter lật.
+  useEffect(() => {
+    if (showTutorial) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (!items || items.length === 0) return;
+      if (e.key === "ArrowRight") {
+        setFlipped(false);
+        setIdx((i) => Math.min(items.length - 1, i + 1));
+      } else if (e.key === "ArrowLeft") {
+        setFlipped(false);
+        setIdx((i) => Math.max(0, i - 1));
+      } else if (e.key === " " || e.key === "Enter") {
+        e.preventDefault();
+        setFlipped((f) => !f);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [items, showTutorial]);
+
   if (error) return <Card><p className="text-sm text-red-600">Lỗi: {error}</p></Card>;
   if (!items) return <PageLoading label="Đang tải…" />;
   if (items.length === 0) {

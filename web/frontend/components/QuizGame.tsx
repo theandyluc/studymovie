@@ -32,6 +32,8 @@ export function QuizGame({ direction }: { direction: QuizDirection }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const revealRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pickRef = useRef<(i: number) => void>(() => {});
+  const advanceRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     fetchVocab()
@@ -48,6 +50,20 @@ export function QuizGame({ direction }: { direction: QuizDirection }) {
   useEffect(() => () => {
     if (timerRef.current) clearTimeout(timerRef.current);
     if (revealRef.current) clearTimeout(revealRef.current);
+  }, []);
+
+  // UX #3 — phím tắt: 1-4 chọn đáp án; Enter/Space qua câu (khi đã trả lời).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key >= "1" && e.key <= "4") {
+        pickRef.current(Number(e.key) - 1);
+      } else if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        advanceRef.current();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, []);
 
   if (error) return <Card><p className="text-sm text-red-600">Lỗi: {error}</p></Card>;
@@ -93,20 +109,34 @@ export function QuizGame({ direction }: { direction: QuizDirection }) {
   }
 
   const q = questions[idx];
+  // UX #7 — qua câu ngay (bấm Enter/Space) khi đã trả lời; huỷ timer tự động.
+  const advanceNow = () => {
+    if (selected === null) return; // chưa trả lời → không skip
+    if (revealRef.current) clearTimeout(revealRef.current);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    setSelected(null);
+    setRevealed(false);
+    if (idx + 1 >= questions.length) setDone(true);
+    else setIdx(idx + 1);
+  };
   const pick = (i: number) => {
     if (selected !== null) return;
+    const correct = i === q.answerIndex;
     setSelected(i);
     setRevealed(false);
-    if (i === q.answerIndex) setScore((s) => s + 1);
-    // Pha 1: xanh dương (đang chọn) → Pha 2: hiện đúng/sai → tự sang câu (Figma không có nút).
+    if (correct) setScore((s) => s + 1);
+    // Pha 1: xanh dương (đang chọn) → Pha 2: hiện đúng/sai → tự sang câu.
+    // UX #7: trả lời SAI cho xem lâu hơn (2.6s) để học đáp án đúng; đúng thì 1.5s.
     revealRef.current = setTimeout(() => setRevealed(true), 450);
     timerRef.current = setTimeout(() => {
       setSelected(null);
       setRevealed(false);
       if (idx + 1 >= questions.length) setDone(true);
       else setIdx(idx + 1);
-    }, 1600);
+    }, correct ? 1500 : 2600);
   };
+  pickRef.current = pick;
+  advanceRef.current = advanceNow;
 
   return (
     <div className="flex flex-col items-center gap-6 py-6">
