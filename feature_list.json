@@ -189,11 +189,11 @@
       "id": "QA-01",
       "title": "QA Tier 1+2 + gstack /qa (browser thật) + /cso security audit, sửa lỗi",
       "area": "qa",
-      "tip": "TIP-013",
-      "status": "todo",
+      "tip": "TIP-029",
+      "status": "verified",
       "depends_on": ["EXT-03", "BE-04"],
       "acceptance": "Các flow chính qua /qa không lỗi; /cso không còn finding nghiêm trọng; regression test cho mỗi fix.",
-      "evidence": ""
+      "evidence": "VERIFIED (2026-07-01): TIP-030 smoke tự động 44/44 PASS (13 route FE=200 không crash, 31 API auth-contract 401 đúng + webhook + CORS không '*', build 3 gói); Homeowner smoke browser gộp PASS (login Google+email, dashboard, vocab→flashcard→quiz, leaderboard, thanh toán QR+countdown, settings, extension overlay EN+VI+tra từ+Tắt/Bật+timer). Không lỗi CRITICAL/HIGH/MEDIUM. | TIP-029 QA sweep: gstack không có trên PATH → Thợ QA thủ công. GATE PASS (init.sh exit 0, lint+typecheck 3 gói, backend 21/21, ext build OK). /cso PASS (không lộ service_role client/ext; RLS đủ 8 bảng; requireAuth mọi /api trừ /health+webhook; CORS reflect origin không '*'; webhook Apikey constant-time+idempotency; .env không commit). /review sạch (không CRITICAL/HIGH/MEDIUM). 3 finding LOW/INFO Chủ thầu ACCEPT (SEC-1 lộ độ dài key: constant-time compare vốn cũng cần cùng độ dài → đã đạt chuẩn, key cố định vô hại; REV-1 stopPoll trong updater: vô hại idempotent; REV-2 mark-learned chatty: đúng thiết kế TIP-026). /qa browser UNTESTABLE bởi Thợ. Đang giao TIP-030 smoke tự động HTTP-level (route+API) cho Thợ + smoke gộp browser cho Homeowner."
     },
     {
       "id": "INF-02",
