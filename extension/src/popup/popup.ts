@@ -565,9 +565,21 @@ async function render(): Promise<void> {
     const me = await apiExt<Me>("/api/me");
     renderUser(me);
   } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    // D-02: 401 = phiên hết hiệu lực (vd user đăng xuất trên web nhưng session cũ còn kẹt)
+    // → dọn session rồi về màn login, KHÔNG hiện hộp lỗi. Lỗi khác (mạng/5xx) giữ nguyên.
+    if (/HTTP 401/.test(msg)) {
+      try {
+        await supabaseExt.auth.signOut();
+      } catch {
+        /* ignore */
+      }
+      renderLogin();
+      return;
+    }
     mount(
       logoNode(),
-      div("muted", `Không tải được tài khoản: ${e instanceof Error ? e.message : String(e)}`),
+      div("muted", `Không tải được tài khoản: ${msg}`),
       button("Thử lại", () => void render(), "btn ghost")
     );
   }
