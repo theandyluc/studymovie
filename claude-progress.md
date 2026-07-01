@@ -21,6 +21,18 @@
 
 ## Session log
 
+### Session 36 — TIP-033: redesign web app khớp Figma (5 màn, calibrate) (2026-07-01)
+- **Yêu cầu khách:** redesign UI web app "giống hệt file Figma". Nguồn = 20 ảnh PNG (Figma\Webapp), KHÔNG có Dev Mode → so bằng mắt (~95%). Cách làm: calibrate từng màn, Homeowner duyệt từng cái. Khách chê "tổng thể + layout/khoảng cách". Tokens (globals.css @theme) đã gần Figma → chủ yếu sửa LAYOUT từng trang.
+- **5 màn đã calibrate + Homeowner DUYỆT (2026-07-01):**
+  1. **Dashboard** (`/dashboard`): lưới 2×2 — card 3 vòng CircleStat (Thời gian/Từ vựng/Streak) + card Level (2 vòng, cung tím) | Kế hoạch tuần (thêm quote) + **LeaderboardCard** (mới, top5+ghim, giữ trang /leaderboard riêng). Bỏ bar chart. Tiêu đề "Tiến độ học". Component mới: `CircleStat`, `LeaderboardCard`.
+  2. **Từ vựng** (`/tu-vung`): bỏ h1+nút top; toolbar (tiêu đề+search+"+Thêm từ vựng" toggle form); STT pill; filter icon (▽) popover ở header cột Ngày/Trạng thái; chart có trục y+lưới+tooltip hộp; ring tổng mảnh (border-4); footer đếm+phân trang+"Học các từ đã chọn" (bỏ nút Quiz — vào từ menu flashcard).
+  3. **Flashcard** (`/hoc-tu-vung`): thẻ dọc (portrait, chữ trên-trái+loa, chấm đen góc dưới); bỏ thanh top; tutorial = overlay tối+thẻ mờ+con trỏ+chữ trắng; menu ≡ nền tối.
+  4. **Quiz** (`QuizGame`, 2 route): thẻ hỏi dọc+loa(en2vi); 4 đáp án 4 STATE màu Figma (trắng→**xanh dương #a9d1fb đang chọn**→xanh lá đúng→hồng sai, 2 pha 450ms/1600ms tự sang câu); menu ≡ nền tối; bỏ thanh top.
+  5. **Thanh toán** (`/thanh-toan`): tiêu đề "Quét mã QR bên dưới"+countdown lớn+ảnh VietQR compact2 (đã gồm logo+info CK, bỏ dl trùng). **THEO CHÚ THÍCH FIGMA: countdown về 0 KHÔNG hết hạn** (bỏ "Tạo mã mới" — NGƯỢC TIP-028; Homeowner đã chọn theo Figma).
+- **Migration 011** (`20260701000011_dashboard_totals.sql`): get_dashboard + `total_minutes` + `vocab_learned` (additive). **CHƯA áp cloud** → 2 số dashboard = 0 tới khi áp. Frontend fallback `?? 0`.
+- **KHÔNG có trong Figma** (giữ nguyên): Login, Cảm ơn, Hỗ trợ, Admin, Playlist.
+- **Verify:** mỗi màn lint+typecheck+build sạch. Homeowner duyệt visual từng màn qua localhost. Đã push (8 commit) + cần áp migration 011.
+
 ### Session 35 — TIP-031 (INF-02): đóng gói bàn giao + Chrome Web Store (2026-07-01)
 - **6/6 WI xong, commit riêng từng cái (local, CHƯA push, ahead 6):** WI-1 `.env.example` SITE_URL→app.studymovie.com + audit env (đủ biến runtime; PORT/DICT_LIMIT optional; GOOGLE_OAUTH_* là tài liệu). WI-2 trang `/privacy` (web/frontend/app/privacy/page.tsx) public render tĩnh, ngoài PROTECTED của AccessGuard → reviewer xem được. WI-3 icon từ logo.png: sinh 16/48/128 bằng sharp (trim viền + pad ~9% + nền trắng) → extension/icons/, manifest + action.default_icon, build.mjs copy dist/icons (dev+prod, không copy logo nguồn); giữ logo.png nguồn để bàn giao. WI-4 manifest bản store: version 0.0.1→1.0.0 + build.mjs khi `--prod` lọc entry `localhost` (dev giữ). WI-5 `HANDOVER.md` (kiến trúc + bảng env không secret + deploy + migrations + transfer ownership + xoay key + dev setup + verify). WI-6 mục Chrome Web Store submission trong HANDOVER (mô tả + privacy URL app.studymovie.com/privacy + data usage + giải trình 5 permission + email dkhiem2k4@gmail.com).
 - **Lưu ý:** TIP-031 lần 1 thiếu WI-3 (đã báo); lần 2 gửi đủ. logo.png nguồn nằm ở `C:\Users\ADMIN\OneDrive\Máy tính\Figma\logo.png` (khách cấp) — đã copy vào extension/icons/. Máy KHÔNG có ImageMagick (`convert` là convert.exe của Windows) nhưng có `sharp` (dep của Next) → dùng sharp.
