@@ -443,8 +443,14 @@ function renderLogin(notice?: { text: string; ok: boolean }): void {
         const { data, error } = await supabaseExt.auth.signUp({ email: em, password: pw });
         if (error) {
           showMsg(mapAuthError(error.message), false);
+        } else if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+          // Supabase anti-enumeration: email ĐÃ TỒN TẠI (vd đã đăng nhập Google) → trả success rỗng
+          // (identities=[]). KHÔNG phải đăng ký thành công → báo đã đăng ký, chuyển sang đăng nhập.
+          authMode = "login";
+          renderLogin({ text: "Email đã được đăng ký. Vui lòng đăng nhập (hoặc dùng nút Google nếu bạn tạo bằng Google).", ok: false });
+          return;
         } else if (!data.session) {
-          // Confirm email ON → chưa có session → về mode đăng nhập + báo.
+          // Confirm email ON, user MỚI → chưa có session → về mode đăng nhập + báo.
           authMode = "login";
           renderLogin({ text: "Đã gửi email xác nhận. Vui lòng mở hộp thư và bấm link để kích hoạt.", ok: true });
           return;
