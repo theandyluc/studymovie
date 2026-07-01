@@ -4,6 +4,7 @@ import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { AccessGuard } from "@/components/AccessGuard";
+import { Toaster, ConfirmHost } from "@/components/ui/feedback";
 
 // TIP-021 — Inter (hỗ trợ tiếng Việt), nạp qua next/font → biến --font-inter cho @theme.
 const inter = Inter({
@@ -26,6 +27,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <AccessGuard>{children}</AccessGuard>
         </main>
         <Footer />
+        <Toaster />
+        <ConfirmHost />
       </body>
     </html>
   );

@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { PageLoading } from "@/components/ui/Spinner";
 import { fetchVocab, addVocab, deleteVocab, STUDY_SELECTION_KEY, type VocabItem } from "@/lib/vocabulary";
+import { toast, confirmDialog } from "@/components/ui/feedback";
 
 function playAudio(url: string): void {
   try {
@@ -174,13 +175,13 @@ function VocabList() {
   };
 
   const onDelete = async (it: VocabItem) => {
-    if (!confirm(`Xóa từ "${it.word}"?`)) return;
+    if (!(await confirmDialog({ title: `Xóa từ "${it.word}"?`, danger: true, confirmText: "Xóa" }))) return;
     setBusy(it.id);
     try {
       await deleteVocab(it.id);
       setItems((cur) => (cur ?? []).filter((x) => x.id !== it.id));
     } catch (e) {
-      alert("Xóa lỗi: " + (e instanceof Error ? e.message : String(e)));
+      toast("Xóa lỗi: " + (e instanceof Error ? e.message : String(e)), "error");
     } finally {
       setBusy(null);
     }

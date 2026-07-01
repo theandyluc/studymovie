@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { PageLoading } from "@/components/ui/Spinner";
 import { ApiError } from "@/lib/apiClient";
 import { fetchPlaylist, addPlaylist, setPlaylistDone, deletePlaylistItem, type PlaylistItem } from "@/lib/playlist";
+import { toast, confirmDialog } from "@/components/ui/feedback";
 
 // Map lỗi thêm video sang thông báo thân thiện (KHÔNG lộ HTTP/đường dẫn API).
 function friendlyAddError(e: unknown): string {
@@ -51,20 +52,20 @@ function PlaylistInner() {
       const updated = await setPlaylistDone(it.id, !it.is_done);
       setItems((cur) => (cur ?? []).map((x) => (x.id === it.id ? updated : x)));
     } catch (e) {
-      alert("Lỗi: " + (e instanceof Error ? e.message : String(e)));
+      toast("Lỗi: " + (e instanceof Error ? e.message : String(e)), "error");
     } finally {
       setBusy(null);
     }
   };
 
   const remove = async (it: PlaylistItem) => {
-    if (!confirm(`Xóa "${it.title ?? it.video_id}"?`)) return;
+    if (!(await confirmDialog({ title: `Xóa "${it.title ?? it.video_id}"?`, danger: true, confirmText: "Xóa" }))) return;
     setBusy(it.id);
     try {
       await deletePlaylistItem(it.id);
       setItems((cur) => (cur ?? []).filter((x) => x.id !== it.id));
     } catch (e) {
-      alert("Lỗi: " + (e instanceof Error ? e.message : String(e)));
+      toast("Lỗi: " + (e instanceof Error ? e.message : String(e)), "error");
     } finally {
       setBusy(null);
     }

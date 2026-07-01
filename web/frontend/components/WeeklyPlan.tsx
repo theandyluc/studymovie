@@ -10,6 +10,7 @@ import {
   type WeeklyPlan,
   type PlanInput,
 } from "@/lib/weeklyPlan";
+import { toast, confirmDialog } from "@/components/ui/feedback";
 
 const EMPTY: PlanInput = { plan_date: "", video_link: "", committed_time: "" };
 const inputCls = "w-full rounded-btn border border-border px-2 py-1 text-sm";
@@ -31,7 +32,7 @@ export function WeeklyPlanTable() {
       .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
   }, []);
 
-  const fail = (e: unknown) => alert("Lỗi: " + (e instanceof Error ? e.message : String(e)));
+  const fail = (e: unknown) => toast("Lỗi: " + (e instanceof Error ? e.message : String(e)), "error");
 
   const onAdd = async () => {
     if (!form.plan_date.trim() && !form.video_link.trim() && !form.committed_time.trim()) return;
@@ -82,7 +83,7 @@ export function WeeklyPlanTable() {
   };
 
   const remove = async (it: WeeklyPlan) => {
-    if (!confirm("Xóa dòng kế hoạch này?")) return;
+    if (!(await confirmDialog({ title: "Xóa dòng kế hoạch này?", danger: true, confirmText: "Xóa" }))) return;
     setBusy(it.id);
     try {
       await deleteWeeklyPlan(it.id);

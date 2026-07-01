@@ -6,6 +6,7 @@ import { useUser } from "@/hooks/useUser";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PageLoading } from "@/components/ui/Spinner";
+import { toast } from "@/components/ui/feedback";
 
 // WEB-01 — Trang login (Google OAuth).
 export default function LoginPage() {
@@ -19,7 +20,7 @@ export default function LoginPage() {
   const signIn = async () => {
     const sb = getSupabase();
     if (!sb) {
-      alert("Chưa cấu hình Supabase (NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY).");
+      toast("Chưa cấu hình Supabase (NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY).", "error");
       return;
     }
     const site = process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin;
