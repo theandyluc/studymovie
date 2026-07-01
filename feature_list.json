@@ -199,11 +199,11 @@
       "id": "INF-02",
       "title": "Đóng gói extension (Chrome Web Store) + deploy frontend/backend Vercel + .env.example + HANDOVER.md + transfer ownership",
       "area": "infra",
-      "tip": "TIP-014",
-      "status": "todo",
+      "tip": "TIP-031",
+      "status": "in_progress",
       "depends_on": ["QA-01"],
       "acceptance": "Extension đóng gói submit; web deploy chạy; .env.example + HANDOVER.md đầy đủ; checklist handover (Blueprint mục 9) pass.",
-      "evidence": ""
+      "evidence": "Đang giao TIP-031. Nền tảng sẵn: .env.example (root) + extension/.env.production.example đầy đủ; .env gitignore+untracked (an toàn); extension có build:prod. Cần: HANDOVER.md, audit .env.example vs process.env thực tế, đóng gói extension zip + tài liệu submit Chrome Web Store. Phần transfer ownership (GitHub/Supabase/Vercel + xoay key) = Homeowner action."
     },
     {
       "id": "INF-03",
@@ -214,6 +214,16 @@
       "depends_on": ["WEB-06"],
       "acceptance": "Backend chạy serverless Vercel; frontend deploy; CORS+OAuth redirect cho domain production; secret ở Vercel env (không commit); dev flow không hỏng; extension build được bản production.",
       "evidence": "VERIFIED PRODUCTION (Homeowner test 2026-06-29): frontend https://studymovie-frontend.vercel.app + backend https://studymovie-backend.vercel.app — login Google, dashboard, vocab, playlist, CORS, /health 200 OK. manifest đổi placeholder -> studymovie-frontend.vercel.app (giữ localhost). | Backend serverless: web/backend/api/index.ts (@hono/node-server/vercel handle, Node runtime) + vercel.json (rewrite /(.*) -> /api để Hono định tuyến). env.ts đọc process.env (Vercel env vars), local đọc root .env. CORS giữ localhost dev + SITE_URL (env=prod frontend) + chrome-extension, KHÔNG '*'. Frontend Next: NEXT_PUBLIC_* qua Vercel env (next.config inline). Extension: build.mjs --prod đọc .env.production (giữ bản dev); manifest thêm host production placeholder (Homeowner đổi domain thật) + giữ localhost. .env.example ghi rõ var nào ở project nào. Khuyến nghị 2 project Vercel riêng (frontend + backend) cho CORS độc lập. TỰ TEST: init.sh exit 0 (lint+typecheck 3 pkg, api/ included), ext build dev + build:prod chạy, backend dev boot (health 200, /api/me 401) — dev flow KHÔNG hỏng. LIVE DEPLOY + nhập env Vercel + Supabase redirect = HOMEOWNER làm theo checklist; verified sau khi production chạy."
+    },
+    {
+      "id": "INF-04",
+      "title": "Đổi domain production: landing studymovie.com (khách tự làm) + web app app.studymovie.com (web + extension + Supabase redirect)",
+      "area": "infra",
+      "tip": "TIP-032b",
+      "status": "in_progress",
+      "depends_on": ["INF-03"],
+      "acceptance": "app.studymovie.com trỏ Vercel frontend + SSL cấp; frontend & backend env NEXT_PUBLIC_SITE_URL=https://app.studymovie.com (backend = CORS); Supabase Auth Site URL + Redirect URLs thêm app.studymovie.com; extension manifest + build:prod trỏ app.studymovie.com; login web (email+Google) + extension sync + thanh toán + paywall chạy trên domain mới. Landing studymovie.com KHÔNG có app/login (khách tự làm).",
+      "evidence": "KIẾN TRÚC 2 DOMAIN (khách chốt 2026-07-01, screenshot): studymovie.com = landing page (khách tự làm, không login); app.studymovie.com = web app (nơi user đăng nhập & học). | TIP-032→032b DONE (code, commit local, CHƯA push): ban đầu trỏ studymovie.com (TIP-032, a0276e3), sửa fix-forward sang app.studymovie.com (TIP-032b) sau khi khách làm rõ. extension/manifest.json host_permissions + content_scripts[auth-bridge].matches → https://app.studymovie.com/* (giữ youtube + localhost, sạch studymovie-frontend.vercel.app); extension/.env.production.example NEXT_PUBLIC_SITE_URL=https://app.studymovie.com. Backend GIỮ studymovie-backend.vercel.app → webhook SePay KHÔNG đổi. | KÈM D-01 (commit trước đó): fix auth-bridge văng 'Extension context invalidated' khi reload extension (stop poll khi context chết). TỰ TEST: typecheck sạch, build dev + build:prod OK, dist/manifest.json trỏ app.studymovie.com (×2), service_role không lộ trong dist. CHỜ HOMEOWNER Runbook: (1) Vercel frontend project add domain app.studymovie.com; (2) DNS thêm record 'app' trỏ Vercel (CNAME cname.vercel-dns.com); (3) env NEXT_PUBLIC_SITE_URL=https://app.studymovie.com ở CẢ frontend + backend project (backend quyết định CORS), redeploy cả 2; (4) Supabase Auth → Site URL = https://app.studymovie.com + Redirect URLs thêm https://app.studymovie.com/** (giữ localhost); (5) Google Cloud OAuth → Authorized redirect thêm callback Supabase (nếu đổi) + Authorized JS origins app.studymovie.com; (6) test Google+email login trên domain mới. Verify tổng trước khi gate verified: app.studymovie.com login web → extension sync session → /thanh-toan QR+countdown → paywall redirect."
     },
     {
       "id": "WEB-LEVEL",
