@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 import { AccessGuard } from "@/components/AccessGuard";
 
 // TIP-021 — Inter (hỗ trợ tiếng Việt), nạp qua next/font → biến --font-inter cho @theme.
@@ -19,11 +20,12 @@ export const metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="vi" className={inter.variable}>
-      <body className="min-h-screen">
+      <body className="flex min-h-screen flex-col">
         <Header />
-        <main className="mx-auto w-full max-w-5xl px-4 py-8">
+        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
           <AccessGuard>{children}</AccessGuard>
         </main>
+        <Footer />
       </body>
     </html>
   );
