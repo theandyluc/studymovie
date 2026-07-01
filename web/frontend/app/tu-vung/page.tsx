@@ -428,7 +428,8 @@ function VocabList() {
                     pageItems.map((it, i) => (
                       <tr
                       key={it.id}
-                      className={`group border-b border-border transition-colors hover:bg-surface-muted ${
+                      onClick={() => toggleSelect(it.id)}
+                      className={`group cursor-pointer border-b border-border transition-colors hover:bg-surface-muted ${
                         selected.has(it.id) ? "bg-info/60" : ""
                       }`}
                     >
@@ -441,7 +442,14 @@ function VocabList() {
                           <span className="font-medium">{it.word}</span>
                           {it.ipa ? <span className="ml-1 text-xs text-muted-foreground">/{it.ipa}/</span> : null}
                           {it.audio_url ? (
-                            <button onClick={() => playAudio(it.audio_url as string)} aria-label="Phát âm" className="ml-1 align-middle text-sm">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                playAudio(it.audio_url as string);
+                              }}
+                              aria-label="Phát âm"
+                              className="ml-1 align-middle text-sm"
+                            >
                               🔊
                             </button>
                           ) : null}
@@ -455,6 +463,7 @@ function VocabList() {
                           <input
                             type="checkbox"
                             checked={selected.has(it.id)}
+                            onClick={(e) => e.stopPropagation()}
                             onChange={() => toggleSelect(it.id)}
                             aria-label={`Chọn học từ ${it.word}`}
                           />
@@ -462,7 +471,10 @@ function VocabList() {
                         <td className="py-2 text-center">
                           <button
                             disabled={busy === it.id}
-                            onClick={() => onDelete(it)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void onDelete(it);
+                            }}
                             title="Xóa"
                             className="text-muted-foreground/40 hover:text-red-600 group-hover:text-muted-foreground"
                           >
