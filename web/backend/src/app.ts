@@ -4,6 +4,7 @@ import { SITE_URL } from "./env.js";
 import { requireAuth } from "./middleware/auth.js";
 import { getMe } from "./api/me.js";
 import { getLookup } from "./api/lookup.js";
+import { postLookupContext } from "./api/lookup-context.js";
 import { postVocabulary, getVocabulary, deleteVocabulary, postMarkLearned } from "./api/vocabulary.js";
 import { getDashboard } from "./api/dashboard.js";
 import { getLeaderboard } from "./api/leaderboard.js";
@@ -61,7 +62,8 @@ app.post("/api/sepay-webhook", postSepayWebhook);
 // Protected (cần Bearer token hợp lệ)
 app.get("/api/me", requireAuth, getMe);
 app.get("/api/access-status", requireAuth, getAccessStatus); // WEB-TRIAL TIP-019b
-app.get("/api/lookup", requireAuth, getLookup); // EXT-02: tra nghĩa
+app.get("/api/lookup", requireAuth, getLookup); // EXT-02: tra nghĩa (từ điển, IPA/audio)
+app.post("/api/lookup-context", requireAuth, postLookupContext); // TIP-038: nghĩa theo ngữ cảnh (AI)
 app.post("/api/vocabulary", requireAuth, postVocabulary); // EXT-02: lưu từ
 app.post("/api/vocabulary/mark-learned", requireAuth, postMarkLearned); // WEB-FLASH2 TIP-026
 app.get("/api/vocabulary", requireAuth, getVocabulary); // WEB-03: danh sách

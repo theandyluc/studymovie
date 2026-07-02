@@ -37,3 +37,6 @@ export const BANK_ACCOUNT_NAME = process.env.BANK_ACCOUNT_NAME ?? "";
 export const VIETQR_TEMPLATE = process.env.VIETQR_TEMPLATE ?? "compact2"; // mẫu ảnh VietQR
 export const PRO_PRICE = Number(process.env.PRO_PRICE ?? 49000);
 export const PRO_DURATION_DAYS = Number(process.env.PRO_DURATION_DAYS ?? 30);
+
+// TIP-038 — OpenAI (gpt-4o-mini) cho nghĩa theo ngữ cảnh. CHỈ backend. Trống = tắt tính năng (fallback từ điển).
+export const OPENAI_API_KEY = process.env.OPENAI_API_KEY ?? "";
