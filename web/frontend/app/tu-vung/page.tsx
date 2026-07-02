@@ -31,23 +31,41 @@ function parseVNDate(s: string): string | null {
 type StatusFilter = "all" | "new" | "learned";
 
 // Biểu đồ 7 ngày (Figma): cột xám + cột cao nhất xanh + tooltip hộp số; có trục y + lưới.
+const CHART_MAX_DAYS = 30; // trần số cột (tránh biểu đồ quá dài)
+
 function LearnedChart({ items }: { items: VocabItem[] }) {
-  const days = useMemo(() => {
+  // TIP-037 — cửa sổ ĐỘNG từ ngày học sớm nhất → hôm nay (min 7, max 30 ngày) để tổng
+  // các cột KHỚP tổng "đã học" (trước đây cửa sổ cố định 7 ngày cắt mất từ học lâu hơn).
+  const { days, capped } = useMemo(() => {
     const base = new Date(Date.now() + 7 * 3600_000);
-    base.setUTCHours(0, 0, 0, 0);
+    base.setUTCHours(0, 0, 0, 0); // UTC-midnight của ngày hôm nay theo giờ VN
+    const todayMs = base.getTime();
     const learnedKeys = items.filter((i) => i.learned_at).map((i) => dayKeyVN(i.learned_at as string));
-    return Array.from({ length: 7 }, (_, idx) => {
-      const d = new Date(base.getTime() - (6 - idx) * 86400_000);
+    let span = 7;
+    let capped = false;
+    if (learnedKeys.length) {
+      const earliest = learnedKeys.reduce((a, b) => (a < b ? a : b));
+      const diffDays = Math.round((todayMs - Date.parse(`${earliest}T00:00:00Z`)) / 86400_000) + 1;
+      span = Math.min(CHART_MAX_DAYS, Math.max(7, diffDays));
+      capped = diffDays > CHART_MAX_DAYS;
+    }
+    const days = Array.from({ length: span }, (_, idx) => {
+      const d = new Date(todayMs - (span - 1 - idx) * 86400_000);
       const key = d.toISOString().slice(0, 10);
       return { key, label: `${key.slice(8, 10)}/${key.slice(5, 7)}`, count: learnedKeys.filter((k) => k === key).length };
     });
+    return { days, capped };
   }, [items]);
   const max = Math.max(1, ...days.map((d) => d.count));
   const ticks = [max, Math.round((max * 2) / 3), Math.round(max / 3), 0];
+  const labelStep = Math.max(1, Math.ceil(days.length / 8)); // thưa nhãn khi nhiều cột
 
   return (
     <Card>
-      <h2 className="mb-4 text-center font-medium">Từ vựng đã học theo ngày</h2>
+      <h2 className="text-center font-medium">Từ vựng đã học theo ngày</h2>
+      <p className="mb-4 text-center text-xs text-muted-foreground">
+        {capped ? `${CHART_MAX_DAYS} ngày gần nhất` : "từ ngày học đầu tiên đến nay"}
+      </p>
       <div className="flex gap-2">
         {/* trục y */}
         <div className="flex h-40 flex-col justify-between py-1 text-[10px] text-muted-foreground">
@@ -82,9 +100,9 @@ function LearnedChart({ items }: { items: VocabItem[] }) {
         </div>
       </div>
       <div className="ml-8 mt-1 flex gap-2">
-        {days.map((d) => (
+        {days.map((d, i) => (
           <span key={d.key} className="flex-1 text-center text-[10px] text-muted-foreground">
-            {d.label}
+            {days.length <= 12 || i % labelStep === 0 ? d.label : ""}
           </span>
         ))}
       </div>
