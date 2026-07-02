@@ -60,13 +60,22 @@ async function pauseTimer(): Promise<TimerState> {
   if (!s.running) return s;
   const seg = Math.max(0, Math.floor((Date.now() - s.sessionStartedAt) / 1000));
   await setTimer({ running: false, sessionStartedAt: 0, accumulatedSec: s.accumulatedSec + seg, flushedSec: s.flushedSec });
+  await chrome.alarms.clear(FLUSH_ALARM); // TIP-051b: clear TRƯỚC flush (bớt cửa sổ race)
   await flushTimer();
-  await chrome.alarms.clear(FLUSH_ALARM);
   return getTimer();
 }
 
-// Gửi phần CHƯA flush của phiên (total - flushedSec). Đúng cho cả running lẫn paused.
-async function flushTimer(): Promise<void> {
+// TIP-051b — SERIALIZE flush: alarm (mỗi ~30s) có thể fire xen giữa lúc pause/stop đang await POST →
+// 2 flush chồng nhau, cùng delta → backend cộng ĐÔI. Xâu chuỗi để flush chạy tuần tự.
+let flushChain: Promise<void> = Promise.resolve();
+function flushTimer(): Promise<void> {
+  const run = flushChain.then(() => doFlush());
+  flushChain = run.catch(() => undefined); // giữ chuỗi chạy tiếp dù 1 flush lỗi
+  return run;
+}
+
+// Gửi phần CHƯA flush (total - flushedSec). Đúng cho cả running lẫn paused.
+async function doFlush(): Promise<void> {
   const s = await getTimer();
   const total = elapsedSec(s);
   const delta = total - s.flushedSec;
@@ -80,17 +89,18 @@ async function flushTimer(): Promise<void> {
       method: "POST",
       body: JSON.stringify({ duration_sec }),
     });
-    s.flushedSec += duration_sec;
-    await setTimer(s);
+    // ĐỌC LẠI: tránh đè state mới (pause/stop vừa đổi accumulated/running); CHỈ tăng flushedSec.
+    const cur = await getTimer();
+    await setTimer({ ...cur, flushedSec: cur.flushedSec + duration_sec });
   } catch (e) {
     console.warn("[StudyMovie] flush timer lỗi (sẽ gửi lại lần sau):", e);
   }
 }
 
 async function stopTimer(): Promise<TimerState> {
+  await chrome.alarms.clear(FLUSH_ALARM); // TIP-051b: clear TRƯỚC flush (bớt cửa sổ race)
   await flushTimer(); // chốt phần còn lại (accumulated đúng nhờ elapsedSec)
   await setTimer({ ...EMPTY });
-  await chrome.alarms.clear(FLUSH_ALARM);
   return { ...EMPTY };
 }
 
