@@ -278,34 +278,14 @@ function buildSettingsCard(): HTMLElement {
         );
       }
 
-      // Màu nền (toggle) + độ đậm %
-      const opLabel = div("set-val", `${st.bgOpacity}%`);
-      const slider = document.createElement("input");
-      slider.type = "range";
-      slider.min = "0";
-      slider.max = "100";
-      slider.step = "5";
-      slider.value = String(st.bgOpacity);
-      slider.className = "set-slider";
-      slider.disabled = !st.bgEnabled;
-      opLabel.style.opacity = st.bgEnabled ? "1" : "0.4";
-      slider.addEventListener("input", () => {
-        st.bgOpacity = Number(slider.value);
-        opLabel.textContent = `${st.bgOpacity}%`;
-        void setSettings({ bgOpacity: st.bgOpacity });
-      });
+      // TIP-050 — "Màu nền" chỉ còn TOGGLE bật/tắt (bỏ slider độ đậm %). bgOpacity giữ mặc định
+      // trong model (không có UI chỉnh); content script vẫn dùng bgOpacity khi bgEnabled.
       body.appendChild(
         switchRow("Màu nền", st.bgEnabled, (v) => {
           st.bgEnabled = v;
-          slider.disabled = !v;
-          opLabel.style.opacity = v ? "1" : "0.4";
           void setSettings({ bgEnabled: v });
         })
       );
-      const opRow = div("set-row");
-      opRow.appendChild(slider);
-      opRow.appendChild(opLabel);
-      body.appendChild(opRow);
 
       // Kích thước (EN size) — 12..32 bước 2
       body.appendChild(
@@ -508,24 +488,46 @@ function renderLogin(notice?: { text: string; ok: boolean }): void {
 }
 
 function renderUser(me: Me): void {
+  const doSignOut = async (): Promise<void> => {
+    await supabaseExt.auth.signOut();
+    // TIP-044 — báo background dọn session ở các tab web (đồng bộ logout ext→web).
+    try {
+      await chrome.runtime.sendMessage({ type: "SM_LOGOUT" });
+    } catch {
+      /* ignore */
+    }
+    renderLogin();
+  };
+
+  // Cài đặt phụ đề (TIP-015): EN/VI, màu, cỡ chữ — áp realtime qua chrome.storage.
+  const settingsCard = buildSettingsCard();
+
+  // TIP-050 — Home tối giản theo Figma (đã đăng nhập + còn hạn): chỉ card Thời gian học + card
+  // Chế độ phụ đề + bottom bar. Bỏ logo / avatar+email / "Hôm nay" / dòng trạng thái trial.
+  if (me.is_active) {
+    const timerCard = buildTimerCard(() => {});
+    mount(timerCard, settingsCard, footerNode(doSignOut));
+    return;
+  }
+
+  // !is_active — GIỮ layout cũ tạm thời (TIP-053 sẽ làm màn "Hết hạn dùng thử" riêng).
   const name = me.profile?.nickname ?? me.user.email ?? "Người dùng";
   const avatarUrl = me.profile?.avatar_url ?? null;
-
-  const avatar = avatarUrl ? (() => {
-    const img = document.createElement("img");
-    img.className = "avatar";
-    img.src = avatarUrl;
-    img.alt = name;
-    img.referrerPolicy = "no-referrer";
-    return img as HTMLElement;
-  })() : (() => {
-    const sp = document.createElement("span");
-    sp.className = "avatar";
-    sp.textContent = (name.trim().charAt(0) || "?").toUpperCase();
-    return sp as HTMLElement;
-  })();
-
-  // Khối avatar+email click được → mở Dashboard trên web.
+  const avatar = avatarUrl
+    ? (() => {
+        const img = document.createElement("img");
+        img.className = "avatar";
+        img.src = avatarUrl;
+        img.alt = name;
+        img.referrerPolicy = "no-referrer";
+        return img as HTMLElement;
+      })()
+    : (() => {
+        const sp = document.createElement("span");
+        sp.className = "avatar";
+        sp.textContent = (name.trim().charAt(0) || "?").toUpperCase();
+        return sp as HTMLElement;
+      })();
   const row = div("row clickable");
   row.setAttribute("role", "button");
   row.title = "Mở Dashboard";
@@ -537,8 +539,6 @@ function renderUser(me: Me): void {
 
   const sub = subStatusText(me);
   const statusBox = div(`status${sub.expired ? " expired" : ""}`, sub.text);
-
-  // Phút học hôm nay — cập nhật bất đồng bộ từ /api/dashboard (refresh lại sau khi Kết thúc).
   const minutesBox = div("status", "Hôm nay: … phút");
   const refreshMinutes = (): void => {
     void apiExt<{ today_minutes?: number }>("/api/dashboard")
@@ -550,29 +550,18 @@ function renderUser(me: Me): void {
       });
   };
   refreshMinutes();
-
-  // Timer thủ công (TIP-014): "Thời gian học" HH:MM:SS + Bắt đầu/Kết thúc. State ở background.
   const timerCard = buildTimerCard(refreshMinutes);
-  // Cài đặt phụ đề (TIP-015): EN/VI toggle, độ đậm nền, cỡ chữ — áp realtime qua chrome.storage.
-  const settingsCard = buildSettingsCard();
 
-  const nodes: Node[] = [logoNode(), row, timerCard, minutesBox, settingsCard, statusBox];
-  if (!me.is_active) {
-    nodes.push(button("Nâng cấp", () => openTab(`${SITE_URL}/upgrade`)));
-  }
-  nodes.push(
-    footerNode(async () => {
-      await supabaseExt.auth.signOut();
-      // TIP-044 — báo background dọn session ở các tab web (đồng bộ logout ext→web).
-      try {
-        await chrome.runtime.sendMessage({ type: "SM_LOGOUT" });
-      } catch {
-        /* ignore */
-      }
-      renderLogin();
-    })
+  mount(
+    logoNode(),
+    row,
+    timerCard,
+    minutesBox,
+    settingsCard,
+    statusBox,
+    button("Nâng cấp", () => openTab(`${SITE_URL}/upgrade`)),
+    footerNode(doSignOut)
   );
-  mount(...nodes);
 }
 
 async function render(): Promise<void> {
