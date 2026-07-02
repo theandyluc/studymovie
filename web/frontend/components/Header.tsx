@@ -1,6 +1,8 @@
 "use client";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
+import { fetchMe } from "@/lib/account";
 
 // TIP-019a — Nav route VN: Tiến độ học / Từ vựng / Hỗ trợ. (TIP-036 bỏ Blog)
 // TIP-042: /ho-tro redirect NGOÀI (Facebook) → tắt prefetch để Next không fetch RSC bị CORS chặn.
@@ -14,6 +16,26 @@ const MAIN_NAV: { href: string; label: string; prefetch?: false }[] = [
 
 export function Header() {
   const { user } = useUser();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // TIP-059 — chỉ hiện link Admin cho tài khoản admin (is_admin từ /api/me). Fail-closed (lỗi → ẩn).
+  useEffect(() => {
+    if (!user) {
+      setIsAdmin(false);
+      return;
+    }
+    let ok = true;
+    fetchMe()
+      .then((me) => {
+        if (ok) setIsAdmin(!!me.profile?.is_admin);
+      })
+      .catch(() => {
+        if (ok) setIsAdmin(false);
+      });
+    return () => {
+      ok = false;
+    };
+  }, [user]);
 
   // Logo "SM." — chữ đen đậm + chấm accent (vàng).
   const logo = (
@@ -30,6 +52,14 @@ export function Header() {
           {logo}
           {user ? (
             <div className="hidden items-center gap-5 md:flex">
+              {isAdmin ? (
+                <Link
+                  href="/admin"
+                  className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  Admin
+                </Link>
+              ) : null}
               {MAIN_NAV.map((item) => (
                 <Link
                   key={item.href}
