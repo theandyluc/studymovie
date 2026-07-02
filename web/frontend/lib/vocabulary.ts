@@ -13,6 +13,14 @@ export interface VocabItem {
   created_at: string;
 }
 
+// TIP-039 — Chuẩn hoá về 1 phiên âm: nhiều biến thể FVDP ngăn bằng "," / ";" (vd "ænd, ənd, ən").
+// Lấy cái đầu (ưu tiên UK — FVDP đã thiên Anh-Anh), bỏ dấu "/" thừa. Trả null nếu rỗng.
+export function firstIpa(ipa: string | null | undefined): string | null {
+  if (!ipa) return null;
+  const first = ipa.replace(/\//g, "").split(/[,;]/)[0].trim();
+  return first || null;
+}
+
 export async function fetchVocab(): Promise<VocabItem[]> {
   const { items } = await apiFetch<{ items: VocabItem[] }>("/api/vocabulary");
   return items;

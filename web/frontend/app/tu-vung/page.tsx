@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { fetchVocab, addVocab, deleteVocab, STUDY_SELECTION_KEY, type VocabItem } from "@/lib/vocabulary";
+import { fetchVocab, addVocab, deleteVocab, firstIpa, STUDY_SELECTION_KEY, type VocabItem } from "@/lib/vocabulary";
 import { toast, confirmDialog } from "@/components/ui/feedback";
 
 function playAudio(url: string): void {
@@ -458,7 +458,7 @@ function VocabList() {
                         </td>
                         <td className="py-2 pr-2">
                           <span className="font-medium">{it.word}</span>
-                          {it.ipa ? <span className="ml-1 text-xs text-muted-foreground">/{it.ipa}/</span> : null}
+                          {firstIpa(it.ipa) ? <span className="ml-1 text-xs text-muted-foreground">/{firstIpa(it.ipa)}/</span> : null}
                           {it.audio_url ? (
                             <button
                               onClick={(e) => {

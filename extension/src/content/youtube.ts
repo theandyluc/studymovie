@@ -53,6 +53,12 @@ interface ContextResponse {
   meaning_vi?: string;
   source?: string;
 }
+// TIP-039 — chỉ 1 phiên âm (FVDP ngăn nhiều biến thể bằng "," / ";"; ưu tiên cái đầu = UK).
+function firstIpa(ipa: string | null): string | null {
+  if (!ipa) return null;
+  const first = ipa.replace(/\//g, "").split(/[,;]/)[0].trim();
+  return first || null;
+}
 
 const ID = "studymovie-overlay";
 let settings: Settings = { ...DEFAULT_SETTINGS };
@@ -372,7 +378,8 @@ async function onWordClick(word: string, surface: string, sentence: string): Pro
     const sub = document.createElement("div");
     sub.style.color = "#71717a";
     sub.style.fontSize = "12px";
-    sub.textContent = `${result.lemma ?? word}${result.ipa ? `  /${result.ipa}/` : ""}`;
+    const ipa1 = firstIpa(result.ipa); // TIP-039: chỉ 1 phiên âm
+    sub.textContent = `${result.lemma ?? word}${ipa1 ? `  /${ipa1}/` : ""}`;
     pop.appendChild(sub);
   }
 

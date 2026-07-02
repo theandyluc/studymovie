@@ -29,6 +29,13 @@ type FdResult =
   | { ok: true; ipa: string | null; audio_url: string | null; meanings: Sense[] }
   | { ok: false; status: "not_found" | "error"; message?: string };
 
+// TIP-039 — chỉ 1 phiên âm sạch (bỏ "/" thừa, lấy cái đầu nếu chuỗi có nhiều biến thể ",/;").
+function firstIpa(ipa: string | null): string | null {
+  if (!ipa) return null;
+  const first = ipa.replace(/\//g, "").split(/[,;]/)[0].trim();
+  return first || null;
+}
+
 async function freeDictLookup(word: string): Promise<FdResult> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 5000);
@@ -44,12 +51,12 @@ async function freeDictLookup(word: string): Promise<FdResult> {
     const arr = (await res.json()) as FdEntry[];
     if (!Array.isArray(arr) || arr.length === 0) return { ok: false, status: "not_found" };
 
-    let ipa: string | null = null;
-    let audio: string | null = null;
+    const phonetics: FdPhonetic[] = [];
+    let plainPhonetic: string | null = null;
     const meanings: Sense[] = [];
     for (const entry of arr) {
-      if (!ipa) ipa = entry.phonetic ?? entry.phonetics?.find((p) => p.text)?.text ?? null;
-      if (!audio) audio = entry.phonetics?.find((p) => p.audio && p.audio.length > 0)?.audio ?? null;
+      if (!plainPhonetic && entry.phonetic) plainPhonetic = entry.phonetic;
+      for (const p of entry.phonetics ?? []) phonetics.push(p);
       for (const m of entry.meanings ?? []) {
         for (const d of m.definitions ?? []) {
           if (!d.definition) continue;
@@ -63,7 +70,13 @@ async function freeDictLookup(word: string): Promise<FdResult> {
       }
     }
     if (meanings.length === 0) return { ok: false, status: "not_found" };
-    return { ok: true, ipa, audio_url: audio, meanings };
+
+    // TIP-039 — ưu tiên bản UK (audio url chứa -uk/_uk); IPA + audio lấy từ mục UK nếu có.
+    const isUk = (p: FdPhonetic) => !!p.audio && /[-_/]uk/i.test(p.audio);
+    const uk = phonetics.find(isUk);
+    const ipaRaw = uk?.text ?? phonetics.find((p) => p.text)?.text ?? plainPhonetic ?? null;
+    const audio = uk?.audio ?? phonetics.find((p) => p.audio && p.audio.length > 0)?.audio ?? null;
+    return { ok: true, ipa: firstIpa(ipaRaw), audio_url: audio, meanings };
   } catch (e) {
     const aborted = e instanceof Error && e.name === "AbortError";
     return { ok: false, status: "error", message: aborted ? "timeout" : "network" };

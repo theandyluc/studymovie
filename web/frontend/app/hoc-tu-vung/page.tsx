@@ -5,7 +5,7 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PageLoading } from "@/components/ui/Spinner";
-import { fetchVocab, markLearned, STUDY_SELECTION_KEY, type VocabItem } from "@/lib/vocabulary";
+import { fetchVocab, markLearned, firstIpa, STUDY_SELECTION_KEY, type VocabItem } from "@/lib/vocabulary";
 
 const TUTORIAL_KEY = "sm-flashcard-tutorial-seen";
 const SWIPE_THRESHOLD = 90; // px — kéo vượt mức này mới đổi thẻ; chưa đủ → nảy về.
@@ -197,7 +197,7 @@ function Flashcards() {
           <span className="text-lg">🔊</span>
         )}
       </div>
-      {it.ipa ? <span className="mt-0.5 text-sm text-muted-foreground">/{it.ipa}/</span> : null}
+      {firstIpa(it.ipa) ? <span className="mt-0.5 text-sm text-muted-foreground">/{firstIpa(it.ipa)}/</span> : null}
       <span className="mt-1 text-base text-muted-foreground">{it.meaning_vi || "(chưa có nghĩa)"}</span>
       {!ghost && flipped && it.example ? (
         <p className="mt-4 text-sm italic text-muted-foreground">{it.example}</p>
