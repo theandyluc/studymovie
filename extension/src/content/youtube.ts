@@ -47,6 +47,12 @@ interface LookupResponse {
   status?: string;
   message?: string | null;
 }
+// TIP-038 — nghĩa theo ngữ cảnh (AI). source: "ai" | "ai-cache" (có nghĩa) | "fallback" (dùng từ điển).
+interface ContextResponse {
+  word?: string;
+  meaning_vi?: string;
+  source?: string;
+}
 
 const ID = "studymovie-overlay";
 let settings: Settings = { ...DEFAULT_SETTINGS };
@@ -338,14 +344,22 @@ async function onWordClick(word: string, surface: string, sentence: string): Pro
   pop.textContent = "Đang tra…";
   player.appendChild(pop);
 
-  let res: LookupResponse;
-  try {
-    res = await callApi<LookupResponse>("GET", `/api/lookup?word=${encodeURIComponent(word)}`);
-  } catch (e) {
-    pop.textContent = `Lỗi tra nghĩa: ${e instanceof Error ? e.message : String(e)}`;
+  // TIP-038 — song song: từ điển (/api/lookup: IPA/audio + nghĩa fallback) +
+  // nghĩa theo NGỮ CẢNH (/api/lookup-context: AI). AI lỗi/fallback → dùng nghĩa từ điển.
+  const [dictR, ctxR] = await Promise.allSettled([
+    callApi<LookupResponse>("GET", `/api/lookup?word=${encodeURIComponent(word)}`),
+    callApi<ContextResponse>("POST", "/api/lookup-context", { word, sentence }),
+  ]);
+  if (dictR.status !== "fulfilled") {
+    pop.textContent = `Lỗi tra nghĩa: ${dictR.reason instanceof Error ? dictR.reason.message : String(dictR.reason)}`;
     return;
   }
+  const res = dictR.value;
   const result = res.result;
+  const aiMeaning =
+    ctxR.status === "fulfilled" && (ctxR.value.source === "ai" || ctxR.value.source === "ai-cache")
+      ? (ctxR.value.meaning_vi ?? "").trim() || null
+      : null;
 
   pop.textContent = "";
   const head = document.createElement("div");
@@ -353,50 +367,54 @@ async function onWordClick(word: string, surface: string, sentence: string): Pro
   head.textContent = surface.trim() || word;
   pop.appendChild(head);
 
-  if (result) {
-    if (result.source === "free_dict") {
-      const tag = document.createElement("div");
-      tag.textContent = "📖 định nghĩa tiếng Anh";
-      tag.style.cssText = "font-size:11px;color:#4f46e5;margin-top:2px;";
-      pop.appendChild(tag);
-    }
+  // Dòng phụ: lemma + IPA (từ từ điển)
+  if (result && (result.lemma || result.ipa)) {
     const sub = document.createElement("div");
     sub.style.color = "#71717a";
     sub.style.fontSize = "12px";
-    sub.textContent = `${result.lemma}${result.ipa ? `  /${result.ipa}/` : ""}`;
+    sub.textContent = `${result.lemma ?? word}${result.ipa ? `  /${result.ipa}/` : ""}`;
     pop.appendChild(sub);
+  }
 
-    const senses = result.meanings ?? [];
-    const list = document.createElement("div");
-    list.style.margin = "8px 0";
-    if (senses.length) {
-      for (const s of senses.slice(0, 4)) {
-        const line = document.createElement("div");
-        line.textContent = `• ${s.pos ? `(${s.pos}) ` : ""}${s.sense ?? ""}`;
-        list.appendChild(line);
-      }
-    } else {
-      list.textContent = "Không tìm thấy nghĩa trong từ điển.";
+  // Nghĩa: ƯU TIÊN nghĩa AI theo ngữ cảnh (1 nghĩa); không có → nghĩa từ điển.
+  const meaningBox = document.createElement("div");
+  meaningBox.style.margin = "8px 0";
+  if (aiMeaning) {
+    const tag = document.createElement("div");
+    tag.textContent = "🤖 nghĩa theo ngữ cảnh";
+    tag.style.cssText = "font-size:11px;color:#16a34a;margin-bottom:2px;";
+    meaningBox.appendChild(tag);
+    const line = document.createElement("div");
+    line.textContent = aiMeaning;
+    meaningBox.appendChild(line);
+  } else if (result?.meanings?.length) {
+    if (result.source === "free_dict") {
+      const tag = document.createElement("div");
+      tag.textContent = "📖 định nghĩa tiếng Anh";
+      tag.style.cssText = "font-size:11px;color:#4f46e5;margin-bottom:2px;";
+      meaningBox.appendChild(tag);
     }
-    pop.appendChild(list);
-
-    if (result.audio_url) {
-      const audioUrl = result.audio_url;
-      pop.appendChild(
-        mkBtn("🔊 Phát âm", () => {
-          try {
-            void new Audio(audioUrl).play();
-          } catch {
-            /* ignore */
-          }
-        })
-      );
+    for (const s of result.meanings.slice(0, 4)) {
+      const line = document.createElement("div");
+      line.textContent = `• ${s.pos ? `(${s.pos}) ` : ""}${s.sense ?? ""}`;
+      meaningBox.appendChild(line);
     }
   } else {
-    const none = document.createElement("div");
-    none.style.margin = "8px 0";
-    none.textContent = res.status === "error" ? "Lỗi tra cứu, thử lại sau." : "Không tìm thấy nghĩa.";
-    pop.appendChild(none);
+    meaningBox.textContent = res.status === "error" ? "Lỗi tra cứu, thử lại sau." : "Không tìm thấy nghĩa.";
+  }
+  pop.appendChild(meaningBox);
+
+  if (result?.audio_url) {
+    const audioUrl = result.audio_url;
+    pop.appendChild(
+      mkBtn("🔊 Phát âm", () => {
+        try {
+          void new Audio(audioUrl).play();
+        } catch {
+          /* ignore */
+        }
+      })
+    );
   }
 
   const saveBtn = mkBtn("Lưu", async () => {
@@ -407,7 +425,7 @@ async function onWordClick(word: string, surface: string, sentence: string): Pro
         word,
         lemma: result?.lemma ?? word,
         ipa: result?.ipa ?? null,
-        meaning_vi: meaningSummary(result),
+        meaning_vi: aiMeaning ?? meaningSummary(result),
         example: sentence,
         audio_url: result?.audio_url ?? null,
       });
