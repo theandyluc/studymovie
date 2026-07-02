@@ -1,9 +1,8 @@
 "use client";
 import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
-import { PageLoading } from "@/components/ui/Spinner";
 import { fetchAccessStatus } from "@/lib/access";
 
 // TIP-019b — Chặn TRANG HỌC khi hết trial + chưa trả → redirect /thanh-toan.
@@ -25,40 +24,24 @@ export function AccessGuard({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { user, loading } = useUser();
   const router = useRouter();
-  const [checking, setChecking] = useState(true);
 
+  // TIP-041 — KHÔNG chặn render: hiện nội dung NGAY, check quyền chạy nền.
+  // Backend đã chặn dữ liệu server-side nên thấy shell mà hết hạn cũng không lấy được data;
+  // guard chỉ là UX redirect. Hết quyền → redirect /thanh-toan. Lỗi → fail-open.
   useEffect(() => {
-    if (!isProtected(pathname)) {
-      setChecking(false);
-      return;
-    }
-    if (loading) {
-      setChecking(true);
-      return; // chờ biết đã đăng nhập chưa
-    }
-    if (!user) {
-      setChecking(false);
-      return; // chưa login → để AuthForm/AuthGuard của trang redirect về "/"
-    }
+    if (!isProtected(pathname) || loading || !user) return;
     let active = true;
-    setChecking(true);
     fetchAccessStatus()
       .then((s) => {
-        if (!active) return;
-        if (s.has_access) setChecking(false);
-        else router.replace(PAYWALL_REDIRECT); // hết trial + chưa trả → trang thanh toán
+        if (active && !s.has_access) router.replace(PAYWALL_REDIRECT);
       })
       .catch(() => {
-        // Lỗi tạm thời → fail-open (không khoá nhầm người đang có quyền); lần điều hướng sau check lại.
-        if (active) setChecking(false);
+        /* fail-open: lỗi tạm thời không khoá nhầm người đang có quyền */
       });
     return () => {
       active = false;
     };
   }, [pathname, user, loading, router]);
 
-  if (isProtected(pathname) && checking) {
-    return <PageLoading />;
-  }
   return <>{children}</>;
 }
