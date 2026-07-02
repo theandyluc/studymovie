@@ -312,17 +312,6 @@ function buildSettingsCard(): HTMLElement {
   return card;
 }
 
-function subStatusText(me: Me): { text: string; expired: boolean } {
-  const s = me.subscription;
-  if (me.is_active && s?.status === "trial" && s.trial_ends_at) {
-    const hrs = Math.max(0, Math.ceil((new Date(s.trial_ends_at).getTime() - Date.now()) / 3_600_000));
-    return { text: `Dùng thử: còn ${hrs} giờ`, expired: false };
-  }
-  if (me.is_active && s?.status === "active" && s.paid_until) {
-    return { text: `Đã kích hoạt đến ${new Date(s.paid_until).toLocaleDateString("vi-VN")}`, expired: false };
-  }
-  return { text: "Đã hết hạn", expired: true };
-}
 
 // Logo "SM." — chữ đậm + chấm accent (vàng), đồng bộ web.
 function logoNode(): HTMLElement {
@@ -499,69 +488,33 @@ function renderUser(me: Me): void {
     renderLogin();
   };
 
-  // Cài đặt phụ đề (TIP-015): EN/VI, màu, cỡ chữ — áp realtime qua chrome.storage.
-  const settingsCard = buildSettingsCard();
-
   // TIP-050 — Home tối giản theo Figma (đã đăng nhập + còn hạn): chỉ card Thời gian học + card
   // Chế độ phụ đề + bottom bar. Bỏ logo / avatar+email / "Hôm nay" / dòng trạng thái trial.
   if (me.is_active) {
+    const settingsCard = buildSettingsCard(); // TIP-015: EN/VI, màu, cỡ chữ — realtime qua chrome.storage
     const timerCard = buildTimerCard(() => {});
     mount(timerCard, settingsCard, footerNode(doSignOut));
     return;
   }
 
-  // !is_active — GIỮ layout cũ tạm thời (TIP-053 sẽ làm màn "Hết hạn dùng thử" riêng).
-  const name = me.profile?.nickname ?? me.user.email ?? "Người dùng";
-  const avatarUrl = me.profile?.avatar_url ?? null;
-  const avatar = avatarUrl
-    ? (() => {
-        const img = document.createElement("img");
-        img.className = "avatar";
-        img.src = avatarUrl;
-        img.alt = name;
-        img.referrerPolicy = "no-referrer";
-        return img as HTMLElement;
-      })()
-    : (() => {
-        const sp = document.createElement("span");
-        sp.className = "avatar";
-        sp.textContent = (name.trim().charAt(0) || "?").toUpperCase();
-        return sp as HTMLElement;
-      })();
-  const row = div("row clickable");
-  row.setAttribute("role", "button");
-  row.title = "Mở Dashboard";
-  row.addEventListener("click", () => openTab(`${SITE_URL}/dashboard`));
-  row.appendChild(avatar);
-  const info = div("");
-  info.appendChild(div("email", me.user.email ?? name));
-  row.appendChild(info);
+  // TIP-053 — !is_active: màn "Hết hạn dùng thử" theo Figma (sạch, căn giữa).
+  const title = div("expired-title", "Hết hạn dùng thử");
+  const p = div("expired-msg");
+  p.append("Tài khoản của bạn đã hết hạn dùng thử, vui lòng nâng cấp ");
+  const a = document.createElement("a");
+  a.textContent = "tại đây";
+  a.className = "expired-link";
+  a.href = "#";
+  a.addEventListener("click", (e) => {
+    e.preventDefault();
+    openTab(`${SITE_URL}/thanh-toan`);
+  });
+  p.appendChild(a);
+  p.append(" để tiếp tục sử dụng.");
+  const box = div("expired-box");
+  box.append(title, p);
 
-  const sub = subStatusText(me);
-  const statusBox = div(`status${sub.expired ? " expired" : ""}`, sub.text);
-  const minutesBox = div("status", "Hôm nay: … phút");
-  const refreshMinutes = (): void => {
-    void apiExt<{ today_minutes?: number }>("/api/dashboard")
-      .then((d) => {
-        minutesBox.textContent = `Hôm nay: ${d.today_minutes ?? 0} phút`;
-      })
-      .catch(() => {
-        minutesBox.textContent = "Hôm nay: — phút";
-      });
-  };
-  refreshMinutes();
-  const timerCard = buildTimerCard(refreshMinutes);
-
-  mount(
-    logoNode(),
-    row,
-    timerCard,
-    minutesBox,
-    settingsCard,
-    statusBox,
-    button("Nâng cấp", () => openTab(`${SITE_URL}/upgrade`)),
-    footerNode(doSignOut)
-  );
+  mount(box, footerNode(doSignOut)); // GIỮ bottom bar (Đăng xuất / Hỗ trợ) để thoát tài khoản
 }
 
 async function render(): Promise<void> {
