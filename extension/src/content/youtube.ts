@@ -380,10 +380,6 @@ async function onWordClick(word: string, surface: string, sentence: string): Pro
   const meaningBox = document.createElement("div");
   meaningBox.style.margin = "8px 0";
   if (aiMeaning) {
-    const tag = document.createElement("div");
-    tag.textContent = "🤖 nghĩa theo ngữ cảnh";
-    tag.style.cssText = "font-size:11px;color:#16a34a;margin-bottom:2px;";
-    meaningBox.appendChild(tag);
     const line = document.createElement("div");
     line.textContent = aiMeaning;
     meaningBox.appendChild(line);
