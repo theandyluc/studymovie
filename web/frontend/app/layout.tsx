@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
 import { AccessGuard } from "@/components/AccessGuard";
 import { Toaster, ConfirmHost } from "@/components/ui/feedback";
 
@@ -32,7 +31,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
           <AccessGuard>{children}</AccessGuard>
         </main>
-        <Footer />
         <Toaster />
         <ConfirmHost />
       </body>
