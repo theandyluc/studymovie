@@ -10,10 +10,11 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 
 // TIP-019a — Nav route VN: Tiến độ học / Từ vựng / Hỗ trợ. (TIP-036: bỏ Blog)
 // Playlist / Bảng xếp hạng / Cài đặt giữ trong dropdown avatar (KHÔNG mất truy cập).
-const MAIN_NAV = [
+// TIP-042: /ho-tro redirect NGOÀI (Facebook) → tắt prefetch để Next không fetch RSC bị CORS chặn.
+const MAIN_NAV: { href: string; label: string; prefetch?: false }[] = [
   { href: "/dashboard", label: "Tiến độ học" },
   { href: "/tu-vung", label: "Từ vựng" },
-  { href: "/ho-tro", label: "Hỗ trợ" },
+  { href: "/ho-tro", label: "Hỗ trợ", prefetch: false },
 ];
 const MENU = [
   { href: "/playlist", label: "Playlist" },
@@ -73,6 +74,7 @@ export function Header() {
                 <Link
                   key={item.href}
                   href={item.href}
+                  prefetch={item.prefetch}
                   className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
                 >
                   {item.label}
