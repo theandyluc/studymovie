@@ -34,6 +34,19 @@ export async function apiFetch<T = unknown>(path: string, init: RequestInit = {}
     } catch {
       /* body không phải JSON */
     }
+
+    // TIP-045 — 401 = token hết hiệu lực (vd bị thu hồi khi đăng xuất ở extension).
+    // Dọn session cũ (local) + về trang login để web tự phục hồi, không kẹt "invalid token".
+    if (res.status === 401) {
+      try {
+        await sb?.auth.signOut({ scope: "local" });
+      } catch {
+        /* ignore */
+      }
+      if (typeof window !== "undefined" && window.location.pathname !== "/") {
+        window.location.replace("/");
+      }
+    }
     throw new ApiError(res.status, code);
   }
   return (await res.json()) as T;
