@@ -201,7 +201,7 @@ cd extension    && npm run lint && npm run build
 
 - **Category:** Education
 - **Ngôn ngữ:** Tiếng Việt
-- **Privacy policy URL:** `https://app.studymovie.com/privacy`
+- **Privacy policy URL:** `https://app.studymovie.com/privacy` (trang vẫn LIVE, truy cập bằng URL trực tiếp. Footer web đã bỏ theo yêu cầu khách — TIP-049 — nên KHÔNG còn link privacy ở đáy trang; dán URL này thẳng vào ô Privacy policy của Store listing.)
 - **Email liên hệ:** dkhiem2k4@gmail.com
 
 **Data usage (khai báo khi submit):**
