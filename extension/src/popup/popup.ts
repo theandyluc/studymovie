@@ -553,6 +553,12 @@ function renderUser(me: Me): void {
   nodes.push(
     footerNode(async () => {
       await supabaseExt.auth.signOut();
+      // TIP-044 — báo background dọn session ở các tab web (đồng bộ logout ext→web).
+      try {
+        await chrome.runtime.sendMessage({ type: "SM_LOGOUT" });
+      } catch {
+        /* ignore */
+      }
       renderLogin();
     })
   );

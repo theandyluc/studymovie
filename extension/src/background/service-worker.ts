@@ -7,6 +7,7 @@
 //   ngột → onStartup finalize (KHÔNG đếm thời gian Chrome đóng).
 import { supabaseExt } from "../lib/supabaseExt";
 import { apiExt } from "../lib/apiExt";
+import { SITE_URL } from "../lib/env";
 
 console.log("[StudyMovie] service worker initialized");
 
@@ -113,6 +114,10 @@ chrome.runtime.onMessage.addListener((msg: SmMessage, _sender, sendResponse) => 
     void applyAuth(msg.session ?? null);
     return; // không trả lời
   }
+  if (msg?.type === "SM_LOGOUT") {
+    void handleLogout(); // TIP-044: dọn ext + báo các tab web logout
+    return;
+  }
   if (msg?.type === "SM_API" && msg.path) {
     void handleApi(msg, sendResponse);
     return true; // trả lời bất đồng bộ
@@ -140,6 +145,21 @@ async function handleApi(msg: SmMessage, sendResponse: (r: unknown) => void): Pr
     sendResponse({ ok: true, data });
   } catch (e) {
     sendResponse({ ok: false, error: e instanceof Error ? e.message : String(e) });
+  }
+}
+
+// TIP-044 — Đồng bộ logout ext→web: đảm bảo ext sạch + gửi SM_LOGOUT tới mọi tab web
+// (SITE_URL + localhost dev) để auth-bridge dọn localStorage web + reload về màn login.
+async function handleLogout(): Promise<void> {
+  await applyAuth(null); // signOut đã chạy ở popup; gọi lại cho chắc ext sạch
+  const patterns = [`${SITE_URL}/*`, "http://localhost:3000/*"];
+  try {
+    const tabs = await chrome.tabs.query({ url: patterns });
+    for (const t of tabs) {
+      if (t.id != null) chrome.tabs.sendMessage(t.id, { type: "SM_LOGOUT" }).catch(() => {});
+    }
+  } catch (e) {
+    console.warn("[StudyMovie] logout propagate lỗi:", e);
   }
 }
 

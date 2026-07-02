@@ -64,3 +64,16 @@ function sync(): void {
 sync();
 timer = setInterval(sync, 1000);
 window.addEventListener("storage", sync);
+
+// TIP-044 — nhận lệnh logout từ extension (popup → background) → dọn session web + reload về login.
+chrome.runtime.onMessage.addListener((msg: { type?: string }) => {
+  if (msg?.type === "SM_LOGOUT") {
+    try {
+      window.localStorage.removeItem(KEY);
+    } catch {
+      /* ignore */
+    }
+    last = "";
+    location.reload();
+  }
+});
