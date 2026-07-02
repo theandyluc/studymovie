@@ -439,6 +439,7 @@ function renderLogin(notice?: { text: string; ok: boolean }): void {
     submit.disabled = true;
     submit.textContent = isReg ? "Đang tạo…" : "Đang đăng nhập…";
     try {
+      let loggedIn = false;
       if (isReg) {
         const { data, error } = await supabaseExt.auth.signUp({ email: em, password: pw });
         if (error) {
@@ -454,12 +455,21 @@ function renderLogin(notice?: { text: string; ok: boolean }): void {
           authMode = "login";
           renderLogin({ text: "Đã gửi email xác nhận. Vui lòng mở hộp thư và bấm link để kích hoạt.", ok: true });
           return;
+        } else {
+          loggedIn = true; // có session ngay (confirm off) → onChanged tự render user view
         }
-        // (Nếu có session ngay = confirm off → onChanged listener sẽ tự render user view.)
       } else {
         const { error } = await supabaseExt.auth.signInWithPassword({ email: em, password: pw });
         if (error) showMsg(mapAuthError(error.message), false);
-        // Thành công → session ghi chrome.storage → onChanged listener tự render user view.
+        else loggedIn = true; // session ghi chrome.storage → onChanged tự render user view
+      }
+      // TIP-047 — login thành công (có session) → đẩy session sang các tab web đang mở.
+      if (loggedIn) {
+        try {
+          await chrome.runtime.sendMessage({ type: "SM_LOGIN" });
+        } catch {
+          /* ignore */
+        }
       }
     } catch (e) {
       showMsg(e instanceof Error ? e.message : String(e), false);

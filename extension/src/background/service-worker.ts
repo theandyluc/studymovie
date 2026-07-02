@@ -5,7 +5,7 @@
 // TIP-014 — Timer THỦ CÔNG Start/Stop. State ở background + chrome.storage (bền khi popup đóng).
 //   Flush định kỳ (alarm) khi đang chạy → POST /api/study-session (cộng HẾT). Tắt Chrome đột
 //   ngột → onStartup finalize (KHÔNG đếm thời gian Chrome đóng).
-import { supabaseExt } from "../lib/supabaseExt";
+import { supabaseExt, EXT_STORAGE_KEY } from "../lib/supabaseExt";
 import { apiExt } from "../lib/apiExt";
 
 console.log("[StudyMovie] service worker initialized");
@@ -117,6 +117,17 @@ chrome.runtime.onMessage.addListener((msg: SmMessage, _sender, sendResponse) => 
     void handleLogout(); // TIP-044: dọn ext + báo các tab web logout
     return;
   }
+  if (msg?.type === "SM_PULL_SESSION") {
+    // TIP-047: content web hỏi session ext (khi web trống) → trả raw session (hoặc null).
+    void chrome.storage.local
+      .get(EXT_STORAGE_KEY)
+      .then((r) => sendResponse({ raw: (r[EXT_STORAGE_KEY] as string | undefined) ?? null }));
+    return true; // trả lời bất đồng bộ
+  }
+  if (msg?.type === "SM_LOGIN") {
+    void handleLogin(); // TIP-047: ext vừa login → đẩy session sang các tab web
+    return;
+  }
   if (msg?.type === "SM_API" && msg.path) {
     void handleApi(msg, sendResponse);
     return true; // trả lời bất đồng bộ
@@ -160,6 +171,22 @@ async function handleLogout(): Promise<void> {
     }
   } catch (e) {
     console.warn("[StudyMovie] logout propagate lỗi:", e);
+  }
+}
+
+// TIP-047 — ext vừa login → đọc raw session ở chrome.storage + gửi SM_SET_SESSION tới MỌI tab
+// (chỉ tab web có auth-bridge sẽ nhận & set localStorage + reload → web tự đăng nhập theo).
+async function handleLogin(): Promise<void> {
+  const r = await chrome.storage.local.get(EXT_STORAGE_KEY);
+  const raw = (r[EXT_STORAGE_KEY] as string | undefined) ?? null;
+  if (!raw) return;
+  try {
+    const tabs = await chrome.tabs.query({});
+    for (const t of tabs) {
+      if (t.id != null) chrome.tabs.sendMessage(t.id, { type: "SM_SET_SESSION", raw }).catch(() => {});
+    }
+  } catch (e) {
+    console.warn("[StudyMovie] login propagate lỗi:", e);
   }
 }
 

@@ -52,6 +52,8 @@ function sync(): void {
   }
   if (raw === last) return;
   last = raw ?? "";
+  // TIP-047 — CHỈ gửi khi web CÓ session; web trống KHÔNG đè/đăng xuất extension (logout dùng SM_LOGOUT).
+  if (!raw) return;
   try {
     chrome.runtime.sendMessage({ type: "SM_AUTH", session: extractSession(raw) }).catch(() => {
       /* background có thể đang ngủ; lần poll sau sẽ gửi lại */
@@ -65,8 +67,9 @@ sync();
 timer = setInterval(sync, 1000);
 window.addEventListener("storage", sync);
 
-// TIP-044 — nhận lệnh logout từ extension (popup → background) → dọn session web + reload về login.
-chrome.runtime.onMessage.addListener((msg: { type?: string }) => {
+// TIP-044/047 — nhận lệnh từ extension: logout (dọn session web) hoặc set-session (ext login → đẩy sang web).
+// Chốt chặn LOOP reload bằng sessionStorage "sm-synced" (mỗi phiên tab chỉ pull/set + reload 1 lần).
+chrome.runtime.onMessage.addListener((msg: { type?: string; raw?: string }) => {
   if (msg?.type === "SM_LOGOUT") {
     try {
       window.localStorage.removeItem(KEY);
@@ -75,5 +78,41 @@ chrome.runtime.onMessage.addListener((msg: { type?: string }) => {
     }
     last = "";
     location.reload();
+  } else if (msg?.type === "SM_SET_SESSION" && msg.raw) {
+    try {
+      sessionStorage.setItem("sm-synced", "1");
+      window.localStorage.setItem(KEY, msg.raw);
+    } catch {
+      /* ignore */
+    }
+    location.reload();
   }
 });
+
+// TIP-047 — Khi tab web tải mà CHƯA có session + chưa đồng bộ phiên này → kéo session từ extension (nếu có).
+(() => {
+  let empty: boolean;
+  try {
+    empty = !window.localStorage.getItem(KEY) && !sessionStorage.getItem("sm-synced");
+  } catch {
+    return;
+  }
+  if (!empty || !contextAlive()) return;
+  try {
+    chrome.runtime
+      .sendMessage({ type: "SM_PULL_SESSION" })
+      .then((resp: { raw?: string | null } | undefined) => {
+        if (!resp?.raw) return;
+        try {
+          sessionStorage.setItem("sm-synced", "1"); // chỉ pull + reload 1 lần/phiên tab
+          window.localStorage.setItem(KEY, resp.raw);
+        } catch {
+          return;
+        }
+        location.reload();
+      })
+      .catch(() => {});
+  } catch {
+    /* context chết */
+  }
+})();
