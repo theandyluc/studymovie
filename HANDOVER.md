@@ -80,6 +80,7 @@ Gồm 3 khối dùng chung 1 tài khoản Google + 1 database Supabase:
 | `VIETQR_TEMPLATE` | mẫu ảnh QR (`compact2`) |
 | `PRO_PRICE` | giá gói Pro (VND, vd `49000`) |
 | `PRO_DURATION_DAYS` | số ngày gói Pro (vd `30`) |
+| `OPENAI_API_KEY` | **BÍ MẬT** — key OpenAI cho tính năng "nghĩa theo ngữ cảnh" (model `gpt-4o-mini`). CHỈ backend. **Thiếu key → tự fallback** sang nghĩa từ điển (không lỗi). Chi tiết + cách đặt/đổi/tắt: xem **mục 3.5**. |
 | `PORT` | (tùy chọn) cổng local, mặc định 8787 — Vercel không cần |
 
 ### 3.3 Extension bản production (`extension/.env.production`, GITIGNORE — KHÔNG commit)
@@ -97,6 +98,33 @@ Gồm 3 khối dùng chung 1 tài khoản Google + 1 database Supabase:
 |---|---|
 | `GOOGLE_OAUTH_CLIENT_ID` | Client ID (nhập vào Supabase Auth → Google provider) |
 | `GOOGLE_OAUTH_CLIENT_SECRET` | Client Secret (Supabase Auth) |
+
+### 3.5 Tính năng AI — nghĩa từ theo NGỮ CẢNH (OpenAI GPT-4o-mini)
+
+**Là gì:** Khi người học bấm vào 1 từ trong phụ đề YouTube, backend gọi OpenAI (model `gpt-4o-mini`)
+đọc cả câu để trả về **DUY NHẤT 1 nghĩa tiếng Việt đúng ngữ cảnh** (thay vì liệt kê nhiều nghĩa gây
+rối). Endpoint: `POST /api/lookup-context` (`web/backend/src/api/lookup-context.ts`). IPA + audio vẫn
+lấy từ từ điển. *(Đây là điểm ĐẢO quyết định D-2 có kiểm soát — xem CLAUDE.md mục 4 / Blueprint.)*
+
+**Cần gì để chạy trên production (đây là chỗ khách hay phải sửa):**
+1. **Migration bảng cache** `..._ai_context_meaning` (bảng `ai_context_meaning`) — đã có sẵn; nếu dựng
+   DB mới thì áp lại theo **mục 5**. Không có bảng → AI vẫn chạy nhưng KHÔNG cache (mỗi lần đều gọi OpenAI, tốn phí hơn).
+2. **Đặt API key** ở **Vercel → project `studymovie-backend` → Settings → Environment Variables**:
+   - **Name:** `OPENAI_API_KEY`
+   - **Value:** key OpenAI (dạng `sk-...`), lấy tại <https://platform.openai.com/api-keys>
+     (cần tài khoản OpenAI + **nạp credit / gắn thẻ**).
+   - **Environment:** Production.
+   - → Sau khi lưu, **Redeploy** project backend (đổi env phải redeploy mới có hiệu lực).
+
+**Chi phí:** `gpt-4o-mini` rất rẻ (~$0.15 / 1 triệu token input); mỗi cặp (từ + câu) chỉ gọi **1 lần**
+rồi cache → thực tế rất thấp. Đặt hạn mức chi tiêu tại dashboard OpenAI (Billing → Limits) nếu muốn.
+
+**Đổi / xoay key:** vào đúng chỗ trên (Vercel backend env) → sửa value `OPENAI_API_KEY` → **Redeploy**.
+
+**Muốn TẮT tính năng (quay lại tra từ điển thuần):** chỉ cần **xoá biến `OPENAI_API_KEY`** ở backend →
+Redeploy. Hệ thống **tự fallback** về từ điển (FVDP/Free Dictionary) — không lỗi, không phải sửa code.
+
+**An toàn:** key CHỈ nằm ở backend (server-side), **không bao giờ** lộ ra extension/web.
 
 ---
 
@@ -129,7 +157,8 @@ Gồm 3 khối dùng chung 1 tài khoản Google + 1 database Supabase:
 - Áp lên project: qua Supabase CLI (`supabase db push --linked`) hoặc chạy SQL trong dashboard.
 - Danh sách hiện có: `..._init_schema`, `..._rpc`, `..._lookup_word_v2`, `..._payment_orders`,
   `..._streak_threshold`, `..._level_system`, `..._weekly_plans`, `..._access_status`, `..._admin`,
-  `..._vocab_learned`.
+  `..._vocab_learned`, `..._dashboard_totals`, `..._ai_context_meaning` (bảng cache nghĩa AI — cần cho
+  tính năng nghĩa ngữ cảnh, mục 3.5).
 - Seed từ điển EN-VI: `supabase/seed/import_dictionary.mjs` (nguồn **FVDP © Hồ Ngọc Đức, GPL v2 —
   GIỮ credit**). Verify RPC: `supabase/seed/verify_rpc.mjs`.
 - Bootstrap admin: set `profiles.is_admin = true` cho email admin (qua SQL/dashboard).
@@ -210,6 +239,7 @@ cd extension    && npm run lint && npm run build
   - [ ] Supabase: reset **anon key** + **service_role key** (Settings → API).
   - [ ] SePay: cấp lại `SEPAY_API_KEY`.
   - [ ] Google OAuth: tạo lại `GOOGLE_OAUTH_CLIENT_SECRET`.
+  - [ ] OpenAI: dùng key OpenAI **của khách** cho `OPENAI_API_KEY` (thu hồi key dev cũ nếu có; đặt lại ở Vercel backend — mục 3.5).
 - [ ] **Cập nhật lại env sau khi xoay key** ở: Vercel (frontend + backend), Supabase Auth (Google
   provider), `extension/.env.production` → rebuild `build:prod` + redeploy web.
 - [ ] Đổi email liên hệ/admin sang của khách nếu cần.
