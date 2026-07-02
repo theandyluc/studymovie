@@ -7,7 +7,6 @@
 //   ngột → onStartup finalize (KHÔNG đếm thời gian Chrome đóng).
 import { supabaseExt } from "../lib/supabaseExt";
 import { apiExt } from "../lib/apiExt";
-import { SITE_URL } from "../lib/env";
 
 console.log("[StudyMovie] service worker initialized");
 
@@ -152,9 +151,10 @@ async function handleApi(msg: SmMessage, sendResponse: (r: unknown) => void): Pr
 // (SITE_URL + localhost dev) để auth-bridge dọn localStorage web + reload về màn login.
 async function handleLogout(): Promise<void> {
   await applyAuth(null); // signOut đã chạy ở popup; gọi lại cho chắc ext sạch
-  const patterns = [`${SITE_URL}/*`, "http://localhost:3000/*"];
+  // TIP-044b: gửi tới MỌI tab (không lọc theo SITE_URL — bản dev SITE_URL=localhost sẽ bỏ sót
+  // tab app.studymovie.com). auth-bridge chỉ chạy ở tab web (theo manifest) nên chỉ tab web xử lý.
   try {
-    const tabs = await chrome.tabs.query({ url: patterns });
+    const tabs = await chrome.tabs.query({});
     for (const t of tabs) {
       if (t.id != null) chrome.tabs.sendMessage(t.id, { type: "SM_LOGOUT" }).catch(() => {});
     }
