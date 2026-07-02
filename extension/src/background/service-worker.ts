@@ -18,10 +18,11 @@ const MAX_FLUSH_SEC = 86400; // cap an toàn 1 ngày (backend cũng validate)
 
 interface TimerState {
   running: boolean;
-  sessionStartedAt: number; // epoch ms khi bấm Bắt đầu (cho hiển thị đếm lên)
+  sessionStartedAt: number; // epoch ms khi bắt đầu ĐOẠN chạy hiện tại
+  accumulatedSec: number; // TIP-051: giây đã tích ở các đoạn chạy TRƯỚC (chưa tính đoạn đang chạy)
   flushedSec: number; // số giây đã gửi backend trong phiên hiện tại
 }
-const EMPTY: TimerState = { running: false, sessionStartedAt: 0, flushedSec: 0 };
+const EMPTY: TimerState = { running: false, sessionStartedAt: 0, accumulatedSec: 0, flushedSec: 0 };
 
 async function getTimer(): Promise<TimerState> {
   const r = await chrome.storage.local.get(TIMER_KEY);
@@ -31,31 +32,48 @@ async function setTimer(s: TimerState): Promise<void> {
   await chrome.storage.local.set({ [TIMER_KEY]: s });
 }
 function elapsedSec(s: TimerState): number {
-  return s.running ? Math.max(0, Math.floor((Date.now() - s.sessionStartedAt) / 1000)) : 0;
+  return s.accumulatedSec + (s.running ? Math.max(0, Math.floor((Date.now() - s.sessionStartedAt) / 1000)) : 0);
 }
-function publicState(s: TimerState): { running: boolean; elapsedSec: number } {
-  return { running: s.running, elapsedSec: elapsedSec(s) };
+function publicState(s: TimerState): { running: boolean; paused: boolean; elapsedSec: number } {
+  const e = elapsedSec(s);
+  return { running: s.running, paused: !s.running && e > 0, elapsedSec: e };
 }
 
+// TIP-051: dùng cho CẢ "Bắt đầu" lẫn "Tiếp tục" — EMPTY→start mới; paused→GIỮ accumulated/flushed (resume).
 async function startTimer(): Promise<TimerState> {
   const s = await getTimer();
   if (s.running) return s; // idempotent
-  const next: TimerState = { running: true, sessionStartedAt: Date.now(), flushedSec: 0 };
+  const next: TimerState = {
+    running: true,
+    sessionStartedAt: Date.now(),
+    accumulatedSec: s.accumulatedSec,
+    flushedSec: s.flushedSec,
+  };
   await setTimer(next);
   await chrome.alarms.create(FLUSH_ALARM, { periodInMinutes: FLUSH_PERIOD_MIN });
   return next;
 }
 
-// Gửi phần CHƯA flush của phiên (total - flushedSec). Lỗi → giữ nguyên flushedSec (gửi lại sau).
+// TIP-051: Tạm dừng — chốt đoạn đang chạy vào accumulatedSec, flush phần chưa gửi, dừng alarm.
+async function pauseTimer(): Promise<TimerState> {
+  const s = await getTimer();
+  if (!s.running) return s;
+  const seg = Math.max(0, Math.floor((Date.now() - s.sessionStartedAt) / 1000));
+  await setTimer({ running: false, sessionStartedAt: 0, accumulatedSec: s.accumulatedSec + seg, flushedSec: s.flushedSec });
+  await flushTimer();
+  await chrome.alarms.clear(FLUSH_ALARM);
+  return getTimer();
+}
+
+// Gửi phần CHƯA flush của phiên (total - flushedSec). Đúng cho cả running lẫn paused.
 async function flushTimer(): Promise<void> {
   const s = await getTimer();
-  if (!s.running) {
-    await chrome.alarms.clear(FLUSH_ALARM); // self-heal alarm mồ côi
+  const total = elapsedSec(s);
+  const delta = total - s.flushedSec;
+  if (delta <= 0) {
+    if (!s.running) await chrome.alarms.clear(FLUSH_ALARM); // self-heal alarm mồ côi khi đã dừng/pause
     return;
   }
-  const total = Math.floor((Date.now() - s.sessionStartedAt) / 1000);
-  const delta = total - s.flushedSec;
-  if (delta <= 0) return;
   const duration_sec = Math.min(delta, MAX_FLUSH_SEC);
   try {
     await apiExt("/api/study-session", {
@@ -70,7 +88,7 @@ async function flushTimer(): Promise<void> {
 }
 
 async function stopTimer(): Promise<TimerState> {
-  await flushTimer(); // chốt phần còn lại
+  await flushTimer(); // chốt phần còn lại (accumulated đúng nhờ elapsedSec)
   await setTimer({ ...EMPTY });
   await chrome.alarms.clear(FLUSH_ALARM);
   return { ...EMPTY };
@@ -134,6 +152,10 @@ chrome.runtime.onMessage.addListener((msg: SmMessage, _sender, sendResponse) => 
   }
   if (msg?.type === "SM_TIMER_START") {
     void startTimer().then((s) => sendResponse(publicState(s)));
+    return true;
+  }
+  if (msg?.type === "SM_TIMER_PAUSE") {
+    void pauseTimer().then((s) => sendResponse(publicState(s))); // TIP-051
     return true;
   }
   if (msg?.type === "SM_TIMER_STOP") {

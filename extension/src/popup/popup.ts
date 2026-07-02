@@ -88,18 +88,19 @@ function buildTimerCard(onStopped: () => void): HTMLElement {
   const time = div("timer-time", "00:00:00");
   const controls = div("timer-controls");
 
-  // Nút TRÒN ▶ / ■ + label dưới (Figma). Giữ logic onStart/onStop.
-  const startWrap = div("tbtn-wrap");
-  const startBtn = button("▶", () => void onStart(), "tbtn");
-  startWrap.appendChild(startBtn);
-  startWrap.appendChild(div("tbtn-label", "Bắt đầu"));
+  // TIP-051 — Nút TRÁI = play/pause/resume (đổi theo state); nút PHẢI = ■ Kết thúc.
+  const leftWrap = div("tbtn-wrap");
+  const leftBtn = button("▶", () => void onLeft(), "tbtn");
+  const leftLabel = div("tbtn-label", "Bắt đầu");
+  leftWrap.appendChild(leftBtn);
+  leftWrap.appendChild(leftLabel);
 
   const stopWrap = div("tbtn-wrap");
   const stopBtn = button("■", () => void onStop(), "tbtn");
   stopWrap.appendChild(stopBtn);
   stopWrap.appendChild(div("tbtn-label", "Kết thúc"));
 
-  controls.appendChild(startWrap);
+  controls.appendChild(leftWrap);
   controls.appendChild(stopWrap);
   card.appendChild(label);
   card.appendChild(time);
@@ -107,11 +108,18 @@ function buildTimerCard(onStopped: () => void): HTMLElement {
 
   let elapsed = 0;
   let running = false;
+  const isPaused = (): boolean => !running && elapsed > 0;
 
   const paint = (): void => {
     time.textContent = fmtHMS(elapsed);
-    startBtn.disabled = running;
-    stopBtn.disabled = !running;
+    if (running) {
+      leftBtn.textContent = "⏸";
+      leftLabel.textContent = "Tạm dừng";
+    } else {
+      leftBtn.textContent = "▶";
+      leftLabel.textContent = isPaused() ? "Tiếp tục" : "Bắt đầu";
+    }
+    stopBtn.disabled = !running && !isPaused(); // Kết thúc bật khi running HOẶC paused
   };
   const startTick = (): void => {
     clearTick();
@@ -122,29 +130,25 @@ function buildTimerCard(onStopped: () => void): HTMLElement {
       }
     }, 1000);
   };
-  async function onStart(): Promise<void> {
-    const s = await timerMsg("SM_TIMER_START");
+  const applyState = (s: { running: boolean; elapsedSec: number }): void => {
     running = s.running;
     elapsed = s.elapsedSec;
     paint();
     if (running) startTick();
+    else clearTick(); // paused/stopped → không đếm
+  };
+  async function onLeft(): Promise<void> {
+    // running → Tạm dừng; stopped/paused → Bắt đầu/Tiếp tục (background giữ accumulated khi resume).
+    applyState(await timerMsg(running ? "SM_TIMER_PAUSE" : "SM_TIMER_START"));
   }
   async function onStop(): Promise<void> {
     clearTick();
-    const s = await timerMsg("SM_TIMER_STOP");
-    running = s.running;
-    elapsed = s.elapsedSec;
-    paint();
-    onStopped(); // ghi nhận xong → cập nhật "phút hôm nay"
+    applyState(await timerMsg("SM_TIMER_STOP"));
+    onStopped(); // ghi nhận xong → cập nhật "phút hôm nay" (nếu có)
   }
 
-  // Khởi tạo từ background (popup mở lại vẫn đúng thời gian đã trôi — AC-3).
-  void timerMsg("SM_TIMER_STATE").then((s) => {
-    running = s.running;
-    elapsed = s.elapsedSec;
-    paint();
-    if (running) startTick();
-  });
+  // Khởi tạo từ background (popup mở lại vẫn đúng state — AC-3: running đếm tiếp, paused giữ số).
+  void timerMsg("SM_TIMER_STATE").then(applyState);
 
   return card;
 }
