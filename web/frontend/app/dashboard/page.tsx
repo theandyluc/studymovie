@@ -72,8 +72,18 @@ function LevelCard() {
       .catch((e: unknown) => setErr(e instanceof Error ? e.message : String(e)));
   }, []);
 
+  // TIP-054 — cập nhật "giờ đã học/mục tiêu" khi quay lại tab.
   useEffect(() => {
     load();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") load();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", load);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", load);
+    };
   }, [load]);
 
   const save = async (level: string) => {
@@ -158,10 +168,24 @@ function DashboardInner() {
   const [data, setData] = useState<Dashboard | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // TIP-054 — tự refetch khi quay lại tab (extension ghi giờ học ở tab khác → web cập nhật ngay).
+  // Refetch NGẦM: không reset data → không nháy skeleton (AC-2).
   useEffect(() => {
-    fetchDashboard()
-      .then(setData)
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
+    const load = () => {
+      fetchDashboard()
+        .then(setData)
+        .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
+    };
+    load();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") load();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", load);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", load);
+    };
   }, []);
 
   if (error) return <Card><p className="text-sm text-danger-foreground">Không tải được dashboard: {error}</p></Card>;
