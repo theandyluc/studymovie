@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import type { EmailOtpType } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabaseClient";
 import { PageLoading } from "@/components/ui/Spinner";
 import { Card } from "@/components/ui/Card";
@@ -31,15 +32,25 @@ export default function AuthCallbackPage() {
         return;
       }
       const code = params.get("code");
-      if (!code) {
-        setError("Thiếu mã 'code' trong URL callback.");
-        return;
-      }
-      // ⚠️ Truyền ĐÚNG mã code (không phải cả URL) — đây là root cause của
-      // "invalid flow state": auth_code phải khớp flow state trên server.
-      const { error: exErr } = await sb.auth.exchangeCodeForSession(code);
-      if (exErr) {
-        setError(exErr.message);
+      const tokenHash = params.get("token_hash");
+      const type = params.get("type");
+      if (code) {
+        // OAuth / PKCE (Google + link xác nhận email dạng code). Truyền ĐÚNG mã code (không phải cả
+        // URL) — root cause "invalid flow state": auth_code phải khớp flow state trên server.
+        const { error: exErr } = await sb.auth.exchangeCodeForSession(code);
+        if (exErr) {
+          setError(exErr.message);
+          return;
+        }
+      } else if (tokenHash && type) {
+        // TIP-046 — link xác nhận email dạng token_hash+type (verifyOtp).
+        const { error: vErr } = await sb.auth.verifyOtp({ type: type as EmailOtpType, token_hash: tokenHash });
+        if (vErr) {
+          setError(vErr.message);
+          return;
+        }
+      } else {
+        setError("Thiếu mã xác thực trong URL callback.");
         return;
       }
       router.replace("/dashboard");
