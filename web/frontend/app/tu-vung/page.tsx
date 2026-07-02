@@ -242,7 +242,7 @@ function VocabList() {
   if (error) {
     return (
       <Card>
-        <p className="text-sm text-red-600">Không tải được từ vựng: {error}</p>
+        <p className="text-sm text-danger-foreground">Không tải được từ vựng: {error}</p>
       </Card>
     );
   }
@@ -375,7 +375,7 @@ function VocabList() {
                             </Button>
                           </div>
                           {dateApplied === "__invalid__" ? (
-                            <p className="mt-1 text-xs text-red-600">Ngày không hợp lệ.</p>
+                            <p className="mt-1 text-xs text-danger-foreground">Ngày không hợp lệ.</p>
                           ) : null}
                         </div>
                       ) : null}
@@ -476,7 +476,7 @@ function VocabList() {
                               void onDelete(it);
                             }}
                             title="Xóa"
-                            className="text-muted-foreground/40 hover:text-red-600 group-hover:text-muted-foreground"
+                            className="text-muted-foreground/40 hover:text-danger-foreground group-hover:text-muted-foreground"
                           >
                             🗑️
                           </button>

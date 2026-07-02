@@ -77,7 +77,7 @@ export function LeaderboardCard() {
 
       <div className="mt-3 flex-1 space-y-1">
         {error ? (
-          <p className="text-sm text-red-600">Không tải được: {error}</p>
+          <p className="text-sm text-danger-foreground">Không tải được: {error}</p>
         ) : !data ? (
           <p className="text-sm text-muted-foreground">Đang tải…</p>
         ) : top5.length === 0 ? (

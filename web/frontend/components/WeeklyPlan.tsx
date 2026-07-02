@@ -100,7 +100,7 @@ export function WeeklyPlanTable() {
       <h2 className="mb-3 font-medium">Kế hoạch tuần này</h2>
 
       {error ? (
-        <p className="text-sm text-red-600">Không tải được kế hoạch: {error}</p>
+        <p className="text-sm text-danger-foreground">Không tải được kế hoạch: {error}</p>
       ) : !items ? (
         <p className="text-sm text-muted-foreground">Đang tải…</p>
       ) : (

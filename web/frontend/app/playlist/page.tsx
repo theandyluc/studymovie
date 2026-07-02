@@ -71,7 +71,7 @@ function PlaylistInner() {
     }
   };
 
-  if (error) return <Card><p className="text-sm text-red-600">Không tải được playlist: {error}</p></Card>;
+  if (error) return <Card><p className="text-sm text-danger-foreground">Không tải được playlist: {error}</p></Card>;
 
   return (
     <div className="space-y-4">
@@ -96,7 +96,7 @@ function PlaylistInner() {
             {adding ? "Đang thêm…" : "Thêm"}
           </Button>
         </div>
-        {addErr ? <p className="text-sm text-red-600">{addErr}</p> : null}
+        {addErr ? <p className="text-sm text-danger-foreground">{addErr}</p> : null}
       </Card>
 
       {!items ? (

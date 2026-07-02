@@ -124,7 +124,7 @@ function Flashcards() {
     return () => window.removeEventListener("keydown", onKey);
   }, [items, showTutorial]);
 
-  if (error) return <Card><p className="text-sm text-red-600">Lỗi: {error}</p></Card>;
+  if (error) return <Card><p className="text-sm text-danger-foreground">Lỗi: {error}</p></Card>;
   if (!items) return <PageLoading label="Đang tải…" />;
   if (items.length === 0) {
     return (

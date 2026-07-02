@@ -42,7 +42,7 @@ function LeaderboardInner() {
       .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
   }, []);
 
-  if (error) return <Card><p className="text-sm text-red-600">Không tải được bảng xếp hạng: {error}</p></Card>;
+  if (error) return <Card><p className="text-sm text-danger-foreground">Không tải được bảng xếp hạng: {error}</p></Card>;
   if (!data) return <PageLoading label="Đang tải bảng xếp hạng…" />;
 
   const uid = user?.id;

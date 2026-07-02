@@ -154,7 +154,7 @@ function UpgradeInner() {
           <Button onClick={onCreate} disabled={creating} className="w-full">
             {creating ? "Đang tạo đơn…" : "Mua Pro 49.000đ/tháng"}
           </Button>
-          {err ? <p className="text-sm text-red-600">{err}</p> : null}
+          {err ? <p className="text-sm text-danger-foreground">{err}</p> : null}
         </Card>
       </div>
     );
@@ -175,7 +175,7 @@ function UpgradeInner() {
       {expired ? (
         /* TIP-028 — hết hạn: dừng poll, cho tạo mã mới */
         <div className="space-y-3">
-          <p className="text-sm font-medium text-red-600">Mã QR đã hết hạn</p>
+          <p className="text-sm font-medium text-danger-foreground">Mã QR đã hết hạn</p>
           <Button className="w-full" onClick={() => setOrder(null)}>
             Tạo mã mới
           </Button>

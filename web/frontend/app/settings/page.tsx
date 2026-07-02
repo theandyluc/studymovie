@@ -52,7 +52,7 @@ function SettingsInner() {
     router.replace("/");
   };
 
-  if (error) return <Card><p className="text-sm text-red-600">Lỗi: {error}</p></Card>;
+  if (error) return <Card><p className="text-sm text-danger-foreground">Lỗi: {error}</p></Card>;
   if (!profile || !me) return <PageLoading label="Đang tải cài đặt…" />;
 
   return (
@@ -90,7 +90,7 @@ function SettingsInner() {
           <Button onClick={save} disabled={saving}>
             {saving ? "Đang lưu…" : "Lưu"}
           </Button>
-          {saved ? <span className="text-sm text-green-600">Đã lưu ✓</span> : null}
+          {saved ? <span className="text-sm text-success-foreground">Đã lưu ✓</span> : null}
         </div>
       </Card>
 

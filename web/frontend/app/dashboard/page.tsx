@@ -89,7 +89,7 @@ function LevelCard() {
     }
   };
 
-  if (err) return <Card><p className="text-sm text-red-600">Không tải được level: {err}</p></Card>;
+  if (err) return <Card><p className="text-sm text-danger-foreground">Không tải được level: {err}</p></Card>;
   if (!lv) return <Card><p className="text-sm text-muted-foreground">Đang tải level…</p></Card>;
 
   // Chưa nhập level → card cho chọn.
@@ -164,7 +164,7 @@ function DashboardInner() {
       .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
   }, []);
 
-  if (error) return <Card><p className="text-sm text-red-600">Không tải được dashboard: {error}</p></Card>;
+  if (error) return <Card><p className="text-sm text-danger-foreground">Không tải được dashboard: {error}</p></Card>;
   if (!data)
     return (
       <div className="space-y-4">
