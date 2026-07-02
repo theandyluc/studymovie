@@ -157,8 +157,8 @@ Redeploy. Hệ thống **tự fallback** về từ điển (FVDP/Free Dictionary
 - Áp lên project: qua Supabase CLI (`supabase db push --linked`) hoặc chạy SQL trong dashboard.
 - Danh sách hiện có: `..._init_schema`, `..._rpc`, `..._lookup_word_v2`, `..._payment_orders`,
   `..._streak_threshold`, `..._level_system`, `..._weekly_plans`, `..._access_status`, `..._admin`,
-  `..._vocab_learned`, `..._dashboard_totals`, `..._ai_context_meaning` (bảng cache nghĩa AI — cần cho
-  tính năng nghĩa ngữ cảnh, mục 3.5).
+  `..._vocab_learned`, `..._dashboard_totals`, `..._ai_context_meaning` (cache nghĩa AI — mục 3.5),
+  `..._leaderboard_period` (RPC `get_leaderboard(p_period)` cho bảng xếp hạng Tuần/Tháng/Toàn thời gian — mục 11).
 - Seed từ điển EN-VI: `supabase/seed/import_dictionary.mjs` (nguồn **FVDP © Hồ Ngọc Đức, GPL v2 —
   GIỮ credit**). Verify RPC: `supabase/seed/verify_rpc.mjs`.
 - Bootstrap admin: set `profiles.is_admin = true` cho email admin (qua SQL/dashboard).
@@ -252,3 +252,47 @@ cd extension    && npm run lint && npm run build
   cập nhật biến này ở Vercel project frontend + redeploy. Đừng để trỏ nhầm về app.
 - **Runtime verify domain mới:** sau khi `app.studymovie.com` live, chạy checklist tổng (login web →
   extension sync → thanh toán → paywall) trước khi coi migration domain là verified.
+
+---
+
+## 11. Cập nhật đợt feedback khách 02/07/2026
+
+> Tài liệu tóm tắt cho KHÁCH: `BAN-GIAO-FEEDBACK-2026-07-02.md`. Mục này ghi các điểm KỸ THUẬT quan
+> trọng cho người bảo trì. Toàn bộ 13 feedback + cải tiến đã DONE, verified, trên `main`.
+
+### 11.1 Mô hình đăng nhập MỚI (quan trọng nhất)
+- **Đăng nhập/đăng ký CHỈ ở Extension** (email/mật khẩu native + Google). Web KHÔNG còn form login —
+  `app/page.tsx` chỉ hiện prompt "đăng nhập bằng tiện ích StudyMovie".
+- Web nhận session từ extension qua **đồng bộ 2 chiều** (content script `auth-bridge` ↔ background):
+  - **web→ext:** auth-bridge đọc `localStorage` web → gửi background (`SM_AUTH`). CHỈ gửi khi web CÓ
+    session (không đè khi web trống).
+  - **ext→web:** popup login → `SM_LOGIN` → background đọc session (`sm-ext-auth`) → `SM_SET_SESSION`
+    ghi `localStorage` web (key `sb-<ref>-auth-token`) + reload. Web trống lúc mở → `SM_PULL_SESSION` kéo
+    session ext. Chống loop reload bằng `sessionStorage['sm-synced']`.
+  - **logout:** popup → `SM_LOGOUT` → background `chrome.tabs.query({})` báo mọi tab web dọn session + reload.
+- **Google login (extension):** popup mở `app.studymovie.com/?login=google` → web tự chạy
+  `signInWithOAuth(google)` → `/auth/callback` → session → đồng bộ về extension. (Google OAuth BẮT BUỘC
+  redirect qua trang web — không làm native trong popup được.)
+- **Web tự phục hồi token hỏng:** `lib/apiClient.ts` gặp **401** → `signOut({scope:'local'})` + về `/`
+  (hết kẹt màn "invalid token").
+
+### 11.2 Tính năng mới / thay đổi UI
+- **Bảng xếp hạng 3 kỳ** Tuần/Tháng/Toàn thời gian — RPC `get_leaderboard(p_period)` (migration
+  `..._leaderboard_period`, §5). Trang `/leaderboard` cũ (tuần) vẫn dùng `get_leaderboard_weekly` (giữ).
+- **Popup extension** dựng lại theo Figma final: timer có **Tạm dừng/Tiếp tục** (state `accumulatedSec`
+  ở background + serialize flush chống cộng đôi), card chế độ phụ đề, màn Đăng nhập/Đăng ký, màn "Hết hạn dùng thử".
+- **Nghĩa từ AI** theo ngữ cảnh (§3.5). **Phụ đề Việt khớp Anh khi tua** (ghép EN↔VI theo độ chồng thời
+  gian thay vì index — `extension/src/lib/captions.ts`).
+- **Dashboard tự cập nhật** giờ học khi quay lại tab (refetch on visibility/focus).
+- **ĐÃ GỠ:** dark mode (web luôn light), footer, avatar+menu góc phải web, form login web, Blog.
+- **Link "Admin"** trên nav — chỉ hiện với tài khoản `is_admin` (Header.tsx, fail-closed).
+
+### 11.3 Vận hành cần làm khi go-live
+- **SePay webhook (thanh toán tự động):** tạo webhook ở SePay → URL
+  `https://studymovie-backend.vercel.app/api/sepay-webhook`; xác thực **API Key** = biến `SEPAY_API_KEY`
+  ở backend (§3.2, phải TRÙNG 2 đầu); sự kiện **tiền vào**; tài khoản NH khớp `BANK_ACCOUNT_NO`. Backend
+  đã có sẵn đối soát mã đơn + số tiền + chống trùng giao dịch + cộng dồn hạn.
+- **`OPENAI_API_KEY`** ở backend Vercel (§3.5) cho nghĩa từ AI.
+- **Extension lên Store:** `npm run build:prod` + zip `extension/dist` (file `studymovie-extension-v1.0.0.zip`
+  đã build lại đợt này, gồm mọi thay đổi). Xem §8.
+- **Migration:** đảm bảo áp đủ, gồm `..._ai_context_meaning` (012) + `..._leaderboard_period` (013).
