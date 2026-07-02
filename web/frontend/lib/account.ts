@@ -48,7 +48,9 @@ export interface Me {
 }
 
 export const fetchDashboard = (): Promise<Dashboard> => apiFetch<Dashboard>("/api/dashboard");
-export const fetchLeaderboard = (): Promise<Leaderboard> => apiFetch<Leaderboard>("/api/leaderboard");
+export type LeaderPeriod = "week" | "month" | "all"; // TIP-058
+export const fetchLeaderboard = (period: LeaderPeriod = "week"): Promise<Leaderboard> =>
+  apiFetch<Leaderboard>(`/api/leaderboard?period=${period}`);
 export const fetchMe = (): Promise<Me> => apiFetch<Me>("/api/me");
 
 export const fetchProfile = (): Promise<Profile> =>

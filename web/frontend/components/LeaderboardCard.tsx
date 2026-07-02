@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { Avatar } from "@/components/ui/Avatar";
 import { useUser } from "@/hooks/useUser";
-import { fetchLeaderboard, type Leaderboard, type LeaderRow } from "@/lib/account";
+import { fetchLeaderboard, type Leaderboard, type LeaderRow, type LeaderPeriod } from "@/lib/account";
 
 // TIP-033 — Card Bảng xếp hạng trên Dashboard (theo Figma: tab + huy chương + ghim user).
 // Reuse backend leaderboard TUẦN hiện có (giữ trang /leaderboard riêng song song).
@@ -34,18 +34,39 @@ function Row({ row, me }: { row: LeaderRow; me?: boolean }) {
   );
 }
 
-const TABS = ["Tuần", "Tháng", "Toàn thời gian"] as const;
+// TIP-058 — 3 kỳ chạy thật.
+const TABS: { label: string; period: LeaderPeriod }[] = [
+  { label: "Tuần", period: "week" },
+  { label: "Tháng", period: "month" },
+  { label: "Toàn thời gian", period: "all" },
+];
+const EMPTY_TEXT: Record<LeaderPeriod, string> = {
+  week: "Tuần này chưa ai có giờ học.",
+  month: "Tháng này chưa ai có giờ học.",
+  all: "Chưa ai có giờ học.",
+};
 
 export function LeaderboardCard() {
   const { user } = useUser();
+  const [period, setPeriod] = useState<LeaderPeriod>("week");
   const [data, setData] = useState<Leaderboard | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchLeaderboard()
-      .then(setData)
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
-  }, []);
+    let active = true;
+    setData(null);
+    setError(null);
+    fetchLeaderboard(period)
+      .then((d) => {
+        if (active) setData(d);
+      })
+      .catch((e: unknown) => {
+        if (active) setError(e instanceof Error ? e.message : String(e));
+      });
+    return () => {
+      active = false;
+    };
+  }, [period]);
 
   const uid = user?.id;
   const top5 = data?.top.slice(0, 5) ?? [];
@@ -57,20 +78,20 @@ export function LeaderboardCard() {
     <Card className="flex flex-col">
       <h2 className="text-center font-medium">Bảng xếp hạng</h2>
 
-      {/* Tab pill (Figma) — chỉ Tuần có dữ liệu; Tháng/Toàn thời gian chờ RPC */}
+      {/* TIP-058 — Tab pill 3 kỳ chạy thật */}
       <div className="mx-auto mt-3 flex rounded-pill border border-border p-0.5 text-sm">
         {TABS.map((t) => {
-          const active = t === "Tuần";
+          const active = t.period === period;
           return (
-            <span
-              key={t}
-              title={active ? undefined : "Sắp có"}
-              className={`rounded-pill px-3 py-1 ${
-                active ? "bg-primary text-primary-foreground" : "cursor-not-allowed text-muted-foreground/60"
+            <button
+              key={t.period}
+              onClick={() => setPeriod(t.period)}
+              className={`rounded-pill px-3 py-1 transition-colors ${
+                active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {t}
-            </span>
+              {t.label}
+            </button>
           );
         })}
       </div>
@@ -81,7 +102,7 @@ export function LeaderboardCard() {
         ) : !data ? (
           <p className="text-sm text-muted-foreground">Đang tải…</p>
         ) : top5.length === 0 ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">Tuần này chưa ai có giờ học.</p>
+          <p className="py-6 text-center text-sm text-muted-foreground">{EMPTY_TEXT[period]}</p>
         ) : (
           <>
             {top5.map((r) => (
