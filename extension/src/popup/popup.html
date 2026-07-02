@@ -98,6 +98,15 @@
       .auth-divider { display: flex; align-items: center; text-align: center; color: var(--muted); font-size: 12px; margin: 12px 0 8px; }
       .auth-divider::before, .auth-divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
       .auth-divider span { padding: 0 10px; }
+      /* TIP-052 — Đăng nhập/Đăng ký theo Figma */
+      .auth-tabs { display: flex; gap: 4px; background: #f3f4f6; border-radius: 10px; padding: 4px; margin-bottom: 12px; }
+      .auth-tab { flex: 1; width: auto; margin: 0; border: 0; border-radius: 7px; padding: 8px 6px; font-size: 13px; font-weight: 600; cursor: pointer; background: transparent; color: var(--muted); }
+      .auth-tab.active { background: var(--surface); color: var(--fg); box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+      .google-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--border); border-radius: var(--radius-btn); padding: 10px 12px; font-size: 14px; font-weight: 600; cursor: pointer; background: var(--surface); color: var(--fg); margin-top: 4px; }
+      .g-icon { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 1px solid var(--border); color: #4285f4; font-weight: 700; font-size: 12px; }
+      .auth-label { font-size: 12px; font-weight: 600; color: var(--fg); margin: 8px 0 3px; }
+      .auth-switch { width: auto; margin: 10px auto 0; padding: 4px; display: block; background: none; border: 0; color: var(--muted); font-size: 13px; cursor: pointer; }
+      .auth-switch:hover { color: var(--fg); background: none; }
       /* Footer: Đăng xuất / Hỗ trợ */
       .footer { display: flex; justify-content: center; gap: 18px; padding-top: 10px; margin-top: 4px; border-top: 1px solid var(--border); }
       .footer-link { width: auto; margin: 0; padding: 4px 6px; background: none; border: 0; color: var(--muted); font-size: 13px; font-weight: 500; cursor: pointer; }

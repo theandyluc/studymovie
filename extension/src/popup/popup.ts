@@ -452,31 +452,63 @@ function renderLogin(notice?: { text: string; ok: boolean }): void {
     }
   }
 
-  // Link đổi mode
+  // TIP-052 — Link đổi mode (dưới cùng)
   const toggle = button(
-    isReg ? "Đã có tài khoản? Đăng nhập" : "Chưa có tài khoản? Đăng ký",
+    isReg ? "Bạn đã có tài khoản? Đăng nhập" : "Bạn chưa có tài khoản? Đăng ký",
     () => {
       authMode = isReg ? "login" : "register";
       renderLogin();
     },
-    "auth-link"
+    "auth-switch"
   );
+
+  // TIP-052 — Tab segmented [Đăng nhập | Đăng ký] (nút của mode hiện tại = active).
+  const authTabs = div("auth-tabs");
+  const loginTab = button(
+    "🔓 Đăng nhập",
+    () => {
+      if (isReg) {
+        authMode = "login";
+        renderLogin();
+      }
+    },
+    `auth-tab${!isReg ? " active" : ""}`
+  );
+  const regTab = button(
+    "👤 Đăng ký",
+    () => {
+      if (!isReg) {
+        authMode = "register";
+        renderLogin();
+      }
+    },
+    `auth-tab${isReg ? " active" : ""}`
+  );
+  authTabs.append(loginTab, regTab);
 
   const divider = div("auth-divider");
   divider.appendChild(document.createElement("span")).textContent = "hoặc";
 
-  const google = button("Đăng nhập với Google", () => openTab(SITE_URL), "btn ghost");
+  // Google — mở web để đăng nhập/đăng ký bằng Google (giữ hành vi cũ); text theo mode + logo G.
+  const google = button(
+    isReg ? "Đăng ký bằng Google" : "Đăng nhập bằng Google",
+    () => openTab(SITE_URL),
+    "google-btn"
+  );
+  google.prepend(div("g-icon", "G"));
 
   mount(
-    logoNode(),
+    authTabs,
     div("auth-title", isReg ? "Đăng ký tài khoản" : "Đăng nhập"),
+    google,
+    divider,
+    div("auth-label", "Email"),
     email,
+    div("auth-label", "Mật khẩu"),
     pass,
     submit,
     msg,
-    toggle,
-    divider,
-    google
+    toggle
   );
 }
 
