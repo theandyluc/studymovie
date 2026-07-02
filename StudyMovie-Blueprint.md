@@ -473,7 +473,7 @@ Mỗi TIP khi tạo sẽ có đủ: Gherkin acceptance criteria, priority P0/P1/
 
 Đã chốt:
 - [x] **D-1** Phụ đề VI = YouTube `tlang=vi`
-- [x] **D-2** Nghĩa từ = từ điển EN-VI nhúng (tra cứu từng từ)
+- [x] **D-2** Nghĩa từ = từ điển EN-VI nhúng (tra cứu từng từ) — **ĐẢO CÓ KIỂM SOÁT 2026-07-02 (khách duyệt, TIP-038):** NGHĨA dùng AI GPT-4o-mini theo ngữ cảnh (`/api/lookup-context`, cache + fallback từ điển); IPA/audio giữ từ từ điển. Từ điển = fallback.
 - [x] **Streak** = chuẩn Duolingo, timezone UTC+7 (mục 3)
 
 Còn cần để sang bước tạo TIP:

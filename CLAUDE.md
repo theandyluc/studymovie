@@ -44,7 +44,7 @@ studymovie/
 ## 4. Quyết định kiến trúc CHỐT (không đảo nếu không re-confirm — xem Blueprint mục 0 & 10)
 
 - **D-1 Phụ đề câu = YouTube auto-translate** (`timedtext` + `tlang=vi`). KHÔNG dịch trả phí.
-- **D-2 Nghĩa từ = từ điển EN-VI nhúng** (lookup, KHÔNG dịch máy, KHÔNG ghép word-by-word).
+- **D-2 Nghĩa từ = từ điển EN-VI nhúng** (lookup, KHÔNG dịch máy, KHÔNG ghép word-by-word). **[ĐẢO CÓ KIỂM SOÁT — khách duyệt 2026-07-02, TIP-038]:** NGHĨA giờ dùng **AI GPT-4o-mini (OpenAI)** chọn theo ngữ cảnh câu (backend `/api/lookup-context`, có cache + **fallback về từ điển**); IPA/audio vẫn từ từ điển. Từ điển FVDP + lemmatize giữ làm fallback. Secret `OPENAI_API_KEY` chỉ ở backend.
   Trước khi tra phải **lemmatize** (running→run). Tra TỪNG TỪ khi user click.
 - **Backend API là tầng giữa dùng chung** cho web frontend + extension. Client không gọi thẳng DB cho nghiệp vụ.
 - **Secret đi qua serverless**, không nằm ở extension/client.
