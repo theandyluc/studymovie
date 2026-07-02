@@ -1,59 +1,20 @@
 "use client";
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { getSupabase } from "@/lib/supabaseClient";
 import { useUser } from "@/hooks/useUser";
-import { fetchMe } from "@/lib/account";
-import { Avatar } from "@/components/ui/Avatar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
-// TIP-019a — Nav route VN: Tiến độ học / Từ vựng / Hỗ trợ. (TIP-036: bỏ Blog)
-// Playlist / Bảng xếp hạng / Cài đặt giữ trong dropdown avatar (KHÔNG mất truy cập).
+// TIP-019a — Nav route VN: Tiến độ học / Từ vựng / Hỗ trợ. (TIP-036 bỏ Blog)
 // TIP-042: /ho-tro redirect NGOÀI (Facebook) → tắt prefetch để Next không fetch RSC bị CORS chặn.
+// TIP-043: bỏ avatar+tên+dropdown (đăng xuất ở popup extension; /playlist, /leaderboard, /settings,
+//   /admin vẫn vào được bằng URL — bảng xếp hạng đã nhúng trong dashboard).
 const MAIN_NAV: { href: string; label: string; prefetch?: false }[] = [
   { href: "/dashboard", label: "Tiến độ học" },
   { href: "/tu-vung", label: "Từ vựng" },
   { href: "/ho-tro", label: "Hỗ trợ", prefetch: false },
 ];
-const MENU = [
-  { href: "/playlist", label: "Playlist" },
-  { href: "/leaderboard", label: "Bảng xếp hạng" },
-  { href: "/settings", label: "Cài đặt" },
-];
 
 export function Header() {
   const { user } = useUser();
-  const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  // Chỉ hiện link /admin cho admin (is_admin từ /api/me). Server vẫn chặn API nếu không phải admin.
-  useEffect(() => {
-    if (!user) {
-      setIsAdmin(false);
-      return;
-    }
-    let active = true;
-    fetchMe()
-      .then((me) => {
-        if (active) setIsAdmin(!!me.profile?.is_admin);
-      })
-      .catch(() => undefined);
-    return () => {
-      active = false;
-    };
-  }, [user]);
-
-  const signOut = async () => {
-    const sb = getSupabase();
-    if (sb) await sb.auth.signOut();
-    setOpen(false);
-    router.replace("/");
-  };
-
-  const meta = (user?.user_metadata ?? {}) as { full_name?: string; name?: string; avatar_url?: string };
-  const displayName = meta.full_name ?? meta.name ?? user?.email ?? "";
 
   // Logo "SM." — chữ đen đậm + chấm accent (vàng).
   const logo = (
@@ -85,55 +46,6 @@ export function Header() {
         </nav>
 
         <ThemeToggle />
-
-        {user ? (
-          <div className="relative flex items-center">
-            <button
-              onClick={() => setOpen((o) => !o)}
-              className="flex items-center gap-2"
-              aria-haspopup="menu"
-              aria-expanded={open}
-            >
-              <Avatar src={meta.avatar_url} name={displayName} />
-              <span className="hidden max-w-[160px] truncate text-sm text-foreground sm:inline">
-                {displayName}
-              </span>
-            </button>
-            {open ? (
-              <>
-                {/* backdrop bấm ra ngoài để đóng */}
-                <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden />
-                <div className="absolute right-0 top-12 z-50 w-48 overflow-hidden rounded-card border border-border bg-surface py-1 shadow-lg">
-                  {MENU.map((m) => (
-                    <Link
-                      key={m.href}
-                      href={m.href}
-                      onClick={() => setOpen(false)}
-                      className="block px-4 py-2 text-sm text-foreground hover:bg-surface-muted"
-                    >
-                      {m.label}
-                    </Link>
-                  ))}
-                  {isAdmin ? (
-                    <Link
-                      href="/admin"
-                      onClick={() => setOpen(false)}
-                      className="block px-4 py-2 text-sm text-foreground hover:bg-surface-muted"
-                    >
-                      Admin
-                    </Link>
-                  ) : null}
-                  <button
-                    onClick={signOut}
-                    className="block w-full px-4 py-2 text-left text-sm text-foreground hover:bg-surface-muted"
-                  >
-                    Đăng xuất
-                  </button>
-                </div>
-              </>
-            ) : null}
-          </div>
-        ) : null}
       </div>
     </header>
   );
