@@ -19,14 +19,8 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="vi" className={inter.variable} suppressHydrationWarning>
+    <html lang="vi" className={inter.variable}>
       <body className="flex min-h-screen flex-col">
-        {/* TIP-034 anti-FOUC: đặt class 'dark' TRƯỚC khi paint để không lóe sáng */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.getItem('sm-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark');}}catch(e){}`,
-          }}
-        />
         <Header />
         <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
           <AccessGuard>{children}</AccessGuard>

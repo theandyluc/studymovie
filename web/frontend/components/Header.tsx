@@ -1,7 +1,6 @@
 "use client";
 import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
-import { ThemeToggle } from "@/components/ThemeToggle";
 
 // TIP-019a — Nav route VN: Tiến độ học / Từ vựng / Hỗ trợ. (TIP-036 bỏ Blog)
 // TIP-042: /ho-tro redirect NGOÀI (Facebook) → tắt prefetch để Next không fetch RSC bị CORS chặn.
@@ -44,8 +43,6 @@ export function Header() {
             </div>
           ) : null}
         </nav>
-
-        <ThemeToggle />
       </div>
     </header>
   );
