@@ -492,7 +492,7 @@ function renderLogin(notice?: { text: string; ok: boolean }): void {
   // Google — mở web để đăng nhập/đăng ký bằng Google (giữ hành vi cũ); text theo mode + logo G.
   const google = button(
     isReg ? "Đăng ký bằng Google" : "Đăng nhập bằng Google",
-    () => openTab(SITE_URL),
+    () => openTab(`${SITE_URL}/?login=google`), // TIP-055b: web tự chạy Google OAuth theo cờ
     "google-btn"
   );
   google.prepend(div("g-icon", "G"));

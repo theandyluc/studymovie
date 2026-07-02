@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
+import { getSupabase } from "@/lib/supabaseClient";
 import { Card } from "@/components/ui/Card";
 import { PageLoading } from "@/components/ui/Spinner";
 
@@ -15,6 +16,16 @@ export default function LoginPage() {
   useEffect(() => {
     if (!loading && user) router.replace("/dashboard");
   }, [user, loading, router]);
+
+  // TIP-055b — extension mở /?login=google → web tự chạy Google OAuth (redirect qua Google → /auth/callback).
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    if (p.get("login") === "google") {
+      const sb = getSupabase();
+      const site = process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin;
+      if (sb) void sb.auth.signInWithOAuth({ provider: "google", options: { redirectTo: `${site}/auth/callback` } });
+    }
+  }, []);
 
   if (loading || user) return <PageLoading />;
 
