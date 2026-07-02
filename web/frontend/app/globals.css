@@ -56,6 +56,17 @@ body {
   background-color: var(--color-background);
   color: var(--color-foreground);
   font-family: var(--font-body);
+  /* TIP-056 — Inter bó nhẹ toàn UI cho khớp cảm giác Figma (letter-spacing −2%). */
+  letter-spacing: -0.02em;
+}
+
+/* TIP-056 — Heading (Inter): bó chặt hơn (−3%) + line-height 1.1 như Figma.
+   Bao cả tiêu đề card dùng .font-heading (không phải thẻ h1..h6). Chỉ đụng letter-spacing/line-height. */
+@layer base {
+  h1, h2, h3, h4, h5, h6, .font-heading {
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
 }
 
 /* ============================================================
