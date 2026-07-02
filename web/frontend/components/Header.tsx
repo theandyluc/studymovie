@@ -6,6 +6,7 @@ import { getSupabase } from "@/lib/supabaseClient";
 import { useUser } from "@/hooks/useUser";
 import { fetchMe } from "@/lib/account";
 import { Avatar } from "@/components/ui/Avatar";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 // TIP-019a — Nav route VN: Tiến độ học / Từ vựng / Blog / Hỗ trợ.
 // Playlist / Bảng xếp hạng / Cài đặt giữ trong dropdown avatar (KHÔNG mất truy cập).
@@ -81,6 +82,8 @@ export function Header() {
             </div>
           ) : null}
         </nav>
+
+        <ThemeToggle />
 
         {user ? (
           <div className="relative flex items-center">

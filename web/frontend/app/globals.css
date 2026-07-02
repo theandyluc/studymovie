@@ -57,3 +57,35 @@ body {
   color: var(--color-foreground);
   font-family: var(--font-body);
 }
+
+/* ============================================================
+   DARK MODE — TIP-034. GHI ĐÈ token màu dưới html.dark (specificity > :root).
+   Component KHÔNG đổi: chúng dùng utility token (bg-surface, text-foreground…),
+   chỉ cần đổi giá trị biến ở đây. Giữ nguyên @theme (light) bên trên.
+   ============================================================ */
+html.dark {
+  color-scheme: dark;
+  --color-background: #0b0f17;
+  --color-surface: #151b26;
+  --color-surface-muted: #1f2734;
+  --color-border: #2a3342;
+  --color-foreground: #e5e7eb;
+  --color-muted-foreground: #9ca3af;
+  /* Nút chính đảo sáng trên nền tối (giữ tương phản) */
+  --color-primary: #f5f6f7;
+  --color-primary-hover: #e2e5e9;
+  --color-primary-foreground: #111827;
+  --color-accent: #f5b301; /* GIỮ vàng thương hiệu */
+  /* Badge/semantic: nền đậm + chữ sáng */
+  --color-info: #1e3a5f;
+  --color-info-foreground: #93c5fd;
+  --color-success: #14432a;
+  --color-success-foreground: #86efac;
+  --color-danger: #4c1d1d;
+  --color-danger-foreground: #fca5a5;
+  /* Vòng Level + biểu đồ */
+  --color-level-ring: #a78bfa;
+  --color-chart-bar: #60a5fa;
+  --color-chart-base: #2a3342;
+  --shadow-card: 0 1px 3px rgb(0 0 0 / 0.5);
+}
