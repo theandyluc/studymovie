@@ -120,7 +120,7 @@ function UpgradeInner() {
     );
   }
 
-  if (!accChecked) return <PageLoading label="Đang kiểm tra tài khoản…" />;
+  if (!accChecked) return <PageLoading />;
 
   if (access?.reason === "paid") {
     const until = access.paid_until ? new Date(access.paid_until).toLocaleDateString("vi-VN") : null;

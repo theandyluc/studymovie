@@ -9,7 +9,7 @@ export function Spinner({ size = 24 }: { size?: number }) {
   );
 }
 
-export function PageLoading({ label }: { label?: string }) {
+export function PageLoading({ label = "Đang tải" }: { label?: string }) {
   return (
     <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 text-muted-foreground">
       <Spinner size={32} />

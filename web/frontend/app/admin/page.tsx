@@ -70,7 +70,7 @@ function AdminInner() {
     if (denied) router.replace("/dashboard"); // không phải admin
   }, [denied, router]);
 
-  if (loading) return <PageLoading label="Đang tải admin…" />;
+  if (loading) return <PageLoading />;
   if (denied) return <PageLoading label="Không có quyền truy cập — đang chuyển…" />;
 
   const fail = (e: unknown) => setMsg("Lỗi: " + (e instanceof Error ? e.message : String(e)));

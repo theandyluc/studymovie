@@ -13,7 +13,6 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 const MAIN_NAV = [
   { href: "/dashboard", label: "Tiến độ học" },
   { href: "/tu-vung", label: "Từ vựng" },
-  { href: "/blog", label: "Blog" },
   { href: "/ho-tro", label: "Hỗ trợ" },
 ];
 const MENU = [

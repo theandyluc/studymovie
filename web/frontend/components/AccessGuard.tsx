@@ -58,7 +58,7 @@ export function AccessGuard({ children }: { children: ReactNode }) {
   }, [pathname, user, loading, router]);
 
   if (isProtected(pathname) && checking) {
-    return <PageLoading label="Đang kiểm tra quyền truy cập…" />;
+    return <PageLoading />;
   }
   return <>{children}</>;
 }

@@ -100,7 +100,7 @@ function PlaylistInner() {
       </Card>
 
       {!items ? (
-        <PageLoading label="Đang tải playlist…" />
+        <PageLoading />
       ) : items.length === 0 ? (
         <Card>
           <p className="text-muted-foreground">Chưa có video. Dán link YouTube ở trên để thêm.</p>

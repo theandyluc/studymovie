@@ -31,9 +31,9 @@ const nextConfig = {
     NEXT_PUBLIC_PAYWALL_REDIRECT: process.env.NEXT_PUBLIC_PAYWALL_REDIRECT,
   },
   // TIP-019a — Routing tiếng Việt: route cũ tiếng Anh → redirect sang route VN canonical;
-  // /ho-tro, /blog → redirect ngoài. (Route VN canonical = thư mục page thật, không nhân đôi.)
+  // /ho-tro → redirect ngoài. (Route VN canonical = thư mục page thật, không nhân đôi.)
+  // TIP-036: bỏ /blog (khách không dùng blog nữa).
   async redirects() {
-    const blog = process.env.NEXT_PUBLIC_BLOG_URL ?? "https://studymovie.com/blog";
     return [
       { source: "/vocabulary", destination: "/tu-vung", permanent: false },
       { source: "/vocabulary/flashcard", destination: "/hoc-tu-vung", permanent: false },
@@ -48,7 +48,6 @@ const nextConfig = {
       { source: "/upgrade", destination: "/thanh-toan", permanent: false },
       // Redirect ngoài
       { source: "/ho-tro", destination: "https://www.facebook.com/thaytruongtienganh", permanent: false },
-      { source: "/blog", destination: blog, permanent: false },
     ];
   },
 };

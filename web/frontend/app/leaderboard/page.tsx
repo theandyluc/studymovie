@@ -43,7 +43,7 @@ function LeaderboardInner() {
   }, []);
 
   if (error) return <Card><p className="text-sm text-danger-foreground">Không tải được bảng xếp hạng: {error}</p></Card>;
-  if (!data) return <PageLoading label="Đang tải bảng xếp hạng…" />;
+  if (!data) return <PageLoading />;
 
   const uid = user?.id;
   // TIP-028 — chỉ hiện TOP 5; user hạng 6–20 hoặc ngoài 20 → ghim dòng riêng bên dưới.

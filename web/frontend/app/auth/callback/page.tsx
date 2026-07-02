@@ -60,5 +60,5 @@ export default function AuthCallbackPage() {
       </div>
     );
   }
-  return <PageLoading label="Đang hoàn tất đăng nhập…" />;
+  return <PageLoading />;
 }

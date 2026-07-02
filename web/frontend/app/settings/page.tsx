@@ -53,7 +53,7 @@ function SettingsInner() {
   };
 
   if (error) return <Card><p className="text-sm text-danger-foreground">Lỗi: {error}</p></Card>;
-  if (!profile || !me) return <PageLoading label="Đang tải cài đặt…" />;
+  if (!profile || !me) return <PageLoading />;
 
   return (
     <div className="space-y-4">

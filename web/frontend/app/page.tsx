@@ -30,7 +30,7 @@ export default function LoginPage() {
     });
   };
 
-  if (loading || user) return <PageLoading label="Đang tải…" />;
+  if (loading || user) return <PageLoading />;
 
   return (
     <div className="flex min-h-[60vh] items-center justify-center">

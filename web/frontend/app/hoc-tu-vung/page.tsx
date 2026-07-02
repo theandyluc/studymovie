@@ -125,7 +125,7 @@ function Flashcards() {
   }, [items, showTutorial]);
 
   if (error) return <Card><p className="text-sm text-danger-foreground">Lỗi: {error}</p></Card>;
-  if (!items) return <PageLoading label="Đang tải…" />;
+  if (!items) return <PageLoading />;
   if (items.length === 0) {
     return (
       <Card className="text-center">

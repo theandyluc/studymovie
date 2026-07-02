@@ -90,7 +90,7 @@ function LevelCard() {
   };
 
   if (err) return <Card><p className="text-sm text-danger-foreground">Không tải được level: {err}</p></Card>;
-  if (!lv) return <Card><p className="text-sm text-muted-foreground">Đang tải level…</p></Card>;
+  if (!lv) return <Card><p className="text-sm text-muted-foreground">Đang tải</p></Card>;
 
   // Chưa nhập level → card cho chọn.
   if (lv.needs_input) {

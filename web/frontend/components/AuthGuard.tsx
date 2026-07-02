@@ -14,7 +14,7 @@ export function AuthGuard({ children }: { children: ReactNode }) {
     if (!loading && !user) router.replace("/");
   }, [user, loading, router]);
 
-  if (loading) return <PageLoading label="Đang kiểm tra đăng nhập…" />;
+  if (loading) return <PageLoading />;
   if (!user) return null;
   return <>{children}</>;
 }
