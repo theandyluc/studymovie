@@ -65,15 +65,18 @@ describe("computeNextPaidUntil (cộng dồn, không ghi đè ngắn đi)", () =
   });
 });
 
-describe("buildVietQrUrl (SePay QR — TIP-066)", () => {
-  it("sinh qr.sepay.vn với acc/bank/amount/des/template", () => {
+describe("buildVietQrUrl (vietqr.app + VA — TIP-067)", () => {
+  it("sinh vietqr.app với bank/acc/template/amount/des/showinfo/fullacc/holder", () => {
     const url = pay.buildVietQrUrl(49000, "SMABCD12");
-    expect(url).toContain("qr.sepay.vn/img");
-    expect(url).toContain("acc=0123456789");
+    expect(url).toContain("vietqr.app/img");
     expect(url).toContain("bank=MB");
+    expect(url).toContain("acc=0123456789");
+    expect(url).toContain("template=compact2");
     expect(url).toContain("amount=49000");
     expect(url).toContain("des=SMABCD12");
-    expect(url).toContain("template=compact2");
+    expect(url).toContain("showinfo=true");
+    expect(url).toContain("fullacc=true");
+    expect(url).toContain("holder=NGUYEN+VAN+A");
   });
 });
 

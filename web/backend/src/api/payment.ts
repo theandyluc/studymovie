@@ -53,18 +53,21 @@ export function computeNextPaidUntil(
   return new Date(base + durationDays * 24 * 60 * 60 * 1000);
 }
 
-// TIP-066 — SePay QR (qr.sepay.vn). VPBank hộ KD liên kết SePay qua VA: tiền phải vào VA
-// SePay mới nhận. QR do SePay sinh biết TK chính (BANK_ACCOUNT_NO) gắn VA → QR payable +
-// tự định tuyến VA + detected. (Giữ tên hàm cũ để không phải sửa nơi gọi.)
+// TIP-067 — QR y hệt SePay "Tạo QR" (đã xác minh payable + detected): vietqr.app + VA.
+// VPBank hộ KD dùng VA "AGBSP…" → chỉ vietqr.app xử đúng VA (vietqr.io/qr.sepay.vn KHÔNG payable).
+// (Giữ tên hàm cũ để không phải sửa nơi gọi.)
 export function buildVietQrUrl(amount: number, addInfo: string): string {
   const qs = new URLSearchParams({
-    acc: BANK_ACCOUNT_NO, // TK chính đã đăng ký SePay — SePay tự map sang VA
-    bank: BANK_ID, // VPBank (BIN 970432 hoặc short "VPBank" — SePay chấp nhận)
+    bank: BANK_ID, // "VPBank" (short name — KHÔNG dùng BIN 970432)
+    acc: BANK_ACCOUNT_NO, // "AGBSP541966978" (số VA)
+    template: VIETQR_TEMPLATE, // "compact"
     amount: String(amount),
-    des: addInfo, // nội dung = mã đơn SMxxxx (webhook đối soát)
-    template: VIETQR_TEMPLATE, // compact2
+    des: addInfo, // mã đơn SMxxxx (webhook đối soát)
+    showinfo: "true",
+    fullacc: "true",
+    holder: BANK_ACCOUNT_NAME, // "HO KINH DOANH LUC NAM TRUONG"
   });
-  return `https://qr.sepay.vn/img?${qs.toString()}`;
+  return `https://vietqr.app/img?${qs.toString()}`;
 }
 
 // So khớp Apikey an toàn (độ dài + nội dung). Header dạng "Apikey <key>".
