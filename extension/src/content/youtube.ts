@@ -141,7 +141,16 @@ function updateOverlayPosition(): void {
   if (box.style.bottom !== px) box.style.bottom = px;
 }
 
-// TIP-022/023 — 1 PILL bo tròn nền tối ôm dòng phụ đề. Tắt nền → trong suốt + text-shadow.
+// TIP-060 — nền phụ đề dùng màu do user chọn (bgColor) + độ mờ bgOpacity.
+function bgRgba(hex: string, opacityPct: number): string {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return `rgba(${r},${g},${b},${opacityPct / 100})`;
+}
+
+// TIP-022/023/060 — 1 PILL bo tròn nền ôm dòng phụ đề. Tắt nền → trong suốt + text-shadow.
 function styleBubble(bubble: HTMLElement): void {
   const bg = settings.bgEnabled;
   Object.assign(bubble.style, {
@@ -149,7 +158,7 @@ function styleBubble(bubble: HTMLElement): void {
     maxWidth: "92%",
     padding: bg ? "4px 14px" : "2px 6px",
     borderRadius: "10px",
-    background: bg ? `rgba(0,0,0,${settings.bgOpacity / 100})` : "transparent",
+    background: bg ? bgRgba(COLOR_HEX[settings.bgColor], settings.bgOpacity) : "transparent",
     textAlign: "center",
     fontFamily: "Arial, sans-serif",
   } as Partial<CSSStyleDeclaration>);

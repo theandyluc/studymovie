@@ -282,14 +282,23 @@ function buildSettingsCard(): HTMLElement {
         );
       }
 
-      // TIP-050 — "Màu nền" chỉ còn TOGGLE bật/tắt (bỏ slider độ đậm %). bgOpacity giữ mặc định
-      // trong model (không có UI chỉnh); content script vẫn dùng bgOpacity khi bgEnabled.
+      // TIP-050/060 — "Màu nền": toggle bật/tắt + (khi bật) chấm màu chọn nền (đen/trắng/vàng).
       body.appendChild(
         switchRow("Màu nền", st.bgEnabled, (v) => {
           st.bgEnabled = v;
           void setSettings({ bgEnabled: v });
+          render(); // hiện/ẩn chấm màu nền
         })
       );
+      if (st.bgEnabled) {
+        body.appendChild(
+          colorRow("Chọn màu nền", st.bgColor, (c) => {
+            st.bgColor = c;
+            void setSettings({ bgColor: c });
+            render();
+          })
+        );
+      }
 
       // Kích thước (EN size) — 12..32 bước 2
       body.appendChild(

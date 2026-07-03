@@ -9,8 +9,9 @@ export interface Settings {
   mode: SubMode; // Tiếng Anh / Song ngữ / Tiếng Việt
   enColor: SubColor; // màu chữ dòng EN
   viColor: SubColor; // màu chữ dòng VI
-  bgEnabled: boolean; // nền đen mờ sau chữ
-  bgOpacity: number; // độ đậm nền đen, % 0..100
+  bgEnabled: boolean; // nền mờ sau chữ
+  bgColor: SubColor; // TIP-060: màu nền phụ đề (đen/trắng/vàng)
+  bgOpacity: number; // độ đậm nền, % 0..100
   fontSizePx: number; // cỡ chữ EN (px) — 12..32 bước 2; VI = 80% EN
   lineGapPx: number; // khoảng cách dọc EN↔VI (px) — 2..16 bước 2, chỉ dùng mode='both'
 }
@@ -23,6 +24,7 @@ export const DEFAULT_SETTINGS: Settings = {
   enColor: "white",
   viColor: "white",
   bgEnabled: true,
+  bgColor: "black",
   bgOpacity: 20,
   fontSizePx: 20,
   lineGapPx: 8,
@@ -72,8 +74,8 @@ function normalize(raw: Record<string, unknown> | undefined): Settings {
     else mode = "both"; // cả hai bật, hoặc cả hai tắt → both (default)
   }
 
-  const color = (v: unknown): SubColor =>
-    typeof v === "string" && COLORS.includes(v as SubColor) ? (v as SubColor) : "white";
+  const color = (v: unknown, fb: SubColor = "white"): SubColor =>
+    typeof v === "string" && COLORS.includes(v as SubColor) ? (v as SubColor) : fb;
 
   return {
     enabled: r.enabled !== false, // mặc định true nếu thiếu
@@ -81,6 +83,8 @@ function normalize(raw: Record<string, unknown> | undefined): Settings {
     enColor: color(r.enColor),
     viColor: color(r.viColor),
     bgEnabled: r.bgEnabled !== false,
+    bgColor: color(r.bgColor, "black"), // TIP-060: fallback đen
+
     bgOpacity: Math.min(100, Math.max(0, Math.round(Number(r.bgOpacity ?? DEFAULT_SETTINGS.bgOpacity) || 0))),
     fontSizePx: clampFont(Number(r.fontSizePx) || DEFAULT_SETTINGS.fontSizePx),
     lineGapPx: clampGap(Number(r.lineGapPx) || DEFAULT_SETTINGS.lineGapPx),
