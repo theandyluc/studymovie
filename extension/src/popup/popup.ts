@@ -216,10 +216,40 @@ function stepperRow(
   return row;
 }
 
+// TIP-060b — cờ SVG (emoji 🇬🇧/🇻🇳 không hiển thị trên Windows).
+const FLAG_GB =
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 30" width="18" height="12">' +
+  '<clipPath id="smf-gb"><path d="M30 15h30v15zv15H0zH0V0zV0h30z"/></clipPath>' +
+  '<path d="M0 0v30h60V0z" fill="#012169"/>' +
+  '<path d="M0 0 60 30m0-30L0 30" stroke="#fff" stroke-width="6"/>' +
+  '<path d="M0 0 60 30m0-30L0 30" clip-path="url(#smf-gb)" stroke="#C8102E" stroke-width="4"/>' +
+  '<path d="M30 0v30M0 15h60" stroke="#fff" stroke-width="10"/>' +
+  '<path d="M30 0v30M0 15h60" stroke="#C8102E" stroke-width="6"/></svg>';
+const FLAG_VN =
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 20" width="18" height="12">' +
+  '<rect width="30" height="20" fill="#da251d"/>' +
+  '<path fill="#ff0" d="M15 4l1.76 5.42h5.7l-4.61 3.35 1.76 5.42L15 14.24l-4.61 3.35 1.76-5.42-4.61-3.35h5.7z"/></svg>';
+
+function flagLabel(svg: string, text: string): HTMLElement {
+  const s = document.createElement("span");
+  s.style.display = "inline-flex";
+  s.style.alignItems = "center";
+  s.style.gap = "6px";
+  const f = document.createElement("span");
+  f.style.display = "inline-flex";
+  f.innerHTML = svg; // SVG tĩnh (không script) — an toàn trong trang extension
+  s.appendChild(f);
+  s.appendChild(document.createTextNode(text));
+  return s;
+}
+
 // Hàng chọn màu chữ (3 chấm trắng/đen/vàng) cho 1 ngôn ngữ.
-function colorRow(flagLabel: string, current: SubColor, onPick: (c: SubColor) => void): HTMLElement {
+function colorRow(label: string | HTMLElement, current: SubColor, onPick: (c: SubColor) => void): HTMLElement {
   const r = div("set-row");
-  r.appendChild(div("set-label", flagLabel));
+  const lbl = div("set-label");
+  if (typeof label === "string") lbl.textContent = label;
+  else lbl.appendChild(label);
+  r.appendChild(lbl);
   const dots = div("dots");
   (["white", "black", "yellow"] as SubColor[]).forEach((c) => {
     const d = document.createElement("button");
@@ -265,7 +295,7 @@ function buildSettingsCard(): HTMLElement {
       // Màu chữ EN / VI (theo mode)
       if (st.mode === "en" || st.mode === "both") {
         body.appendChild(
-          colorRow("🇬🇧 Tiếng Anh", st.enColor, (c) => {
+          colorRow(flagLabel(FLAG_GB, "Tiếng Anh"), st.enColor, (c) => {
             st.enColor = c;
             void setSettings({ enColor: c });
             render();
@@ -274,7 +304,7 @@ function buildSettingsCard(): HTMLElement {
       }
       if (st.mode === "vi" || st.mode === "both") {
         body.appendChild(
-          colorRow("🇻🇳 Tiếng Việt", st.viColor, (c) => {
+          colorRow(flagLabel(FLAG_VN, "Tiếng Việt"), st.viColor, (c) => {
             st.viColor = c;
             void setSettings({ viColor: c });
             render();
@@ -291,13 +321,21 @@ function buildSettingsCard(): HTMLElement {
         })
       );
       if (st.bgEnabled) {
-        body.appendChild(
-          colorRow("Chọn màu nền", st.bgColor, (c) => {
-            st.bgColor = c;
-            void setSettings({ bgColor: c });
-            render();
-          })
-        );
+        // TIP-060b — 1 chấm bấm đảo đen ↔ trắng (dot-white có viền để thấy).
+        const r = div("set-row");
+        r.appendChild(div("set-label", "Chọn màu nền"));
+        const dots = div("dots");
+        const d = document.createElement("button");
+        d.className = `dot-btn dot-${st.bgColor} sel`;
+        d.title = st.bgColor === "white" ? "Trắng" : "Đen";
+        d.addEventListener("click", () => {
+          st.bgColor = st.bgColor === "white" ? "black" : "white";
+          void setSettings({ bgColor: st.bgColor });
+          render();
+        });
+        dots.appendChild(d);
+        r.appendChild(dots);
+        body.appendChild(r);
       }
 
       // Kích thước (EN size) — 12..32 bước 2
