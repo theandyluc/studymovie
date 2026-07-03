@@ -256,6 +256,16 @@
       "evidence": "VERIFIED Homeowner soi cạnh Figma (2026-07-02). Khách #13 nói 'web sai font' — soi Properties Figma: font Figma = Inter = ĐÚNG font web (không sai font-family). Khác biệt thật = letter-spacing (Figma −3%/heading, web mặc định 0) → chữ web trông thưa. FIX TIP-056 (d887505, globals.css): body letter-spacing −0.02em; h1-h6 + .font-heading −0.03em + line-height 1.1 → khớp cảm giác Figma. Cấu trúc/bố cục các trang (dashboard, từ vựng, học từ vựng flashcard, kiểm tra Anh-Việt/Việt-Anh, thanh toán) đã khớp Figma sẵn từ trước."
     },
     {
+      "id": "SUB-GATE",
+      "title": "Chặn tính năng khi HẾT HẠN (subscription gate) — extension + backend",
+      "area": "web+extension",
+      "tip": "TIP-062",
+      "status": "verified",
+      "depends_on": [],
+      "acceptance": "Tài khoản hết hạn: không phụ đề + tra từ trả 403; còn hạn: chạy bình thường; luồng paywall/nâng cấp không vỡ.",
+      "evidence": "VERIFIED Homeowner local 2 tài khoản hết hạn + còn hạn (2026-07-03). BUG khách 3/7: tài khoản HẾT HẠN vẫn dùng được dịch vụ (phụ đề song ngữ + tra từ) vì MỌI endpoint chỉ requireAuth (không check is_active) + content script chỉ check settings.enabled. FIX TIP-062 (ba52181): | BACKEND: middleware/active.ts requireActive — RPC get_access_status, trả 403 {error:'subscription_expired'} khi has_access===false, fail-open khi lỗi RPC (không chặn oan). Áp (sau requireAuth) lên 5 endpoint dùng dịch vụ: /api/lookup, /api/lookup-context, /api/vocabulary(POST), /api/vocabulary/mark-learned, /api/study-session. GIỮ KHÔNG gate: me, access-status, payment/*, profile, mọi GET → luồng paywall+nâng cấp không vỡ. | CONTENT SCRIPT youtube.ts: hasAccess (mặc định true=fail-open) lấy từ /api/access-status (init + đổi video); gate render phụ đề + lookup; hết hạn → ẩn overlay + trả caption gốc YouTube + nhắc nâng cấp; lookup trả 403 → khoá + nhắc (bắt hết hạn giữa chừng). VẬN HÀNH: redeploy backend Vercel (gate prod, RPC get_access_status đã có sẵn) + build:prod ext (content-script gate bản prod)."
+    },
+    {
       "id": "WEB-FB-0703",
       "title": "Feedback khách 3/7 — màu nền/cờ extension + biểu đồ từ vựng + đổi SePay khách",
       "area": "web+extension",
