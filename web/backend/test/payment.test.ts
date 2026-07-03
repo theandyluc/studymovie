@@ -65,13 +65,15 @@ describe("computeNextPaidUntil (cộng dồn, không ghi đè ngắn đi)", () =
   });
 });
 
-describe("buildVietQrUrl", () => {
-  it("chứa bank, số tiền, nội dung", () => {
+describe("buildVietQrUrl (SePay QR — TIP-066)", () => {
+  it("sinh qr.sepay.vn với acc/bank/amount/des/template", () => {
     const url = pay.buildVietQrUrl(49000, "SMABCD12");
-    expect(url).toContain("api.vietqr.io/image/MB-0123456789-compact2.jpg");
+    expect(url).toContain("qr.sepay.vn/img");
+    expect(url).toContain("acc=0123456789");
+    expect(url).toContain("bank=MB");
     expect(url).toContain("amount=49000");
-    expect(url).toContain("addInfo=SMABCD12");
-    expect(url).toContain("accountName=NGUYEN+VAN+A");
+    expect(url).toContain("des=SMABCD12");
+    expect(url).toContain("template=compact2");
   });
 });
 
