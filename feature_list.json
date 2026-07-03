@@ -256,6 +256,16 @@
       "evidence": "VERIFIED Homeowner soi cạnh Figma (2026-07-02). Khách #13 nói 'web sai font' — soi Properties Figma: font Figma = Inter = ĐÚNG font web (không sai font-family). Khác biệt thật = letter-spacing (Figma −3%/heading, web mặc định 0) → chữ web trông thưa. FIX TIP-056 (d887505, globals.css): body letter-spacing −0.02em; h1-h6 + .font-heading −0.03em + line-height 1.1 → khớp cảm giác Figma. Cấu trúc/bố cục các trang (dashboard, từ vựng, học từ vựng flashcard, kiểm tra Anh-Việt/Việt-Anh, thanh toán) đã khớp Figma sẵn từ trước."
     },
     {
+      "id": "WEB-FB-0703",
+      "title": "Feedback khách 3/7 — màu nền/cờ extension + biểu đồ từ vựng + đổi SePay khách",
+      "area": "web+extension",
+      "tip": "TIP-060/060b/061",
+      "status": "verified",
+      "depends_on": [],
+      "acceptance": "#2 màu nền phụ đề bấm đổi được + cờ hiện đúng trên Windows; #3 biểu đồ trục Y nguyên + hiện cột. Thanh toán trỏ SePay + TK khách.",
+      "evidence": "VERIFIED Homeowner (2026-07-03). | #2 (TIP-060 d456df4 + 060b 9ce5ac8): 'Màu nền' phụ đề = 1 chấm bấm đổi ĐEN↔TRẮNG (settings bgColor 'black'|'white', apply bgRgba ở youtube renderCue); THAY emoji cờ 🇬🇧🇻🇳 (không render trên Windows) bằng cờ SVG inline (FLAG_GB Union Jack + FLAG_VN) qua flagLabel trong colorRow. | #3 (TIP-061 f262353): biểu đồ 'Từ vựng đã học theo ngày' (tu-vung/page.tsx) — trục Y tick NGUYÊN đều (rawMax/niceMax + Array.from thay [max,round(2/3),round(1/3),0] vốn ra 0,1,3,4 lẻ); cột hiện rõ (thêm h-full cho cột con → height% có mốc tham chiếu, hết cột tàng hình); nhãn peak neo bottom-full trên đỉnh cột. | ĐỔI THANH TOÁN sang SePay + tài khoản KHÁCH: chỉ đổi env Vercel backend (BANK_ID=970432 VPBank / BANK_ACCOUNT_NO=541966978 / BANK_ACCOUNT_NAME / SEPAY_API_KEY) + tạo webhook 'studymovie' → /api/sepay-webhook (Test 200, key khớp) — KHÔNG sửa code. CÒN TREO PHÍA SEPAY (khách xử): Bank Hub báo 'đã kết nối API' nhưng giao dịch tiền vào VPBank 541966978 KHÔNG hiện trong mục Giao dịch → SePay chưa đọc được biến động (nghi độ trễ/gói free/cần support SePay). Hệ thống mình verify đúng end-to-end (endpoint 401 khi sai key, 200 khi Test) — khi SePay đọc được giao dịch là tự lên Pro."
+    },
+    {
       "id": "EXT-POPUP-FIGMA",
       "title": "Redesign popup extension theo Figma final (feedback khách #10-13)",
       "area": "extension",
