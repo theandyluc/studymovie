@@ -56,8 +56,11 @@ function LearnedChart({ items }: { items: VocabItem[] }) {
     });
     return { days, capped };
   }, [items]);
-  const max = Math.max(1, ...days.map((d) => d.count));
-  const ticks = [max, Math.round((max * 2) / 3), Math.round(max / 3), 0];
+  // TIP-061 — trục Y số NGUYÊN, cách đều: max nhỏ (≤4) giữ nguyên; lớn thì làm tròn lên bội 4.
+  const rawMax = Math.max(1, ...days.map((d) => d.count));
+  const niceMax = rawMax <= 4 ? rawMax : Math.ceil(rawMax / 4) * 4;
+  const steps = Math.min(4, niceMax);
+  const ticks = Array.from({ length: steps + 1 }, (_, i) => Math.round((niceMax * (steps - i)) / steps));
   const labelStep = Math.max(1, Math.ceil(days.length / 8)); // thưa nhãn khi nhiều cột
 
   return (
@@ -82,18 +85,20 @@ function LearnedChart({ items }: { items: VocabItem[] }) {
             ))}
           </div>
           {days.map((d) => {
-            const peak = d.count === max && d.count > 0;
+            const peak = d.count === rawMax && d.count > 0;
             return (
-              <div key={d.key} className="relative flex flex-1 flex-col items-center justify-end gap-1" title={`${d.label}: ${d.count} từ`}>
-                {peak ? (
-                  <span className="absolute -top-1 z-10 rounded-btn border border-border bg-surface px-2 py-0.5 text-xs font-semibold shadow-card">
-                    {d.count}
-                  </span>
-                ) : null}
+              <div key={d.key} className="relative flex h-full flex-1 flex-col items-center justify-end" title={`${d.label}: ${d.count} từ`}>
+                {/* Cột cao theo count/niceMax; h-full ở cha cho % có mốc tham chiếu (fix cột tàng hình). */}
                 <div
-                  className={`w-full rounded-t ${peak ? "bg-chart-bar" : "bg-chart-base"}`}
-                  style={{ height: `${(d.count / max) * 100}%`, minHeight: d.count > 0 ? "3px" : "0" }}
-                />
+                  className={`relative w-full rounded-t ${peak ? "bg-chart-bar" : "bg-chart-base"}`}
+                  style={{ height: `${(d.count / niceMax) * 100}%`, minHeight: d.count > 0 ? "4px" : "0" }}
+                >
+                  {peak ? (
+                    <span className="absolute bottom-full left-1/2 mb-1 -translate-x-1/2 whitespace-nowrap rounded-btn border border-border bg-surface px-2 py-0.5 text-xs font-semibold shadow-card">
+                      {d.count}
+                    </span>
+                  ) : null}
+                </div>
               </div>
             );
           })}
