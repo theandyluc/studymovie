@@ -30,8 +30,23 @@ function parseVNDate(s: string): string | null {
 
 type StatusFilter = "all" | "new" | "learned";
 
-// Biểu đồ 7 ngày (Figma): cột xám + cột cao nhất xanh + tooltip hộp số; có trục y + lưới.
+// Biểu đồ (Figma): cột xám + cột cao nhất xanh + hộp số đỉnh; trục y số tròn + lưới.
 const CHART_MAX_DAYS = 30; // trần số cột (tránh biểu đồ quá dài)
+
+// TIP-064 — trục Y "đẹp": step nice-number (1/2/5 × 10^n), ~4 mốc tròn (0/2/4, 0/10/20/30…).
+// Đếm từ = số nguyên → kẹp step ≥ 1 (không có mốc lẻ 0.5).
+function niceAxis(rawMax: number): { niceMax: number; ticks: number[] } {
+  const target = 3; // ~3 khoảng → ~4 mốc
+  const rough = Math.max(1, rawMax) / target;
+  const mag = Math.pow(10, Math.floor(Math.log10(rough)));
+  const norm = rough / mag;
+  const rawStep = (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10) * mag;
+  const step = Math.max(1, Math.round(rawStep)); // số nguyên
+  const niceMax = Math.max(step, Math.ceil(rawMax / step) * step);
+  const ticks: number[] = [];
+  for (let t = niceMax; t >= 0; t -= step) ticks.push(t);
+  return { niceMax, ticks };
+}
 
 function LearnedChart({ items }: { items: VocabItem[] }) {
   // TIP-037 — cửa sổ ĐỘNG từ ngày học sớm nhất → hôm nay (min 7, max 30 ngày) để tổng
@@ -56,45 +71,44 @@ function LearnedChart({ items }: { items: VocabItem[] }) {
     });
     return { days, capped };
   }, [items]);
-  // TIP-061 — trục Y số NGUYÊN, cách đều: max nhỏ (≤4) giữ nguyên; lớn thì làm tròn lên bội 4.
+  // TIP-064 — trục Y số tròn đẹp (nice-number). Cột cao theo count/niceMax; đỉnh so theo rawMax.
   const rawMax = Math.max(1, ...days.map((d) => d.count));
-  const niceMax = rawMax <= 4 ? rawMax : Math.ceil(rawMax / 4) * 4;
-  const steps = Math.min(4, niceMax);
-  const ticks = Array.from({ length: steps + 1 }, (_, i) => Math.round((niceMax * (steps - i)) / steps));
+  const { niceMax, ticks } = niceAxis(rawMax);
   const labelStep = Math.max(1, Math.ceil(days.length / 8)); // thưa nhãn khi nhiều cột
 
   return (
     <Card>
-      <h2 className="text-center font-medium">Từ vựng đã học theo ngày</h2>
+      <h2 className="text-center font-heading font-bold">Từ vựng đã học theo ngày</h2>
       <p className="mb-4 text-center text-xs text-muted-foreground">
         {capped ? `${CHART_MAX_DAYS} ngày gần nhất` : "từ ngày học đầu tiên đến nay"}
       </p>
       <div className="flex gap-2">
-        {/* trục y */}
-        <div className="flex h-40 flex-col justify-between py-1 text-[10px] text-muted-foreground">
+        {/* trục y — số tròn căn phải, xám */}
+        <div className="flex h-40 w-8 flex-col justify-between py-1 pr-1 text-right text-[10px] tabular-nums text-muted-foreground">
           {ticks.map((t, i) => (
             <span key={i}>{t}</span>
           ))}
         </div>
         {/* cột */}
         <div className="relative flex h-40 flex-1 items-end gap-2">
-          {/* lưới ngang */}
+          {/* lưới ngang mờ tại mỗi mốc */}
           <div className="pointer-events-none absolute inset-0 flex flex-col justify-between">
             {ticks.map((_, i) => (
-              <div key={i} className="border-t border-border/60" />
+              <div key={i} className="border-t border-border/50" />
             ))}
           </div>
           {days.map((d) => {
             const peak = d.count === rawMax && d.count > 0;
             return (
               <div key={d.key} className="relative flex h-full flex-1 flex-col items-center justify-end" title={`${d.label}: ${d.count} từ`}>
-                {/* Cột cao theo count/niceMax; h-full ở cha cho % có mốc tham chiếu (fix cột tàng hình). */}
+                {/* Cột cao theo count/niceMax; h-full ở cha cho % có mốc tham chiếu. */}
                 <div
-                  className={`relative w-full rounded-t ${peak ? "bg-chart-bar" : "bg-chart-base"}`}
+                  className={`relative w-full rounded-t-md ${peak ? "bg-chart-bar" : "bg-chart-base"}`}
                   style={{ height: `${(d.count / niceMax) * 100}%`, minHeight: d.count > 0 ? "4px" : "0" }}
                 >
+                  {/* Hộp số đỉnh: trắng bo góc + viền + shadow, số đậm to, nổi trên đỉnh cột. */}
                   {peak ? (
-                    <span className="absolute bottom-full left-1/2 mb-1 -translate-x-1/2 whitespace-nowrap rounded-btn border border-border bg-surface px-2 py-0.5 text-xs font-semibold shadow-card">
+                    <span className="absolute bottom-full left-1/2 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded-lg border border-border bg-surface px-3 py-1 text-base font-bold shadow-card">
                       {d.count}
                     </span>
                   ) : null}
@@ -104,7 +118,7 @@ function LearnedChart({ items }: { items: VocabItem[] }) {
           })}
         </div>
       </div>
-      <div className="ml-8 mt-1 flex gap-2">
+      <div className="ml-8 mt-1 flex gap-2 pl-2">
         {days.map((d, i) => (
           <span key={d.key} className="flex-1 text-center text-[10px] text-muted-foreground">
             {days.length <= 12 || i % labelStep === 0 ? d.label : ""}
