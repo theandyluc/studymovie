@@ -256,6 +256,16 @@
       "evidence": "VERIFIED Homeowner soi cạnh Figma (2026-07-02). Khách #13 nói 'web sai font' — soi Properties Figma: font Figma = Inter = ĐÚNG font web (không sai font-family). Khác biệt thật = letter-spacing (Figma −3%/heading, web mặc định 0) → chữ web trông thưa. FIX TIP-056 (d887505, globals.css): body letter-spacing −0.02em; h1-h6 + .font-heading −0.03em + line-height 1.1 → khớp cảm giác Figma. Cấu trúc/bố cục các trang (dashboard, từ vựng, học từ vựng flashcard, kiểm tra Anh-Việt/Việt-Anh, thanh toán) đã khớp Figma sẵn từ trước."
     },
     {
+      "id": "EXT-VN-SUB-ROBUST",
+      "title": "Tăng độ bền phụ đề VN — chống 'giới hạn' Google auto-translate (feedback 3/7 #1)",
+      "area": "extension",
+      "tip": "TIP-063",
+      "status": "verified",
+      "depends_on": [],
+      "acceptance": "Phụ đề VN ít gặp 'giới hạn'; bị chặn tạm → tự phục hồi sau ~20-25s; xem lại video → dùng cache không gọi lại Google.",
+      "evidence": "VERIFIED Homeowner (2026-07-03). Feedback 3/7 #1 'Phụ đề Việt bị lỗi' = Google anti-bot chặn tlang=vi khi gọi nhiều (trang 'Sorry') → hiện 'Phụ đề Việt tạm bị giới hạn'. KHÔNG phải bug build dev/prod (dùng chung endpoint YouTube auto-translate — quyết định D-1); test nhiều/reload trên cùng IP dễ bị hơn user store bình thường. FIX TIP-063 (abcc207, yt-intercept.ts): (1) backoff giãn dần VI_BACKOFF [700,2000,5000] (3 lần, không hammer); (2) auto-retry NỀN khi vẫn blocked → post EN ngay + hẹn ~22s fetch lại VI (cap BG_RETRY_MAX=2 vòng/video, hủy khi đổi video/đã có VN) → VN tự hiện không cần user thao tác; (3) viCache Map theo videoId → xem lại/tua/F5 không gọi lại Google. EN luôn hiện dù VN bị chặn. Đây là GIẢM NHẸ, không xoá 100% (phụ thuộc Google; muốn hết hẳn = dịch trả phí, đảo D-1)."
+    },
+    {
       "id": "SUB-GATE",
       "title": "Chặn tính năng khi HẾT HẠN (subscription gate) — extension + backend",
       "area": "web+extension",
