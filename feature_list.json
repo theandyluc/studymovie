@@ -256,6 +256,16 @@
       "evidence": "VERIFIED Homeowner soi cạnh Figma (2026-07-02). Khách #13 nói 'web sai font' — soi Properties Figma: font Figma = Inter = ĐÚNG font web (không sai font-family). Khác biệt thật = letter-spacing (Figma −3%/heading, web mặc định 0) → chữ web trông thưa. FIX TIP-056 (d887505, globals.css): body letter-spacing −0.02em; h1-h6 + .font-heading −0.03em + line-height 1.1 → khớp cảm giác Figma. Cấu trúc/bố cục các trang (dashboard, từ vựng, học từ vựng flashcard, kiểm tra Anh-Việt/Việt-Anh, thanh toán) đã khớp Figma sẵn từ trước."
     },
     {
+      "id": "WEB-CHART-FIGMA",
+      "title": "Biểu đồ Từ vựng khớp Figma + hover (cột xám → hover xanh + hiện số)",
+      "area": "web",
+      "tip": "TIP-064/065",
+      "status": "verified",
+      "depends_on": [],
+      "acceptance": "Biểu đồ 'Từ vựng đã học theo ngày' đúng style Figma; mọi cột xám, hover 1 cột → xanh + hiện số ngày đó.",
+      "evidence": "VERIFIED Homeowner (2026-07-03), /tu-vung LearnedChart. | TIP-064 (c6489d3): khớp style Figma — trục Y số TRÒN đẹp niceAxis (step nice 1/2/5×10^n thay bội-4 của TIP-061; vd max 4→0/2/4, 32→0/20/40), tiêu đề font-heading font-bold, hộp số trắng rounded-lg + viền + shadow (to/đậm), cột rounded-t-md xám/xanh, gridline border-border/50 mờ, nhãn ngày xám. | TIP-065 (c48b510): tương tác HOVER theo yêu cầu khách — BỎ 'cột đỉnh xanh cố định'; mọi cột bg-chart-base (xám), mỗi cột là group → group-hover:bg-chart-bar (xanh) + hộp số opacity-0→group-hover:opacity-100 (hiện số từ đã học của ngày hover trên đỉnh cột); rời chuột về xám/ẩn số. Giữ logic cửa sổ động + tổng (TIP-061). Trục Y co giãn theo data thật."
+    },
+    {
       "id": "EXT-VN-SUB-ROBUST",
       "title": "Tăng độ bền phụ đề VN — chống 'giới hạn' Google auto-translate (feedback 3/7 #1)",
       "area": "extension",
