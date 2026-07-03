@@ -286,6 +286,16 @@
       "evidence": "VERIFIED Homeowner local 2 tài khoản hết hạn + còn hạn (2026-07-03). BUG khách 3/7: tài khoản HẾT HẠN vẫn dùng được dịch vụ (phụ đề song ngữ + tra từ) vì MỌI endpoint chỉ requireAuth (không check is_active) + content script chỉ check settings.enabled. FIX TIP-062 (ba52181): | BACKEND: middleware/active.ts requireActive — RPC get_access_status, trả 403 {error:'subscription_expired'} khi has_access===false, fail-open khi lỗi RPC (không chặn oan). Áp (sau requireAuth) lên 5 endpoint dùng dịch vụ: /api/lookup, /api/lookup-context, /api/vocabulary(POST), /api/vocabulary/mark-learned, /api/study-session. GIỮ KHÔNG gate: me, access-status, payment/*, profile, mọi GET → luồng paywall+nâng cấp không vỡ. | CONTENT SCRIPT youtube.ts: hasAccess (mặc định true=fail-open) lấy từ /api/access-status (init + đổi video); gate render phụ đề + lookup; hết hạn → ẩn overlay + trả caption gốc YouTube + nhắc nâng cấp; lookup trả 403 → khoá + nhắc (bắt hết hạn giữa chừng). VẬN HÀNH: redeploy backend Vercel (gate prod, RPC get_access_status đã có sẵn) + build:prod ext (content-script gate bản prod)."
     },
     {
+      "id": "SEPAY-VA-PAYMENT",
+      "title": "Thanh toán tự động SePay — luồng VA VPBank hộ kinh doanh (chạy end-to-end)",
+      "area": "web+ops",
+      "tip": "TIP-066/067 + config",
+      "status": "verified",
+      "depends_on": [],
+      "acceptance": "CK qua QR VA → SePay đọc → webhook 200 → tự lên Pro (với app ngân hàng hỗ trợ VA).",
+      "evidence": "VERIFIED Homeowner (2026-07-03) — CK bằng app ngân hàng hỗ trợ VA → tự lên Pro. Đổi thanh toán sang SePay + tài khoản KHÁCH (VPBank hộ kinh doanh). VPBank HKD liên kết SePay qua TÀI KHOẢN ẢO (VA) → tiền phải vào VA thì SePay mới đọc. CHỐT: | (1) SePay bật 'cho phép sử dụng tài khoản phụ ngân hàng' (my.sepay.vn/company/configuration) → đọc giao dịch VA. | (2) Webhook 'studymovie' → /api/sepay-webhook (API Key khớp SEPAY_API_KEY, Tất cả tài khoản, tiền vào, xác thực thanh toán). | (3) QR (TIP-066→067): buildVietQrUrl → https://vietqr.app/img?bank=VPBank&acc=<VA>&template=compact&amount=&des=<code>&showinfo=true&fullacc=true&holder=<name>. QUAN TRỌNG: vietqr.io/qr.sepay.vn KHÔNG payable với VA 'AGBSP…'; CHỈ vietqr.app xử đúng (giống hệt QR SePay Tạo QR). | ENV backend Vercel: BANK_ID=VPBank (short name, KHÔNG BIN 970432), BANK_ACCOUNT_NO=AGBSP541966978 (VA), VIETQR_TEMPLATE=compact, BANK_ACCOUNT_NAME=HO KINH DOANH LUC NAM TRUONG. CAVEAT: một số app ngân hàng không quét được VA ('account không tồn tại') = lỗi phía app/nhà phát hành; app khác quét + CK bình thường. Backend đối soát mã đơn + số tiền + idempotency + gate hết hạn (TIP-062) đều sẵn sàng."
+    },
+    {
       "id": "WEB-FB-0703",
       "title": "Feedback khách 3/7 — màu nền/cờ extension + biểu đồ từ vựng + đổi SePay khách",
       "area": "web+extension",

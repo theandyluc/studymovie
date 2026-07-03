@@ -288,10 +288,18 @@ cd extension    && npm run lint && npm run build
 - **Link "Admin"** trên nav — chỉ hiện với tài khoản `is_admin` (Header.tsx, fail-closed).
 
 ### 11.3 Vận hành cần làm khi go-live
-- **SePay webhook (thanh toán tự động):** tạo webhook ở SePay → URL
-  `https://studymovie-backend.vercel.app/api/sepay-webhook`; xác thực **API Key** = biến `SEPAY_API_KEY`
-  ở backend (§3.2, phải TRÙNG 2 đầu); sự kiện **tiền vào**; tài khoản NH khớp `BANK_ACCOUNT_NO`. Backend
-  đã có sẵn đối soát mã đơn + số tiền + chống trùng giao dịch + cộng dồn hạn.
+- **SePay webhook (thanh toán tự động) — LUỒNG VA (VPBank hộ kinh doanh):**
+  - VPBank HKD liên kết SePay qua **tài khoản ảo (VA)** → tiền phải vào **VA** thì SePay mới đọc được.
+  - SePay: bật **"cho phép sử dụng tài khoản phụ ngân hàng"** (`my.sepay.vn/company/configuration`);
+    tạo webhook → URL `https://studymovie-backend.vercel.app/api/sepay-webhook`; **API Key** = biến
+    `SEPAY_API_KEY` (phải TRÙNG 2 đầu); sự kiện **tiền vào**; xác thực thanh toán BẬT.
+  - **QR:** backend sinh qua **`vietqr.app`** (KHÔNG dùng vietqr.io/qr.sepay.vn — 2 cái này KHÔNG payable
+    với VA "AGBSP…"). Env backend: `BANK_ID=VPBank` (short name), `BANK_ACCOUNT_NO=AGBSP541966978` (VA),
+    `VIETQR_TEMPLATE=compact`, `BANK_ACCOUNT_NAME=HO KINH DOANH LUC NAM TRUONG`. (Xem `buildVietQrUrl`
+    trong `web/backend/src/api/payment.ts`.)
+  - Backend đã có: đối soát mã đơn + số tiền + chống trùng giao dịch (idempotency) + cộng dồn hạn.
+  - **Lưu ý:** một số app ngân hàng KHÔNG quét được VA ("account không tồn tại") = hạn chế phía app/nhà
+    phát hành; app khác quét + CK bình thường → SePay đọc → tự kích hoạt Pro.
 - **`OPENAI_API_KEY`** ở backend Vercel (§3.5) cho nghĩa từ AI.
 - **Extension lên Store:** `npm run build:prod` + zip `extension/dist` (file `studymovie-extension-v1.0.0.zip`
   đã build lại đợt này, gồm mọi thay đổi). Xem §8.
