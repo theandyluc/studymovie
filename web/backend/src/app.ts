@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { SITE_URL } from "./env.js";
 import { requireAuth } from "./middleware/auth.js";
+import { requireActive } from "./middleware/active.js";
 import { getMe } from "./api/me.js";
 import { getLookup } from "./api/lookup.js";
 import { postLookupContext } from "./api/lookup-context.js";
@@ -62,10 +63,11 @@ app.post("/api/sepay-webhook", postSepayWebhook);
 // Protected (cần Bearer token hợp lệ)
 app.get("/api/me", requireAuth, getMe);
 app.get("/api/access-status", requireAuth, getAccessStatus); // WEB-TRIAL TIP-019b
-app.get("/api/lookup", requireAuth, getLookup); // EXT-02: tra nghĩa (từ điển, IPA/audio)
-app.post("/api/lookup-context", requireAuth, postLookupContext); // TIP-038: nghĩa theo ngữ cảnh (AI)
-app.post("/api/vocabulary", requireAuth, postVocabulary); // EXT-02: lưu từ
-app.post("/api/vocabulary/mark-learned", requireAuth, postMarkLearned); // WEB-FLASH2 TIP-026
+// TIP-062 — requireActive (SAU requireAuth) chặn khi HẾT HẠN cho endpoint "dùng dịch vụ".
+app.get("/api/lookup", requireAuth, requireActive, getLookup); // EXT-02: tra nghĩa (từ điển, IPA/audio)
+app.post("/api/lookup-context", requireAuth, requireActive, postLookupContext); // TIP-038: nghĩa theo ngữ cảnh (AI)
+app.post("/api/vocabulary", requireAuth, requireActive, postVocabulary); // EXT-02: lưu từ
+app.post("/api/vocabulary/mark-learned", requireAuth, requireActive, postMarkLearned); // WEB-FLASH2 TIP-026
 app.get("/api/vocabulary", requireAuth, getVocabulary); // WEB-03: danh sách
 app.delete("/api/vocabulary/:id", requireAuth, deleteVocabulary); // WEB-03: xóa
 app.get("/api/dashboard", requireAuth, getDashboard); // WEB-02
@@ -83,7 +85,7 @@ app.delete("/api/weekly-plan/:id", requireAuth, deleteWeeklyPlan); // WEB-PLAN T
 app.get("/api/leaderboard", requireAuth, getLeaderboard); // WEB-07
 app.get("/api/profile", requireAuth, getProfile); // WEB-09
 app.patch("/api/profile", requireAuth, patchProfile); // WEB-09
-app.post("/api/study-session", requireAuth, postStudySession); // EXT-03 timer
+app.post("/api/study-session", requireAuth, requireActive, postStudySession); // EXT-03 timer (TIP-062 gate)
 app.get("/api/playlist", requireAuth, getPlaylist); // WEB-06
 app.post("/api/playlist", requireAuth, postPlaylist); // WEB-06
 app.patch("/api/playlist/:id", requireAuth, patchPlaylist); // WEB-06

@@ -67,6 +67,7 @@ let activeIndex = -1;
 let popupOpen = false;
 let pausedByPopup = false;
 let currentVid = "";
+let hasAccess = true; // TIP-062: còn quyền dùng dịch vụ? mặc định true = fail-open (chỉ ẩn khi rõ hết hạn)
 
 const SM_DEBUG = false; // bật để xem log chẩn đoán
 const dbg = (...a: unknown[]): void => {
@@ -89,9 +90,9 @@ function ensureHideNativeStyle(): void {
     s.textContent = ".ytp-caption-window-container{display:none !important;}";
     document.documentElement.appendChild(s);
   }
-  // Ẩn caption gốc YouTube khi StudyMovie BẬT và đang phụ trách (có cue).
-  // Tắt StudyMovie (TIP-028) → gỡ style ẩn → caption gốc YouTube trở lại.
-  s.toggleAttribute("disabled", !(settings.enabled && cues.length > 0));
+  // Ẩn caption gốc YouTube khi StudyMovie BẬT + CÒN QUYỀN và đang phụ trách (có cue).
+  // Tắt StudyMovie (TIP-028) / hết hạn (TIP-062) → gỡ style ẩn → caption gốc YouTube trở lại.
+  s.toggleAttribute("disabled", !(settings.enabled && hasAccess && cues.length > 0));
 }
 
 function cleanWord(raw: string): string {
@@ -234,7 +235,7 @@ function renderCue(idx: number): void {
 }
 
 function syncTick(): void {
-  if (!settings.enabled) return; // TIP-028: tắt StudyMovie → không xử lý phụ đề
+  if (!settings.enabled || !hasAccess) return; // TIP-028 tắt / TIP-062 hết hạn → không xử lý phụ đề
   const video = getVideo();
   if (!video || !document.getElementById(ID)) return;
   updateOverlayPosition(); // TIP-023: né control YouTube (ẩn/hiện + full screen), poll 250ms
@@ -286,6 +287,63 @@ function setViNote(text: string | null): void {
   el.textContent = text;
 }
 
+// TIP-062 — nhắc nâng cấp khi HẾT HẠN (thay cho phụ đề). show=false → gỡ.
+function setAccessNote(show: boolean): void {
+  const id = "studymovie-accessnote";
+  const existing = document.getElementById(id);
+  if (!show) {
+    existing?.remove();
+    return;
+  }
+  const player = getPlayer();
+  if (!player) return;
+  let el = existing as HTMLDivElement | null;
+  if (!el) {
+    el = document.createElement("div");
+    el.id = id;
+    Object.assign(el.style, {
+      position: "absolute",
+      left: "0",
+      right: "0",
+      bottom: "40px",
+      textAlign: "center",
+      zIndex: "61",
+      pointerEvents: "none",
+      color: "#fbbf24",
+      fontSize: "13px",
+      fontWeight: "600",
+      fontFamily: "Arial, sans-serif",
+      textShadow: "0 1px 2px rgba(0,0,0,0.9)",
+    } as Partial<CSSStyleDeclaration>);
+    player.appendChild(el);
+  }
+  el.textContent = "StudyMovie: hết hạn dùng thử — nâng cấp tại app.studymovie.com";
+}
+
+// TIP-062 — lấy trạng thái quyền từ backend (/api/access-status qua proxy). Fail-open khi lỗi.
+async function refreshAccess(): Promise<void> {
+  try {
+    const data = await callApi<{ has_access?: boolean }>("GET", "/api/access-status");
+    hasAccess = data?.has_access !== false; // chỉ ẩn khi rõ ràng false
+  } catch {
+    hasAccess = true; // lỗi mạng / chưa đăng nhập → không chặn oan
+  }
+  applyAccessGate();
+}
+
+// TIP-062 — áp gate quyền: hết hạn → ẩn overlay + nhắc; còn hạn → dựng lại theo settings.
+function applyAccessGate(): void {
+  ensureHideNativeStyle(); // cập nhật ẩn/hiện caption gốc theo hasAccess
+  if (!hasAccess) {
+    removeOverlay();
+    setViNote(null);
+    setAccessNote(true);
+    return;
+  }
+  setAccessNote(false);
+  applySettings();
+}
+
 // ---- Word popup (tra nghĩa + lưu) ----
 function closeWordPopup(resume: boolean): void {
   document.getElementById("studymovie-word")?.remove();
@@ -324,6 +382,11 @@ function mkBtn(label: string, onClick: () => void, ghost = false): HTMLButtonEle
 
 async function onWordClick(word: string, surface: string, sentence: string): Promise<void> {
   if (!word) return;
+  if (!hasAccess) {
+    // TIP-062: hết hạn → không tra, chỉ nhắc nâng cấp.
+    setAccessNote(true);
+    return;
+  }
   const player = getPlayer();
   if (!player) return;
 
@@ -366,7 +429,15 @@ async function onWordClick(word: string, surface: string, sentence: string): Pro
     callApi<ContextResponse>("POST", "/api/lookup-context", { word, sentence }),
   ]);
   if (dictR.status !== "fulfilled") {
-    pop.textContent = `Lỗi tra nghĩa: ${dictR.reason instanceof Error ? dictR.reason.message : String(dictR.reason)}`;
+    const msg = dictR.reason instanceof Error ? dictR.reason.message : String(dictR.reason);
+    if (msg.includes("HTTP 403")) {
+      // TIP-062: hết hạn giữa chừng → khoá dịch vụ + ẩn phụ đề + nhắc.
+      hasAccess = false;
+      closeWordPopup(true);
+      applyAccessGate();
+      return;
+    }
+    pop.textContent = `Lỗi tra nghĩa: ${msg}`;
     return;
   }
   const res = dictR.value;
@@ -461,8 +532,8 @@ document.addEventListener("click", () => {
 // Cài đặt phụ đề giờ nằm ở POPUP extension (gỡ panel gear trong player của TIP-005).
 function applySettings(): void {
   ensureHideNativeStyle();
-  // TIP-028: Tắt StudyMovie → gỡ overlay + trả caption gốc (ensureHideNativeStyle đã gỡ style ẩn).
-  if (!settings.enabled || !cues.length) {
+  // TIP-028 tắt / TIP-062 hết hạn → gỡ overlay + trả caption gốc (ensureHideNativeStyle đã gỡ style ẩn).
+  if (!settings.enabled || !hasAccess || !cues.length) {
     removeOverlay();
     return;
   }
@@ -482,14 +553,17 @@ function onMessage(e: MessageEvent): void {
   activeIndex = -1;
   ensureHideNativeStyle();
   removeOverlay(); // dựng lại để gắn vào #movie_player hiện tại (YouTube có thể thay DOM player)
-  if (settings.enabled && cues.length) {
+  if (settings.enabled && hasAccess && cues.length) {
     // TIP-028: Tắt StudyMovie → vẫn lưu cues (để bật lại dựng ngay) nhưng KHÔNG build overlay.
     buildOverlay();
+    setAccessNote(false);
     // Nhãn khi không có VI: phân biệt bị-chặn (Sorry) vs video thật sự không có VI.
     const hasVi = cues.some((c) => c.vi);
     if (!hasVi && d.viState === "blocked") setViNote("⚠️ Phụ đề Việt tạm bị giới hạn, thử lại sau");
     else if (!hasVi && d.viState === "empty") setViNote("Video này không có phụ đề Việt");
     else setViNote(null);
+  } else if (!hasAccess && cues.length) {
+    setAccessNote(true); // TIP-062: hết hạn nhưng video có phụ đề → nhắc nâng cấp
   }
 }
 
@@ -503,6 +577,7 @@ async function init(): Promise<void> {
   window.addEventListener("message", onMessage);
   document.addEventListener("fullscreenchange", updateOverlayPosition); // TIP-023: dời ngay khi vào/ra full screen
   setInterval(syncTick, 250);
+  void refreshAccess(); // TIP-062: kiểm tra quyền lúc khởi động
 
   // SPA: KHÔNG dựa vào yt-navigate-finish (dễ race với lúc cue tới). Thay vào đó:
   // poll location — khi đổi sang video khác thì xoá overlay stale; cue video mới
@@ -514,6 +589,7 @@ async function init(): Promise<void> {
       currentVid = v;
       cues = [];
       removeOverlay();
+      void refreshAccess(); // TIP-062: cập nhật quyền mỗi khi đổi video
     }
   }, 500);
 }
