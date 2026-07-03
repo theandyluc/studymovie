@@ -97,25 +97,25 @@ function LearnedChart({ items }: { items: VocabItem[] }) {
               <div key={i} className="border-t border-border/50" />
             ))}
           </div>
-          {days.map((d) => {
-            const peak = d.count === rawMax && d.count > 0;
-            return (
-              <div key={d.key} className="relative flex h-full flex-1 flex-col items-center justify-end" title={`${d.label}: ${d.count} từ`}>
-                {/* Cột cao theo count/niceMax; h-full ở cha cho % có mốc tham chiếu. */}
-                <div
-                  className={`relative w-full rounded-t-md ${peak ? "bg-chart-bar" : "bg-chart-base"}`}
-                  style={{ height: `${(d.count / niceMax) * 100}%`, minHeight: d.count > 0 ? "4px" : "0" }}
-                >
-                  {/* Hộp số đỉnh: trắng bo góc + viền + shadow, số đậm to, nổi trên đỉnh cột. */}
-                  {peak ? (
-                    <span className="absolute bottom-full left-1/2 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded-lg border border-border bg-surface px-3 py-1 text-base font-bold shadow-card">
-                      {d.count}
-                    </span>
-                  ) : null}
-                </div>
+          {/* TIP-065 — mọi cột xám; hover 1 cột → xanh + hiện hộp số ngày đó (bỏ peak cố định). */}
+          {days.map((d) => (
+            <div
+              key={d.key}
+              className="group relative flex h-full flex-1 flex-col items-center justify-end"
+              title={`${d.label}: ${d.count} từ`}
+            >
+              {/* Cột cao theo count/niceMax; h-full ở cha cho % có mốc tham chiếu. */}
+              <div
+                className="relative w-full rounded-t-md bg-chart-base transition-colors group-hover:bg-chart-bar"
+                style={{ height: `${(d.count / niceMax) * 100}%`, minHeight: d.count > 0 ? "4px" : "0" }}
+              >
+                {/* Hộp số: ẩn mặc định, hiện khi hover cột đó (trắng bo góc + viền + shadow). */}
+                <span className="pointer-events-none absolute bottom-full left-1/2 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded-lg border border-border bg-surface px-3 py-1 text-base font-bold opacity-0 shadow-card transition-opacity group-hover:opacity-100">
+                  {d.count}
+                </span>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       </div>
       <div className="ml-8 mt-1 flex gap-2 pl-2">
