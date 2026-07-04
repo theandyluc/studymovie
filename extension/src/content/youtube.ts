@@ -380,6 +380,33 @@ function mkBtn(label: string, onClick: () => void, ghost = false): HTMLButtonEle
   return b;
 }
 
+// TIP-070 — phát âm bằng Web Speech API (không tải media ngoài → không vướng CSP media-src YouTube).
+function speakWord(text: string): void {
+  try {
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "en-GB";
+    u.rate = 0.9;
+    window.speechSynthesis.cancel(); // dừng câu đang đọc (nếu có)
+    window.speechSynthesis.speak(u);
+  } catch {
+    /* ignore */
+  }
+}
+
+// Ưu tiên audio từ điển; bị chặn (CSP)/lỗi/không có URL → fallback speechSynthesis.
+function playPronunciation(url: string | null, text: string): void {
+  if (url) {
+    try {
+      const a = new Audio(url);
+      void a.play().catch(() => speakWord(text)); // CSP media-src YouTube chặn media ngoài → speak
+      return;
+    } catch {
+      /* fall through */
+    }
+  }
+  speakWord(text);
+}
+
 function onWordClick(word: string, surface: string, sentence: string): void {
   if (!word) return;
   if (!hasAccess) {
@@ -526,17 +553,10 @@ function onWordClick(word: string, surface: string, sentence: string): void {
         sub.textContent = `${r.lemma ?? word}${ipa1 ? `  /${ipa1}/` : ""}`;
         sub.style.display = "";
       }
-      if (r?.audio_url) {
-        const audioUrl = r.audio_url;
-        const audioBtn = mkBtn("🔊 Phát âm", () => {
-          try {
-            void new Audio(audioUrl).play();
-          } catch {
-            /* ignore */
-          }
-        });
-        actions.insertBefore(audioBtn, saveBtn); // đứng trước "Lưu"
-      }
+      // TIP-070 — luôn có nút Phát âm; dùng audio từ điển nếu có, else speechSynthesis.
+      const speakText = r?.lemma || word;
+      const audioBtn = mkBtn("🔊 Phát âm", () => playPronunciation(r?.audio_url ?? null, speakText));
+      actions.insertBefore(audioBtn, saveBtn); // đứng trước "Lưu"
       renderMeaning();
     })
     .catch((e: unknown) => {
