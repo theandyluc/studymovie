@@ -59,10 +59,17 @@ async function pauseTimer(): Promise<TimerState> {
   const s = await getTimer();
   if (!s.running) return s;
   const seg = Math.max(0, Math.floor((Date.now() - s.sessionStartedAt) / 1000));
-  await setTimer({ running: false, sessionStartedAt: 0, accumulatedSec: s.accumulatedSec + seg, flushedSec: s.flushedSec });
+  const next: TimerState = {
+    running: false,
+    sessionStartedAt: 0,
+    accumulatedSec: s.accumulatedSec + seg,
+    flushedSec: s.flushedSec,
+  };
+  await setTimer(next);
   await chrome.alarms.clear(FLUSH_ALARM); // TIP-051b: clear TRƯỚC flush (bớt cửa sổ race)
-  await flushTimer();
-  return getTimer();
+  // Flush chạy NỀN — state hiển thị đã chốt xong ở trên, không cần đợi network để trả UI (tránh popup đứng hình 2-3s).
+  void flushTimer();
+  return next;
 }
 
 // TIP-051b — SERIALIZE flush: alarm (mỗi ~30s) có thể fire xen giữa lúc pause/stop đang await POST →
