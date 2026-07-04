@@ -266,6 +266,16 @@
       "evidence": "VERIFIED Homeowner (2026-07-03), /tu-vung LearnedChart. | TIP-064 (c6489d3): khớp style Figma — trục Y số TRÒN đẹp niceAxis (step nice 1/2/5×10^n thay bội-4 của TIP-061; vd max 4→0/2/4, 32→0/20/40), tiêu đề font-heading font-bold, hộp số trắng rounded-lg + viền + shadow (to/đậm), cột rounded-t-md xám/xanh, gridline border-border/50 mờ, nhãn ngày xám. | TIP-065 (c48b510): tương tác HOVER theo yêu cầu khách — BỎ 'cột đỉnh xanh cố định'; mọi cột bg-chart-base (xám), mỗi cột là group → group-hover:bg-chart-bar (xanh) + hộp số opacity-0→group-hover:opacity-100 (hiện số từ đã học của ngày hover trên đỉnh cột); rời chuột về xám/ẩn số. Giữ logic cửa sổ động + tổng (TIP-061). Trục Y co giãn theo data thật."
     },
     {
+      "id": "WEB-DASHBOARD-TODAY-TIME",
+      "title": "Dashboard: ô 'Thời gian học hôm nay' (thay all-time) (feedback 4/7 #5)",
+      "area": "web",
+      "tip": "TIP-076",
+      "status": "verified",
+      "depends_on": [],
+      "acceptance": "Ô stat đầu dashboard hiện thời gian học HÔM NAY (today_minutes); all-time vẫn ở thẻ Level (Xh/175h).",
+      "evidence": "Code verified + deploy (2026-07-04). Feedback 4/7 #5: ô 'Thời gian đã học' hiện all-time (9h14m) nhưng all-time đã có ở thẻ Level '9.24h/175h' → khách muốn ô này hiện HÔM NAY. FIX (TIP-076, app/dashboard/page.tsx 1 dòng): CircleStat đổi label 'Thời gian đã học'→'Thời gian học hôm nay' + value fmtStudy(data.total_minutes)→fmtStudy(data.today_minutes). Dùng field today_minutes đã có sẵn trong type Dashboard + get_dashboard RPC trả về → KHÔNG đụng backend. Redeploy frontend prod."
+    },
+    {
       "id": "WEB-FLASHCARD-SWIPE",
       "title": "Flashcard: swipe animation (bỏ mũi tên) + thẻ gọn hơn (feedback 4/7 #4)",
       "area": "web",
