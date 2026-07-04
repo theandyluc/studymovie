@@ -5,7 +5,7 @@
 //   (client tự dùng nghĩa từ điển của /api/lookup — KHÔNG vỡ UX). IPA/audio do /api/lookup lo.
 import type { Context } from "hono";
 import { getServiceClient } from "../lib/supabase.js";
-import { OPENAI_API_KEY } from "../env.js";
+import { OPENAI_API_KEY, OPENAI_MODEL } from "../env.js";
 
 const MAX_SENTENCE = 500; // cắt câu để làm khoá cache (tránh vượt giới hạn index)
 
@@ -13,27 +13,32 @@ async function askOpenAI(word: string, sentence: string): Promise<string | null>
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 5000);
   try {
+    // TIP-071 — dựng body theo model: GPT-5 (nano/mini) không nhận temperature/max_tokens;
+    // dùng max_completion_tokens + reasoning_effort. gpt-4o-mini giữ temperature 0.
+    const isGpt5 = /^gpt-5/.test(OPENAI_MODEL);
+    const reqBody: Record<string, unknown> = {
+      model: OPENAI_MODEL,
+      max_completion_tokens: 256, // thay max_tokens (GPT-5 bắt buộc); output ngắn nên không tốn thêm
+      messages: [
+        {
+          role: "system",
+          content:
+            "Bạn là từ điển Anh-Việt. Cho một CÂU tiếng Anh và một TỪ trong câu, trả về DUY NHẤT " +
+            "nghĩa tiếng Việt NGẮN GỌN của từ đó ĐÚNG theo ngữ cảnh câu. Không giải thích, không liệt kê " +
+            "nhiều nghĩa, không thêm dấu ngoặc hay tiền tố. Chỉ trả nghĩa.",
+        },
+        {
+          role: "user",
+          content: `Câu: "${sentence}"\nTừ: "${word}"\nNghĩa tiếng Việt ngắn gọn của "${word}" trong câu trên:`,
+        },
+      ],
+    };
+    if (isGpt5) reqBody.reasoning_effort = "minimal"; // GPT-5: nhanh + rẻ
+    else reqBody.temperature = 0; // 4o-mini: deterministic
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${OPENAI_API_KEY}` },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        temperature: 0,
-        max_tokens: 60,
-        messages: [
-          {
-            role: "system",
-            content:
-              "Bạn là từ điển Anh-Việt. Cho một CÂU tiếng Anh và một TỪ trong câu, trả về DUY NHẤT " +
-              "nghĩa tiếng Việt NGẮN GỌN của từ đó ĐÚNG theo ngữ cảnh câu. Không giải thích, không liệt kê " +
-              "nhiều nghĩa, không thêm dấu ngoặc hay tiền tố. Chỉ trả nghĩa.",
-          },
-          {
-            role: "user",
-            content: `Câu: "${sentence}"\nTừ: "${word}"\nNghĩa tiếng Việt ngắn gọn của "${word}" trong câu trên:`,
-          },
-        ],
-      }),
+      body: JSON.stringify(reqBody),
       signal: ctrl.signal,
     });
     if (!res.ok) return null;
