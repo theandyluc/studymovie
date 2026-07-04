@@ -10,6 +10,16 @@ import { fetchLevel, setLevel, LEVELS, type LevelProgress } from "@/lib/level";
 import { WeeklyPlanTable } from "@/components/WeeklyPlan";
 import { LeaderboardCard } from "@/components/LeaderboardCard";
 
+/* ============================================================
+   GIẢI THÍCH CHO KHÁCH — File: app/dashboard/page.tsx
+   ------------------------------------------------------------
+   Trang "Tiến độ học" — màn hình chính sau khi đăng nhập. Gồm:
+   - Hàng trên: 3 vòng số liệu (tổng giờ học, số từ đã học, chuỗi ngày
+     học liên tiếp) và thẻ Level (cấp hiện tại + mục tiêu cấp kế tiếp).
+   - Hàng dưới: bảng "Kế hoạch tuần này" và thẻ "Bảng xếp hạng".
+   Điểm hay: khi người dùng học ở tab/tiện ích khác rồi quay lại tab này,
+   trang TỰ cập nhật số liệu mới mà không nhấp nháy (làm mới ngầm).
+   ============================================================ */
 // TIP-033 — format tổng phút → "12h30m" (theo Figma).
 function fmtStudy(min: number): string {
   const h = Math.floor(min / 60);
@@ -55,6 +65,9 @@ function LevelPicker({
   );
 }
 
+// (Giải thích) Thẻ "Level": hiện cấp hiện tại và mục tiêu cấp kế tiếp.
+// Nếu người dùng chưa từng chọn cấp → hiện ô cho chọn. Khi đủ giờ học để
+// lên cấp, hệ thống báo "Chúc mừng bạn lên cấp". Người dùng có thể tự đổi cấp.
 // Card Level (Figma): 1 card, 2 vòng tròn — Level hiện tại (ring trơn) + Mục tiêu (ring cung tím).
 function LevelCard() {
   const [lv, setLv] = useState<LevelProgress | null>(null);
@@ -212,7 +225,8 @@ function DashboardInner() {
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <div className="grid grid-cols-3 gap-2">
-            <CircleStat label="Thời gian đã học" value={fmtStudy(data.total_minutes ?? 0)} />
+            {/* TIP-076 — hiện thời gian học HÔM NAY (all-time đã có ở thẻ Level). */}
+            <CircleStat label="Thời gian học hôm nay" value={fmtStudy(data.today_minutes ?? 0)} />
             <CircleStat label="Từ vựng đã học" value={String(data.vocab_learned ?? 0)} />
             <CircleStat label="Số ngày liên tiếp" value={String(data.streak)} />
           </div>
