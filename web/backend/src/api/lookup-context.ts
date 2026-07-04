@@ -23,9 +23,11 @@ async function askOpenAI(word: string, sentence: string): Promise<string | null>
         {
           role: "system",
           content:
-            "Bạn là từ điển Anh-Việt. Cho một CÂU tiếng Anh và một TỪ trong câu, trả về DUY NHẤT " +
-            "nghĩa tiếng Việt NGẮN GỌN của từ đó ĐÚNG theo ngữ cảnh câu. Không giải thích, không liệt kê " +
-            "nhiều nghĩa, không thêm dấu ngoặc hay tiền tố. Chỉ trả nghĩa.",
+            "Bạn là từ điển Anh-Việt. Cho một CÂU tiếng Anh và một TỪ trong câu, trả về DUY NHẤT một " +
+            "nghĩa tiếng Việt NGẮN GỌN (1–3 từ) của từ đó, ĐÚNG ngữ cảnh câu. QUY TẮC BẮT BUỘC: chỉ MỘT " +
+            "nghĩa (không đưa lựa chọn thay thế), KHÔNG dùng dấu '/', KHÔNG liệt kê, KHÔNG giải thích, " +
+            "KHÔNG dấu ngoặc/tiền tố, KHÔNG viết hoa (trừ danh từ riêng). Nếu từ đa nghĩa, chọn nghĩa " +
+            "phù hợp nhất ngữ cảnh. Chỉ trả nghĩa.",
         },
         {
           role: "user",
