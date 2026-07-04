@@ -95,6 +95,7 @@ function lemmaCandidates(w: string): string[] {
   if (w.length > 4 && w.endsWith("ies")) c.add(w.slice(0, -3) + "y"); // studies→study
   if (w.length > 3 && w.endsWith("es")) c.add(w.slice(0, -2)); // boxes→box
   if (w.length > 3 && w.endsWith("s") && !w.endsWith("ss")) c.add(w.slice(0, -1)); // moments→moment
+  if (w.length > 4 && w.endsWith("ied")) c.add(w.slice(0, -3) + "y"); // carried→carry (trước -ed để vào top 3)
   if (w.length > 4 && w.endsWith("ed")) {
     c.add(w.slice(0, -2)); // walked→walk
     c.add(w.slice(0, -1)); // faked→fake
