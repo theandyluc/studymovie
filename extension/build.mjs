@@ -33,9 +33,18 @@ const e = await readEnvFile();
 console.log(`[StudyMovie] build ${PROD ? "PRODUCTION (.env.production)" : "dev (root .env)"}`);
 const pick = (k, fallback = "") => e[k] ?? process.env[k] ?? fallback;
 
+const smSupabaseUrl = pick("NEXT_PUBLIC_SUPABASE_URL", pick("SUPABASE_URL"));
+if (!smSupabaseUrl) {
+  console.warn(
+    `[StudyMovie] ⚠️  SUPABASE_URL rỗng — thiếu file ${ENV_FILE}. Popup sẽ crash ngay lúc load ` +
+      `("supabaseUrl is required") và kẹt ở "Đang tải…" tĩnh. Dùng \`npm run build:prod\` (đọc ` +
+      `.env.production) hoặc tạo root .env trước khi build dev.`
+  );
+}
+
 const define = {
   "process.env.NODE_ENV": JSON.stringify("production"),
-  "process.env.SM_SUPABASE_URL": JSON.stringify(pick("NEXT_PUBLIC_SUPABASE_URL", pick("SUPABASE_URL"))),
+  "process.env.SM_SUPABASE_URL": JSON.stringify(smSupabaseUrl),
   "process.env.SM_SUPABASE_ANON_KEY": JSON.stringify(pick("NEXT_PUBLIC_SUPABASE_ANON_KEY", pick("SUPABASE_ANON_KEY"))),
   "process.env.SM_SITE_URL": JSON.stringify(pick("NEXT_PUBLIC_SITE_URL", "http://localhost:3000")),
   "process.env.SM_BACKEND_URL": JSON.stringify(pick("NEXT_PUBLIC_BACKEND_URL", "http://localhost:8787")),

@@ -24,6 +24,10 @@ const dbg = (...a: unknown[]): void => {
 const TT = "/api/timedtext";
 const isTT = (u: unknown): u is string => typeof u === "string" && u.includes(TT);
 const hasTlang = (u: string): boolean => /[?&]tlang=/.test(u);
+// TIP-063b — track player load KHÔNG chắc là EN (vd video có track mặc định khác EN,
+// theo preference tài khoản/kênh) → chỉ tái dùng body player khi ĐÚNG lang=en, không thì bỏ qua
+// và fetch lại bằng enUrl (đã ép lang=en) — tránh hiện nhầm phụ đề ngôn ngữ khác làm "EN gốc".
+const isEnglishLang = (u: string): boolean => /[?&]lang=en(?:-[a-zA-Z]+)?(?:&|$)/.test(u);
 const currentVideoId = (): string => new URLSearchParams(location.search).get("v") ?? "";
 const delay = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
@@ -107,7 +111,9 @@ async function runBgRetry(vid: string, en: RawCue[], viUrl: string): Promise<voi
 
 async function handleTimedtext(rawUrl: string, playerBody?: string): Promise<void> {
   if (hasTlang(rawUrl)) return; // chỉ dùng track gốc (EN, chưa dịch) làm base
-  const enUrl = withParam(rawUrl, "fmt", "json3");
+  // TIP-063b — ÉP lang=en: player có thể tự load track mặc định KHÁC EN (vd theo preference
+  // tài khoản/kênh) → nếu dùng thẳng rawUrl sẽ hiện nhầm phụ đề ngôn ngữ khác làm "gốc EN".
+  const enUrl = withParam(withParam(rawUrl, "lang", "en"), "fmt", "json3");
   if (enUrl === lastBase) return; // tránh xử lý lặp cùng 1 track
   lastBase = enUrl;
   const vid = currentVideoId();
@@ -120,8 +126,9 @@ async function handleTimedtext(rawUrl: string, playerBody?: string): Promise<voi
   }
 
   try {
-    // EN: ưu tiên body player ĐÃ tải (nếu là json3) → bớt 1 request. Không parse được → re-fetch json3.
-    let en = playerBody ? parseJson3(playerBody) : [];
+    // EN: ưu tiên body player ĐÃ tải (nếu là json3) → bớt 1 request. CHỈ dùng khi request gốc
+    // ĐÚNG lang=en — khác ngôn ngữ thì bỏ qua, re-fetch bằng enUrl (đã ép lang=en) cho chắc.
+    let en = playerBody && isEnglishLang(rawUrl) ? parseJson3(playerBody) : [];
     if (en.length === 0) {
       en = parseJson3(await (await fetch(enUrl)).text());
     }
