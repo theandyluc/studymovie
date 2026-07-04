@@ -7,6 +7,19 @@ import { Card } from "@/components/ui/Card";
 import { PageLoading } from "@/components/ui/Spinner";
 import { fetchVocab, markLearned, firstIpa, STUDY_SELECTION_KEY, type VocabItem } from "@/lib/vocabulary";
 
+/* ============================================================
+   GIẢI THÍCH CHO KHÁCH — File: app/hoc-tu-vung/page.tsx
+   ------------------------------------------------------------
+   Trang "Học từ vựng" bằng THẺ LẬT (flashcard):
+   - Mỗi thẻ hiện từ tiếng Anh + phiên âm + nghĩa; chạm vào thẻ để xem
+     câu ví dụ.
+   - Kéo thẻ sang trái/phải (hoặc dùng phím mũi tên) để chuyển thẻ; trên
+     máy tính còn có nút ‹ › hiện khi rê chuột.
+   - Mỗi thẻ mới sẽ tự đọc to từ và tự đánh dấu "đã học".
+   - Lần đầu vào sẽ có hướng dẫn nhỏ (overlay) chỉ cách kéo thẻ.
+   - Nếu người dùng đã chọn sẵn một số từ ở trang Từ vựng thì chỉ học các
+     từ đó; nếu không, học toàn bộ.
+   ============================================================ */
 const TUTORIAL_KEY = "sm-flashcard-tutorial-seen";
 const SWIPE_THRESHOLD = 90; // px — kéo vượt mức này mới đổi thẻ; chưa đủ → nảy về.
 
@@ -60,6 +73,7 @@ function Flashcards() {
   // Swipe state
   const [dragX, setDragX] = useState(0);
   const [dragging, setDragging] = useState(false);
+  const [exit, setExit] = useState<0 | 1 | -1>(0); // TIP-074: hướng thẻ bay ra (0 = không)
   const startX = useRef(0);
   const movedRef = useRef(false);
 
@@ -143,8 +157,23 @@ function Flashcards() {
     setIdx((i) => Math.min(items.length - 1, Math.max(0, i + d)));
   };
 
+  // TIP-074 — swipe có animation: thẻ bay hẳn ra theo hướng, rồi đổi thẻ.
+  const commitSwipe = (dir: 1 | -1) => {
+    setDragX(0);
+    setExit(dir);
+    window.setTimeout(() => {
+      go(dir);
+      setExit(0);
+    }, 250);
+  };
+
+  // (Giải thích) Xử lý thao tác KÉO THẺ bằng chuột/ngón tay:
+  //   • bấm giữ → ghi lại điểm bắt đầu;
+  //   • di chuyển → thẻ trượt theo tay;
+  //   • thả ra → nếu kéo đủ xa thì chuyển thẻ, nếu chỉ chạm nhẹ thì lật thẻ.
   // ── Swipe (pointer events) ──
   const onPointerDown = (e: React.PointerEvent) => {
+    if (exit !== 0) return; // đang bay ra → bỏ qua thao tác mới
     startX.current = e.clientX;
     movedRef.current = false;
     setDragging(true);
@@ -160,22 +189,36 @@ function Flashcards() {
     if (!dragging) return;
     setDragging(false);
     const dx = dragX;
-    setDragX(0);
-    if (dx >= SWIPE_THRESHOLD) go(1);
-    else if (dx <= -SWIPE_THRESHOLD) go(-1);
-    else if (!movedRef.current) setFlipped((f) => !f);
+    // Kéo đủ ngưỡng + còn thẻ theo hướng đó → bay ra; thẻ đầu/cuối → snap về; chạm nhẹ → lật.
+    if (dx >= SWIPE_THRESHOLD && idx < items.length - 1) commitSwipe(1);
+    else if (dx <= -SWIPE_THRESHOLD && idx > 0) commitSwipe(-1);
+    else if (!movedRef.current) {
+      setDragX(0);
+      setFlipped((f) => !f);
+    } else {
+      setDragX(0); // snap về (không đủ ngưỡng hoặc hết thẻ)
+    }
   };
 
-  const cardStyle: React.CSSProperties = {
-    transform: `translateX(${dragX}px) rotate(${dragX * 0.03}deg)`,
-    transition: dragging ? "none" : "transform 0.2s ease",
-    touchAction: "pan-y",
-  };
+  // TIP-074 — exit≠0: thẻ trượt+xoay+mờ bay ra; else: kéo theo tay (hoặc nảy về khi thả).
+  const cardStyle: React.CSSProperties =
+    exit !== 0
+      ? {
+          transform: `translateX(${exit * 130}%) rotate(${exit * 8}deg)`,
+          opacity: 0,
+          transition: "transform .25s ease-out, opacity .25s ease-out",
+          touchAction: "pan-y",
+        }
+      : {
+          transform: `translateX(${dragX}px) rotate(${dragX * 0.03}deg)`,
+          transition: dragging ? "none" : "transform .2s ease",
+          touchAction: "pan-y",
+        };
 
   // Thẻ dọc (portrait) — nội dung dùng chung cho thẻ thật + thẻ mờ tutorial.
   const renderCard = (ghost = false) => (
     <div
-      className={`relative flex min-h-[400px] w-full max-w-xs flex-col rounded-card border border-border bg-surface p-6 shadow-card ${
+      className={`relative flex min-h-[260px] w-full max-w-xs flex-col justify-center rounded-card border border-border bg-surface p-6 shadow-card ${
         ghost ? "opacity-70" : ""
       }`}
     >
@@ -224,18 +267,8 @@ function Flashcards() {
         </div>
       ) : null}
 
-      {/* Thẻ chính + nút ‹ › HIỆN KHI HOVER (giữ UI sạch lúc nghỉ; mobile dùng swipe) */}
-      <div className="group relative">
-        {idx > 0 ? (
-          <button
-            onClick={() => go(-1)}
-            aria-label="Thẻ trước"
-            className="absolute -left-12 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface text-lg opacity-0 shadow-card transition-opacity hover:bg-surface-muted group-hover:opacity-100 sm:flex"
-          >
-            ‹
-          </button>
-        ) : null}
-
+      {/* TIP-074 — thẻ chính: SWIPE có animation (bỏ nút ‹ ›; phím ← → vẫn đổi thẻ). */}
+      <div className="relative">
         <div
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
@@ -246,16 +279,6 @@ function Flashcards() {
         >
           {renderCard(false)}
         </div>
-
-        {idx < items.length - 1 ? (
-          <button
-            onClick={() => go(1)}
-            aria-label="Thẻ tiếp theo"
-            className="absolute -right-12 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface text-lg opacity-0 shadow-card transition-opacity hover:bg-surface-muted group-hover:opacity-100 sm:flex"
-          >
-            ›
-          </button>
-        ) : null}
       </div>
 
       {/* ≡ menu chuyển Học từ vựng / Kiểm tra Anh-Việt / Kiểm tra Việt-Anh */}
