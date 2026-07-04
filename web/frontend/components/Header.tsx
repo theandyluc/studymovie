@@ -57,15 +57,15 @@ export function Header() {
   return (
     <header className="sticky top-0 z-30 bg-background/80 backdrop-blur">
       <div className="mx-auto flex w-full max-w-5xl items-center gap-3 px-4 py-3">
-        {/* Nav dạng PILL bo tròn full, nền trắng, shadow nhẹ */}
-        <nav className="flex flex-1 items-center gap-6 rounded-pill border border-border bg-surface px-5 py-2.5 shadow-card">
+        {/* Nav dạng PILL bo tròn full, nền trắng, shadow nhẹ — container cố định 696x68 */}
+        <nav className="flex h-[68px] w-[696px] items-center gap-6 rounded-pill border border-border bg-surface px-5 shadow-card">
           {logo}
           {user ? (
             <div className="hidden items-center gap-5 md:flex">
               {isAdmin ? (
                 <Link
                   href="/admin"
-                  className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  className="font-heading text-[20px] font-medium tracking-[-0.03em] text-[#1F1F1F] opacity-100 transition-opacity hover:opacity-60"
                 >
                   Admin
                 </Link>
@@ -75,7 +75,7 @@ export function Header() {
                   key={item.href}
                   href={item.href}
                   prefetch={item.prefetch}
-                  className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  className="font-heading text-[20px] font-medium tracking-[-0.03em] text-[#1F1F1F] opacity-100 transition-opacity hover:opacity-60"
                 >
                   {item.label}
                 </Link>
