@@ -266,6 +266,16 @@
       "evidence": "VERIFIED Homeowner (2026-07-03), /tu-vung LearnedChart. | TIP-064 (c6489d3): khớp style Figma — trục Y số TRÒN đẹp niceAxis (step nice 1/2/5×10^n thay bội-4 của TIP-061; vd max 4→0/2/4, 32→0/20/40), tiêu đề font-heading font-bold, hộp số trắng rounded-lg + viền + shadow (to/đậm), cột rounded-t-md xám/xanh, gridline border-border/50 mờ, nhãn ngày xám. | TIP-065 (c48b510): tương tác HOVER theo yêu cầu khách — BỎ 'cột đỉnh xanh cố định'; mọi cột bg-chart-base (xám), mỗi cột là group → group-hover:bg-chart-bar (xanh) + hộp số opacity-0→group-hover:opacity-100 (hiện số từ đã học của ngày hover trên đỉnh cột); rời chuột về xám/ẩn số. Giữ logic cửa sổ động + tổng (TIP-061). Trục Y co giãn theo data thật."
     },
     {
+      "id": "EXT-PRONOUNCE-TTS",
+      "title": "Nút Phát âm ra tiếng: Web Speech API (speechSynthesis) + fallback (feedback 4/7)",
+      "area": "extension",
+      "tip": "TIP-070",
+      "status": "verified",
+      "depends_on": ["EXT-LOOKUP-LEMMA-AUDIO"],
+      "acceptance": "Bấm 🔊 Phát âm luôn ra tiếng (audio thật nếu phát được, else giọng TTS trình duyệt).",
+      "evidence": "VERIFIED code + build prod (2026-07-04). Feedback 4/7: bấm Phát âm không ra tiếng. ROOT CAUSE: new Audio(url).play() tải media ngoài (dictionaryapi/gstatic/Google TTS) trên trang youtube.com bị CSP media-src của YouTube chặn; host_permissions cũng không có domain audio. TIP-068 khiến mọi từ đều có nút loa nên mới lộ. FIX (TIP-070, extension/youtube.ts): thêm speakWord(text) dùng SpeechSynthesisUtterance (lang en-GB, rate 0.9, cancel() trước speak — không tải media ngoài → không vướng CSP) + playPronunciation(url,text) thử new Audio(url).play(), .catch (CSP chặn/lỗi) → speakWord. Nút loa LUÔN hiện (không gate audio_url), đọc lemma||word. KHÔNG thêm host_permissions. Build PROD (SM_BACKEND_URL=studymovie-backend.vercel.app), zip rebuild. Không hồi quy render dần (TIP-069)/lemmatize/lưu."
+    },
+    {
       "id": "EXT-LOOKUP-SPEED",
       "title": "Tra từ nhanh hơn: popup render dần (từ+IPA+loa hiện ngay, nghĩa AI vào sau) (feedback 4/7 #2)",
       "area": "extension",
