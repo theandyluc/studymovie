@@ -25,7 +25,12 @@ export function CircleStat({
 
   return (
     <div className="flex flex-col items-center gap-2">
-      {label ? <span className="text-sm text-muted-foreground">{label}</span> : null}
+      {/* TIP-077 — chiều cao cố định 2 dòng + căn giữa → mọi label chiếm cùng mức, vòng tròn thẳng hàng. */}
+      {label ? (
+        <span className="flex min-h-[2.5rem] items-center justify-center text-center text-sm text-muted-foreground">
+          {label}
+        </span>
+      ) : null}
       <div className="relative" style={{ width: size, height: size }}>
         <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90">
           <circle cx="50" cy="50" r={r} fill="none" strokeWidth="6" className="stroke-chart-base" />
