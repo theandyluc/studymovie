@@ -380,7 +380,7 @@ function mkBtn(label: string, onClick: () => void, ghost = false): HTMLButtonEle
   return b;
 }
 
-async function onWordClick(word: string, surface: string, sentence: string): Promise<void> {
+function onWordClick(word: string, surface: string, sentence: string): void {
   if (!word) return;
   if (!hasAccess) {
     // TIP-062: hết hạn → không tra, chỉ nhắc nâng cấp.
@@ -419,98 +419,89 @@ async function onWordClick(word: string, surface: string, sentence: string): Pro
     pointerEvents: "auto",
   } as Partial<CSSStyleDeclaration>);
   pop.addEventListener("click", (e) => e.stopPropagation());
-  pop.textContent = "Đang tra…";
   player.appendChild(pop);
 
-  // TIP-038 — song song: từ điển (/api/lookup: IPA/audio + nghĩa fallback) +
-  // nghĩa theo NGỮ CẢNH (/api/lookup-context: AI). AI lỗi/fallback → dùng nghĩa từ điển.
-  const [dictR, ctxR] = await Promise.allSettled([
-    callApi<LookupResponse>("GET", `/api/lookup?word=${encodeURIComponent(word)}`),
-    callApi<ContextResponse>("POST", "/api/lookup-context", { word, sentence }),
-  ]);
-  if (dictR.status !== "fulfilled") {
-    const msg = dictR.reason instanceof Error ? dictR.reason.message : String(dictR.reason);
-    if (msg.includes("HTTP 403")) {
-      // TIP-062: hết hạn giữa chừng → khoá dịch vụ + ẩn phụ đề + nhắc.
-      hasAccess = false;
-      closeWordPopup(true);
-      applyAccessGate();
-      return;
-    }
-    pop.textContent = `Lỗi tra nghĩa: ${msg}`;
-    return;
-  }
-  const res = dictR.value;
-  const result = res.result;
-  const aiMeaning =
-    ctxR.status === "fulfilled" && (ctxR.value.source === "ai" || ctxR.value.source === "ai-cache")
-      ? (ctxR.value.meaning_vi ?? "").trim() || null
-      : null;
+  // TIP-069 — RENDER DẦN: từ hiện NGAY; IPA/loa vào khi /api/lookup xong; nghĩa AI điền sau.
+  // Guard: popup còn mở & đúng element (bỏ qua cập nhật nếu user đã đóng trước khi request về).
+  const alive = (): boolean => popupOpen && document.getElementById("studymovie-word") === pop;
 
-  pop.textContent = "";
   const head = document.createElement("div");
   head.style.fontWeight = "700";
-  head.textContent = surface.trim() || word;
+  head.textContent = surface.trim() || word; // hiện NGAY, không cần request
   pop.appendChild(head);
 
-  // Dòng phụ: lemma + IPA (từ từ điển)
-  if (result && (result.lemma || result.ipa)) {
-    const sub = document.createElement("div");
-    sub.style.color = "#71717a";
-    sub.style.fontSize = "12px";
-    const ipa1 = firstIpa(result.ipa); // TIP-039: chỉ 1 phiên âm
-    sub.textContent = `${result.lemma ?? word}${ipa1 ? `  /${ipa1}/` : ""}`;
-    pop.appendChild(sub);
-  }
+  const sub = document.createElement("div"); // lemma + IPA (điền khi dict xong)
+  sub.style.color = "#71717a";
+  sub.style.fontSize = "12px";
+  sub.style.display = "none";
+  pop.appendChild(sub);
 
-  // Nghĩa: ƯU TIÊN nghĩa AI theo ngữ cảnh (1 nghĩa); không có → nghĩa từ điển.
   const meaningBox = document.createElement("div");
   meaningBox.style.margin = "8px 0";
-  if (aiMeaning) {
-    const line = document.createElement("div");
-    line.textContent = aiMeaning;
-    meaningBox.appendChild(line);
-  } else if (result?.meanings?.length) {
-    if (result.source === "free_dict") {
-      const tag = document.createElement("div");
-      tag.textContent = "📖 định nghĩa tiếng Anh";
-      tag.style.cssText = "font-size:11px;color:#4f46e5;margin-bottom:2px;";
-      meaningBox.appendChild(tag);
-    }
-    for (const s of result.meanings.slice(0, 4)) {
-      const line = document.createElement("div");
-      line.textContent = `• ${s.pos ? `(${s.pos}) ` : ""}${s.sense ?? ""}`;
-      meaningBox.appendChild(line);
-    }
-  } else {
-    meaningBox.textContent = res.status === "error" ? "Lỗi tra cứu, thử lại sau." : "Không tìm thấy nghĩa.";
-  }
+  meaningBox.textContent = "Đang tra nghĩa…";
   pop.appendChild(meaningBox);
 
-  if (result?.audio_url) {
-    const audioUrl = result.audio_url;
-    pop.appendChild(
-      mkBtn("🔊 Phát âm", () => {
-        try {
-          void new Audio(audioUrl).play();
-        } catch {
-          /* ignore */
-        }
-      })
-    );
+  const actions = document.createElement("div"); // hàng nút: [Phát âm] Lưu Đóng
+  pop.appendChild(actions);
+
+  // Trạng thái điền dần (đọc lúc bấm Lưu).
+  let currentResult: LookupResult | null = null;
+  let currentMeaning: string | null = null; // nghĩa để lưu (AI nếu có, else tóm tắt từ điển)
+  let aiMeaning: string | null = null;
+  let dictSettled = false;
+  let ctxSettled = false;
+  let dictStatus: string | undefined;
+
+  function renderMeaning(): void {
+    if (!alive()) return;
+    meaningBox.textContent = "";
+    if (aiMeaning) {
+      const line = document.createElement("div");
+      line.textContent = aiMeaning;
+      meaningBox.appendChild(line);
+      currentMeaning = aiMeaning;
+      return;
+    }
+    if (!ctxSettled) {
+      meaningBox.textContent = "Đang tra nghĩa…"; // chờ AI trước khi rơi về từ điển
+      return;
+    }
+    // AI đã settle, không có nghĩa AI → dùng nghĩa từ điển.
+    if (currentResult?.meanings?.length) {
+      if (currentResult.source === "free_dict") {
+        const tag = document.createElement("div");
+        tag.textContent = "📖 định nghĩa tiếng Anh";
+        tag.style.cssText = "font-size:11px;color:#4f46e5;margin-bottom:2px;";
+        meaningBox.appendChild(tag);
+      }
+      for (const s of currentResult.meanings.slice(0, 4)) {
+        const line = document.createElement("div");
+        line.textContent = `• ${s.pos ? `(${s.pos}) ` : ""}${s.sense ?? ""}`;
+        meaningBox.appendChild(line);
+      }
+      currentMeaning = meaningSummary(currentResult);
+      return;
+    }
+    if (!dictSettled) {
+      meaningBox.textContent = "Đang tra nghĩa…"; // AI rỗng nhưng dict chưa xong → chờ dict
+      return;
+    }
+    meaningBox.textContent = dictStatus === "error" ? "Lỗi tra cứu, thử lại sau." : "Không tìm thấy nghĩa.";
+    currentMeaning = null;
   }
 
+  // Nút Lưu (đọc NGHĨA HIỆN TẠI lúc bấm) + Đóng — có sẵn ngay.
   const saveBtn = mkBtn("Lưu", async () => {
     saveBtn.disabled = true;
     saveBtn.textContent = "Đang lưu…";
     try {
       const r = await callApi<{ saved: boolean; duplicate: boolean }>("POST", "/api/vocabulary", {
         word,
-        lemma: result?.lemma ?? word,
-        ipa: result?.ipa ?? null,
-        meaning_vi: aiMeaning ?? meaningSummary(result),
+        lemma: currentResult?.lemma ?? word,
+        ipa: currentResult?.ipa ?? null,
+        meaning_vi: currentMeaning ?? meaningSummary(currentResult),
         example: sentence,
-        audio_url: result?.audio_url ?? null,
+        audio_url: currentResult?.audio_url ?? null,
       });
       saveBtn.textContent = r.duplicate ? "Đã lưu trước đó ✓" : "Đã lưu ✓";
     } catch (e) {
@@ -519,8 +510,60 @@ async function onWordClick(word: string, surface: string, sentence: string): Pro
     }
   });
   saveBtn.style.marginRight = "6px";
-  pop.appendChild(saveBtn);
-  pop.appendChild(mkBtn("Đóng", () => closeWordPopup(true), true));
+  actions.appendChild(saveBtn);
+  actions.appendChild(mkBtn("Đóng", () => closeWordPopup(true), true));
+
+  // Fire SONG SONG, KHÔNG await chung.
+  void callApi<LookupResponse>("GET", `/api/lookup?word=${encodeURIComponent(word)}`)
+    .then((res) => {
+      dictSettled = true;
+      dictStatus = res.status;
+      currentResult = res.result;
+      if (!alive()) return;
+      const r = res.result;
+      if (r && (r.lemma || r.ipa)) {
+        const ipa1 = firstIpa(r.ipa); // TIP-039: chỉ 1 phiên âm
+        sub.textContent = `${r.lemma ?? word}${ipa1 ? `  /${ipa1}/` : ""}`;
+        sub.style.display = "";
+      }
+      if (r?.audio_url) {
+        const audioUrl = r.audio_url;
+        const audioBtn = mkBtn("🔊 Phát âm", () => {
+          try {
+            void new Audio(audioUrl).play();
+          } catch {
+            /* ignore */
+          }
+        });
+        actions.insertBefore(audioBtn, saveBtn); // đứng trước "Lưu"
+      }
+      renderMeaning();
+    })
+    .catch((e: unknown) => {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (msg.includes("HTTP 403")) {
+        // TIP-062: hết hạn giữa chừng → khoá dịch vụ + ẩn phụ đề + nhắc.
+        hasAccess = false;
+        closeWordPopup(true);
+        applyAccessGate();
+        return;
+      }
+      dictSettled = true; // lỗi khác → không chặn (AI vẫn có thể ra nghĩa)
+      dictStatus = "error";
+      renderMeaning();
+    });
+
+  void callApi<ContextResponse>("POST", "/api/lookup-context", { word, sentence })
+    .then((ctx) => {
+      if (ctx.source === "ai" || ctx.source === "ai-cache") aiMeaning = (ctx.meaning_vi ?? "").trim() || null;
+    })
+    .catch(() => {
+      /* AI lỗi → dùng nghĩa từ điển */
+    })
+    .finally(() => {
+      ctxSettled = true;
+      renderMeaning();
+    });
 }
 
 // Click ra ngoài popup -> đóng + chạy tiếp.

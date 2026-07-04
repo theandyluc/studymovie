@@ -38,7 +38,7 @@ function firstIpa(ipa: string | null): string | null {
 
 async function freeDictLookup(word: string): Promise<FdResult> {
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 5000);
+  const timer = setTimeout(() => ctrl.abort(), 3000); // TIP-069: fail-fast, tránh kéo dài chuỗi ứng viên
   try {
     const res = await fetch(
       `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`,
