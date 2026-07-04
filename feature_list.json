@@ -266,6 +266,16 @@
       "evidence": "VERIFIED Homeowner (2026-07-03), /tu-vung LearnedChart. | TIP-064 (c6489d3): khớp style Figma — trục Y số TRÒN đẹp niceAxis (step nice 1/2/5×10^n thay bội-4 của TIP-061; vd max 4→0/2/4, 32→0/20/40), tiêu đề font-heading font-bold, hộp số trắng rounded-lg + viền + shadow (to/đậm), cột rounded-t-md xám/xanh, gridline border-border/50 mờ, nhãn ngày xám. | TIP-065 (c48b510): tương tác HOVER theo yêu cầu khách — BỎ 'cột đỉnh xanh cố định'; mọi cột bg-chart-base (xám), mỗi cột là group → group-hover:bg-chart-bar (xanh) + hộp số opacity-0→group-hover:opacity-100 (hiện số từ đã học của ngày hover trên đỉnh cột); rời chuột về xám/ẩn số. Giữ logic cửa sổ động + tổng (TIP-061). Trục Y co giãn theo data thật."
     },
     {
+      "id": "WEB-VOCAB-REFRESH-QUIZ",
+      "title": "/tu-vung tự cập nhật sau khi lưu từ + quiz chỉ hỏi từ đã chọn (feedback 4/7)",
+      "area": "web",
+      "tip": "TIP-073",
+      "status": "verified",
+      "depends_on": [],
+      "acceptance": "Lưu từ (extension) → /tu-vung tự cập nhật khi quay lại tab (không reload); chọn N từ → Kiểm tra chỉ hỏi N từ đó.",
+      "evidence": "VERIFIED code + build/deploy (2026-07-04). Feedback 4/7: (1) lưu từ qua extension thì /tu-vung không tự cập nhật phải reload; (2) chọn 4 từ để học → Kiểm tra lại lấy thêm từ khác. FIX (TIP-073): (A) app/tu-vung/page.tsx VocabList thêm useEffect listener visibilitychange+focus → refetch fetchVocab().then(setItems) khi tab hiện lại (chỉ setItems, không nháy loading; giống TIP-054 dashboard). (B) lib/vocabulary.ts buildQuiz(items,dir,askItems?) — thêm tham số câu hỏi tuỳ chọn: câu hỏi từ askItems (nếu có) else toàn kho; distractor vẫn từ pool toàn kho. (C) components/QuizGame.tsx thêm readSelection() (STUDY_SELECTION_KEY) → có selection thì buildQuiz(items,direction,selectedItems) chỉ hỏi từ đã chọn; rỗng → toàn bộ như cũ; vẫn cần ≥4 từ tổng cho đáp án. Root cause #2: QuizGame trước fetchVocab lấy TẤT CẢ + buildQuiz(items) không đọc selection. Redeploy frontend prod. Không đụng backend/extension. Lưu ý khách: đáp án nhiễu (3 sai) có thể là từ ngoài selection (bình thường của trắc nghiệm); CÂU HỎI đúng bằng selection."
+    },
+    {
       "id": "AI-MODEL-ENV",
       "title": "Model AI tra nghĩa đổi qua ENV (OPENAI_MODEL) + tương thích GPT-5 (khách hỏi thử gpt-5-nano)",
       "area": "web",
