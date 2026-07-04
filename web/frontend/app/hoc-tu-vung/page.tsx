@@ -21,6 +21,8 @@ import { fetchVocab, markLearned, firstIpa, STUDY_SELECTION_KEY, type VocabItem 
      từ đó; nếu không, học toàn bộ.
    ============================================================ */
 const TUTORIAL_KEY = "sm-flashcard-tutorial-seen";
+// (Chỉnh được) SWIPE_THRESHOLD = số pixel phải kéo ngang tối thiểu để ĐỔI thẻ.
+// Tăng số → phải kéo xa hơn mới đổi (đỡ đổi nhầm); giảm → vuốt nhạy hơn.
 const SWIPE_THRESHOLD = 90; // px — kéo vượt mức này mới đổi thẻ; chưa đủ → nảy về.
 
 function speak(text: string): void {
@@ -73,6 +75,8 @@ function Flashcards() {
   // Swipe state
   const [dragX, setDragX] = useState(0);
   const [dragging, setDragging] = useState(false);
+  // exit: hướng thẻ đang "bay ra" khi vuốt (1 = bay sang phải để qua thẻ kế, -1 = sang trái về thẻ trước,
+  // 0 = đứng yên). Dùng để chạy hiệu ứng trượt trước khi đổi nội dung thẻ.
   const [exit, setExit] = useState<0 | 1 | -1>(0); // TIP-074: hướng thẻ bay ra (0 = không)
   const startX = useRef(0);
   const movedRef = useRef(false);
@@ -158,6 +162,8 @@ function Flashcards() {
   };
 
   // TIP-074 — swipe có animation: thẻ bay hẳn ra theo hướng, rồi đổi thẻ.
+  // commitSwipe: khi vuốt đủ mạnh → cho thẻ BAY RA (setExit) rồi ĐỢI 250ms mới đổi sang thẻ kế (go).
+  // (Chỉnh được) 250 = thời gian hiệu ứng bay. Nếu đổi số này PHẢI đổi khớp ".25s" trong cardStyle bên dưới.
   const commitSwipe = (dir: 1 | -1) => {
     setDragX(0);
     setExit(dir);
@@ -189,7 +195,8 @@ function Flashcards() {
     if (!dragging) return;
     setDragging(false);
     const dx = dragX;
-    // Kéo đủ ngưỡng + còn thẻ theo hướng đó → bay ra; thẻ đầu/cuối → snap về; chạm nhẹ → lật.
+    // Khi thả tay: kéo phải đủ ngưỡng → qua thẻ KẾ; kéo trái đủ ngưỡng → về thẻ TRƯỚC;
+    // đang ở thẻ đầu/cuối thì chỉ bật về chỗ cũ; chạm nhẹ (không kéo) → LẬT thẻ xem ví dụ.
     if (dx >= SWIPE_THRESHOLD && idx < items.length - 1) commitSwipe(1);
     else if (dx <= -SWIPE_THRESHOLD && idx > 0) commitSwipe(-1);
     else if (!movedRef.current) {
@@ -203,7 +210,9 @@ function Flashcards() {
   // TIP-074 — exit≠0: thẻ trượt+xoay+mờ bay ra; else: kéo theo tay (hoặc nảy về khi thả).
   const cardStyle: React.CSSProperties =
     exit !== 0
-      ? {
+      ? // (Chỉnh được) Hiệu ứng thẻ bay ra: translateX(±130%) = bay xa cỡ nào; rotate(±8deg) = độ nghiêng;
+        // transition .25s = thời gian bay (khớp 250ms ở commitSwipe). Bỏ rotate nếu không muốn thẻ nghiêng.
+        {
           transform: `translateX(${exit * 130}%) rotate(${exit * 8}deg)`,
           opacity: 0,
           transition: "transform .25s ease-out, opacity .25s ease-out",
@@ -216,6 +225,8 @@ function Flashcards() {
         };
 
   // Thẻ dọc (portrait) — nội dung dùng chung cho thẻ thật + thẻ mờ tutorial.
+  // (Chỉnh được) min-h-[260px] = chiều cao tối thiểu của thẻ. Tăng/giảm số px để thẻ cao/thấp hơn.
+  // max-w-xs = bề rộng thẻ. justify-center = dồn chữ ra giữa theo chiều dọc.
   const renderCard = (ghost = false) => (
     <div
       className={`relative flex min-h-[260px] w-full max-w-xs flex-col justify-center rounded-card border border-border bg-surface p-6 shadow-card ${
