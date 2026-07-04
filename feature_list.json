@@ -266,6 +266,16 @@
       "evidence": "VERIFIED Homeowner (2026-07-03), /tu-vung LearnedChart. | TIP-064 (c6489d3): khớp style Figma — trục Y số TRÒN đẹp niceAxis (step nice 1/2/5×10^n thay bội-4 của TIP-061; vd max 4→0/2/4, 32→0/20/40), tiêu đề font-heading font-bold, hộp số trắng rounded-lg + viền + shadow (to/đậm), cột rounded-t-md xám/xanh, gridline border-border/50 mờ, nhãn ngày xám. | TIP-065 (c48b510): tương tác HOVER theo yêu cầu khách — BỎ 'cột đỉnh xanh cố định'; mọi cột bg-chart-base (xám), mỗi cột là group → group-hover:bg-chart-bar (xanh) + hộp số opacity-0→group-hover:opacity-100 (hiện số từ đã học của ngày hover trên đỉnh cột); rời chuột về xám/ẩn số. Giữ logic cửa sổ động + tổng (TIP-061). Trục Y co giãn theo data thật."
     },
     {
+      "id": "EXT-LOOKUP-LEMMA-AUDIO",
+      "title": "Tra từ: lemmatize (số nhiều/-ed/-ing/-ied) + audio TTS mọi từ (feedback 4/7 #1)",
+      "area": "web",
+      "tip": "TIP-068/068b",
+      "status": "verified",
+      "depends_on": [],
+      "acceptance": "Từ số nhiều + biến thể có IPA; đa số từ có icon loa (audio từ điển hoặc TTS).",
+      "evidence": "VERIFIED smoke test + Homeowner (2026-07-04). Feedback 4/7 #1: từ SỐ NHIỀU (moments) không hiện IPA (nhưng -ed/-ing có); đa số từ không có icon loa. ROOT CAUSE: KHÔNG lemmatize ở đâu (extension gửi raw word, backend tra thẳng); getLookup ưu tiên FVDP → trả cả khi thiếu IPA, không bù free-dict; audio chỉ từ free-dict (hay thiếu). FIX lookup.ts (backend, TIP-068 + 068b): (A) lemmaCandidates(word) sinh dạng gốc (ies→y, ied→y [carried→carry, đặt trước -ed để vào top-3], es, s, ed→{-2,-1}, ing→{base, base+e, doubled→-1}); getLookup thử ~3 ứng viên (RPC lookup_word → miss thì freeDictLookup), CHỌN kết quả đầu tiên CÓ IPA. (B) audio TTS fallback: audio_url = dict-audio || Google translate_tts (đọc qua <audio>) → mọi từ có loa. SMOKE TEST (free-dict thật): moments/studies/boxes/children/running/making/walked/played/tried/studied/carried… đều ra IPA (carried→carry /ˈkæ.ɹi/); từ thiếu dict-audio (faked) → TTS 200 audio/mpeg. Backend đã redeploy prod. Không đụng AI meaning (lookup-context) / extension."
+    },
+    {
       "id": "EXT-VN-SUB-ROBUST",
       "title": "Tăng độ bền phụ đề VN — chống 'giới hạn' Google auto-translate (feedback 3/7 #1)",
       "area": "extension",
