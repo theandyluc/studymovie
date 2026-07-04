@@ -605,10 +605,44 @@ function applySettings(): void {
   if (activeIndex >= 0) renderCue(activeIndex);
 }
 
+// TIP-078 — Cache phụ đề Việt DÙNG CHUNG giữa mọi user (qua backend), giảm số lần phải
+// tự gọi Google (hay bị anti-bot chặn). MAIN world (yt-intercept.ts) không có chrome.runtime
+// → nhờ content script ISOLATED (ở đây) relay: hỏi cache lúc cần, đóng góp lại lúc fetch được.
+interface RawCueLike {
+  start: number;
+  dur: number;
+  text: string;
+}
+function handleAskViCache(videoId: string, reqId: string): void {
+  callApi<{ found: boolean; vi?: RawCueLike[] }>("GET", `/api/captions-vi/${videoId}`)
+    .then((r) => {
+      window.postMessage({ __sm: "SM_VI_CACHE_RESULT", reqId, vi: r.found ? (r.vi ?? null) : null }, "*");
+    })
+    .catch(() => {
+      window.postMessage({ __sm: "SM_VI_CACHE_RESULT", reqId, vi: null }, "*"); // lỗi mạng/chưa login → coi như miss
+    });
+}
+function handleContributeViCache(videoId: string, vi: RawCueLike[]): void {
+  callApi("POST", `/api/captions-vi/${videoId}`, { vi }).catch(() => {
+    /* lỗi thì thôi — không ảnh hưởng người dùng hiện tại, lần sau vẫn có thể đóng góp lại */
+  });
+}
+
 // ---- Nhận cue từ interceptor (MAIN world) ----
 function onMessage(e: MessageEvent): void {
   if (e.source !== window) return;
-  const d = e.data as { __sm?: string; cues?: Cue[]; videoId?: string; viState?: string } | null;
+  const raw = e.data as
+    | { __sm?: string; cues?: Cue[]; videoId?: string; viState?: string; reqId?: string; vi?: RawCueLike[] }
+    | null;
+  if (raw?.__sm === "SM_ASK_VI_CACHE" && raw.videoId && raw.reqId) {
+    handleAskViCache(raw.videoId, raw.reqId);
+    return;
+  }
+  if (raw?.__sm === "SM_CONTRIBUTE_VI" && raw.videoId && Array.isArray(raw.vi)) {
+    handleContributeViCache(raw.videoId, raw.vi);
+    return;
+  }
+  const d = raw;
   if (d?.__sm !== "SM_CUES" || !Array.isArray(d.cues)) return;
   dbg("nhận cue", d.cues.length, "video=", d.videoId, "viState=", d.viState);
   cues = d.cues;

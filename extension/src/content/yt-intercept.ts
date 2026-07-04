@@ -83,6 +83,35 @@ async function fetchVi(viUrl: string, delays: number[]): Promise<{ vi: RawCue[];
   return { vi, viState };
 }
 
+// TIP-078 — Cache VI dùng CHUNG giữa mọi user (qua backend), giảm số request thật tới
+// Google. MAIN world không có chrome.runtime → nhờ content script ISOLATED (youtube.ts)
+// relay qua window.postMessage (ISOLATED có chrome.runtime, gọi backend qua SM_API proxy).
+let askReqSeq = 0;
+function askBackendViCache(videoId: string): Promise<RawCue[] | null> {
+  return new Promise((resolve) => {
+    const reqId = `${videoId}-${++askReqSeq}`;
+    const timer = setTimeout(() => {
+      window.removeEventListener("message", onReply);
+      resolve(null); // ISOLATED không phản hồi kịp (hoặc lỗi) → coi như miss, fetch Google bình thường
+    }, 3000);
+    function onReply(e: MessageEvent): void {
+      if (e.source !== window) return;
+      const d = e.data as { __sm?: string; reqId?: string; vi?: RawCue[] | null } | undefined;
+      if (d?.__sm !== "SM_VI_CACHE_RESULT" || d.reqId !== reqId) return;
+      clearTimeout(timer);
+      window.removeEventListener("message", onReply);
+      resolve(Array.isArray(d.vi) ? d.vi : null);
+    }
+    window.addEventListener("message", onReply);
+    window.postMessage({ __sm: "SM_ASK_VI_CACHE", videoId, reqId }, "*");
+  });
+}
+
+// Fire-and-forget: gửi VI vừa fetch thành công lên backend cho user sau dùng lại.
+function contributeViCache(videoId: string, vi: RawCue[]): void {
+  window.postMessage({ __sm: "SM_CONTRIBUTE_VI", videoId, vi }, "*");
+}
+
 function scheduleBgRetry(vid: string, en: RawCue[], viUrl: string): void {
   if (bgRounds >= BG_RETRY_MAX) {
     dbg("bg retry: đã đạt cap", BG_RETRY_MAX);
@@ -98,10 +127,22 @@ async function runBgRetry(vid: string, en: RawCue[], viUrl: string): Promise<voi
   if (currentVideoId() !== vid) return; // đã đổi video → hủy
   if (viCache.has(vid)) return; // đã có VN (nguồn khác) → thôi
   bgRounds++;
+
+  // TIP-078 — Thử cache backend trước (có thể user khác đã fetch xong trong lúc mình chờ).
+  const backendCached = await askBackendViCache(vid);
+  if (currentVideoId() !== vid) return; // đổi video khi đang hỏi cache → bỏ
+  if (backendCached && backendCached.length > 0) {
+    viCache.set(vid, backendCached);
+    dbg(`bg retry: dùng VI cache BACKEND (${backendCached.length})`);
+    window.postMessage({ __sm: "SM_CUES", cues: mergeCues(en, backendCached), videoId: vid, viState: "ok" }, "*");
+    return;
+  }
+
   const { vi, viState } = await fetchVi(viUrl, [0, 3000]); // thử ngay + 1 backoff
   if (currentVideoId() !== vid) return; // đổi video khi đang fetch → bỏ
   if (viState === "ok" && vi.length > 0) {
     viCache.set(vid, vi);
+    contributeViCache(vid, vi); // TIP-078 — đóng góp lại cho user sau
     dbg(`bg retry OK: video=${vid} VI=${vi.length} → merge lại`);
     window.postMessage({ __sm: "SM_CUES", cues: mergeCues(en, vi), videoId: vid, viState: "ok" }, "*");
     return;
@@ -139,7 +180,7 @@ async function handleTimedtext(rawUrl: string, playerBody?: string): Promise<voi
 
     const viUrl = withParam(enUrl, "tlang", "vi");
 
-    // Cache hit → dùng VN đã lưu, KHÔNG gọi Google.
+    // Cache hit (tab session) → dùng VN đã lưu, KHÔNG gọi Google.
     const cached = vid ? viCache.get(vid) : undefined;
     if (cached && cached.length > 0) {
       dbg(`video=${vid} dùng VI cache (${cached.length})`);
@@ -147,11 +188,24 @@ async function handleTimedtext(rawUrl: string, playerBody?: string): Promise<voi
       return;
     }
 
+    // TIP-078 — Cache backend (CHIA SẺ giữa mọi user): người khác đã fetch trước cho video
+    // này → dùng luôn, không cần tự gọi Google (giảm tải, đỡ bị anti-bot chặn).
+    const backendCached = vid ? await askBackendViCache(vid) : null;
+    if (backendCached && backendCached.length > 0) {
+      dbg(`video=${vid} dùng VI cache BACKEND (${backendCached.length})`);
+      if (vid) viCache.set(vid, backendCached);
+      window.postMessage({ __sm: "SM_CUES", cues: mergeCues(en, backendCached), videoId: vid, viState: "ok" }, "*");
+      return;
+    }
+
     // VI: backoff giãn dần (tiền cảnh).
     const { vi, viState } = await fetchVi(viUrl, VI_BACKOFF);
 
     dbg(`video=${vid} EN=${en.length} VI=${vi.length} state=${viState}`);
-    if (viState === "ok" && vi.length > 0 && vid) viCache.set(vid, vi);
+    if (viState === "ok" && vi.length > 0 && vid) {
+      viCache.set(vid, vi);
+      contributeViCache(vid, vi); // TIP-078 — đóng góp lại cho user sau cùng video
+    }
     window.postMessage({ __sm: "SM_CUES", cues: mergeCues(en, vi), videoId: vid, viState }, "*");
 
     // Vẫn bị chặn → EN đã hiện (post ở trên); đặt lịch retry NỀN để VN tự xuất hiện sau.
