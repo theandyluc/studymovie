@@ -266,6 +266,16 @@
       "evidence": "VERIFIED Homeowner (2026-07-03), /tu-vung LearnedChart. | TIP-064 (c6489d3): khớp style Figma — trục Y số TRÒN đẹp niceAxis (step nice 1/2/5×10^n thay bội-4 của TIP-061; vd max 4→0/2/4, 32→0/20/40), tiêu đề font-heading font-bold, hộp số trắng rounded-lg + viền + shadow (to/đậm), cột rounded-t-md xám/xanh, gridline border-border/50 mờ, nhãn ngày xám. | TIP-065 (c48b510): tương tác HOVER theo yêu cầu khách — BỎ 'cột đỉnh xanh cố định'; mọi cột bg-chart-base (xám), mỗi cột là group → group-hover:bg-chart-bar (xanh) + hộp số opacity-0→group-hover:opacity-100 (hiện số từ đã học của ngày hover trên đỉnh cột); rời chuột về xám/ẩn số. Giữ logic cửa sổ động + tổng (TIP-061). Trục Y co giãn theo data thật."
     },
     {
+      "id": "EXT-LOOKUP-SPEED",
+      "title": "Tra từ nhanh hơn: popup render dần (từ+IPA+loa hiện ngay, nghĩa AI vào sau) (feedback 4/7 #2)",
+      "area": "extension",
+      "tip": "TIP-069",
+      "status": "verified",
+      "depends_on": ["EXT-LOOKUP-LEMMA-AUDIO"],
+      "acceptance": "Popup + từ + IPA + nút Phát âm hiện tức thì; nghĩa AI ngữ cảnh điền vào sau; không chặn chờ AI.",
+      "evidence": "VERIFIED smoke + Homeowner (2026-07-04). Feedback 4/7 #2: 'tra nghĩa load hơi chậm'. ROOT CAUSE: onWordClick await Promise.allSettled([lookup, lookup-context]) → chờ CẢ hai xong mới vẽ popup; AI (OpenAI) là phần chậm nhất → toàn popup chờ theo AI. FIX (TIP-069): (A) extension/youtube.ts onWordClick → non-async, render DẦN: mở popup hiện ngay head=từ + 'Đang tra nghĩa…'; fire 2 request song song KHÔNG await chung; /api/lookup .then → điền IPA + nút 🔊 Phát âm + Lưu/Đóng; /api/lookup-context .then → renderMeaning() điền nghĩa AI (fallback từ điển; 📖 nếu free_dict; cả hai rỗng+settled → 'Không tìm thấy nghĩa'). Nút Lưu đọc currentResult/currentMeaning lúc bấm (lưu được trước khi AI xong). Guard alive() bỏ qua cập nhật nếu popup đã đóng. 403 hết hạn giữ TIP-062. (B) backend/lookup.ts free-dict timeout 5000→3000ms (fail-fast chuỗi ứng viên lemmatize). SMOKE: nguồn hiện-trước nhanh — free-dict 'moment' 0.15s, TTS 0.58s → từ+IPA+loa ~150ms, nghĩa AI vào sau (không chặn). EXT build OK (youtube.js 18.8kb), zip 301KB rebuild; backend redeploy prod (ly2n3jn73). Không đổi API shape / AI prompt."
+    },
+    {
       "id": "EXT-LOOKUP-LEMMA-AUDIO",
       "title": "Tra từ: lemmatize (số nhiều/-ed/-ing/-ied) + audio TTS mọi từ (feedback 4/7 #1)",
       "area": "web",
