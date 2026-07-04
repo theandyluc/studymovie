@@ -1,3 +1,18 @@
+/* ============================================================
+   GIẢI THÍCH CHO KHÁCH — File: lib/vocabulary.ts
+   ------------------------------------------------------------
+   Trung tâm xử lý TỪ VỰNG của người dùng:
+   - fetchVocab / addVocab / deleteVocab: lấy, thêm, xoá từ.
+   - markLearned: đánh dấu một số từ là "đã học".
+   - firstIpa: một từ có thể có nhiều cách phiên âm; hàm này lấy
+     cách đọc đầu tiên cho gọn để hiển thị.
+   - buildQuiz + quizableItems: tạo bộ câu hỏi trắc nghiệm 4 đáp án
+     từ chính danh sách từ của người dùng (dùng cho phần Kiểm tra).
+   - STUDY_SELECTION_KEY: "chìa khoá" để nhớ các từ người dùng chọn
+     ở trang Từ vựng rồi mang sang trang Học/Flashcard.
+
+   Lưu ý: các phần "interface" chỉ mô tả dữ liệu có những trường gì.
+   ============================================================ */
 // TIP-006 — Logic vocabulary (tách khỏi presentation để reskin theo Figma sau).
 import { apiFetch } from "./apiClient";
 
@@ -66,6 +81,8 @@ export interface QuizQuestion {
 
 export const MAX_QUIZ = 20;
 
+// (Giải thích) Hàm "xáo bài": trộn ngẫu nhiên thứ tự một danh sách,
+// dùng để đảo thứ tự câu hỏi và các đáp án cho mỗi lần làm quiz.
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -80,13 +97,21 @@ export function quizableItems(items: VocabItem[]): VocabItem[] {
   return items.filter((i) => i.word.trim() && (i.meaning_vi ?? "").trim());
 }
 
-// Tạo bộ câu hỏi: mỗi từ hỏi 1 lần, 4 đáp án = 1 đúng + 3 sai random từ chính vocab user.
-export function buildQuiz(items: VocabItem[], dir: QuizDirection): QuizQuestion[] {
-  const pool = quizableItems(items);
+// (Giải thích) Cách tạo đề trắc nghiệm:
+//   • Mỗi từ được hỏi 1 lần (tối đa 20 câu).
+//   • Mỗi câu có 4 lựa chọn: 1 đáp án đúng + 3 đáp án sai lấy ngẫu
+//     nhiên từ các từ khác của chính người dùng.
+//   • "dir" quyết định chiều hỏi: Anh→Việt (hiện từ, chọn nghĩa)
+//     hoặc Việt→Anh (hiện nghĩa, chọn từ).
+// TIP-073 — `askItems` (tuỳ chọn): CHỈ hỏi các từ này (vd selection người dùng chọn);
+//   ĐÁP ÁN NHIỄU vẫn lấy từ toàn kho `items`. Bỏ trống → hỏi toàn bộ như cũ (tương thích ngược).
+export function buildQuiz(items: VocabItem[], dir: QuizDirection, askItems?: VocabItem[]): QuizQuestion[] {
+  const pool = quizableItems(items); // kho cho đáp án nhiễu
+  const asked = askItems ? quizableItems(askItems) : pool; // câu hỏi
   const valOf = (it: VocabItem): string => (dir === "en2vi" ? (it.meaning_vi ?? "") : it.word);
   const promptOf = (it: VocabItem): string => (dir === "en2vi" ? it.word : (it.meaning_vi ?? ""));
 
-  return shuffle(pool)
+  return shuffle(asked)
     .slice(0, MAX_QUIZ)
     .map((it) => {
       const correct = valOf(it);

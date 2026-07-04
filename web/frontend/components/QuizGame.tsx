@@ -4,8 +4,22 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PageLoading } from "@/components/ui/Spinner";
-import { fetchVocab, buildQuiz, quizableItems, type QuizDirection, type QuizQuestion } from "@/lib/vocabulary";
+import { fetchVocab, buildQuiz, quizableItems, STUDY_SELECTION_KEY, type QuizDirection, type QuizQuestion } from "@/lib/vocabulary";
 
+// TIP-073 — đọc selection người dùng chọn ở /tu-vung (nếu có) → quiz CHỈ hỏi các từ đó.
+function readSelection(): string[] {
+  try {
+    const raw = sessionStorage.getItem(STUDY_SELECTION_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw) as unknown;
+    return Array.isArray(arr) ? arr.filter((x): x is string => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+// (Giải thích) Hàm đọc to một từ tiếng Anh bằng giọng máy có sẵn của
+// trình duyệt (dùng cho nút loa 🔊). Nếu trình duyệt không hỗ trợ thì bỏ qua.
 function speak(text: string): void {
   try {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
@@ -18,6 +32,19 @@ function speak(text: string): void {
   }
 }
 
+/* ============================================================
+   GIẢI THÍCH CHO KHÁCH — File: components/QuizGame.tsx
+   ------------------------------------------------------------
+   Trò chơi TRẮC NGHIỆM từ vựng, dùng chung cho cả 2 chiều:
+   Anh→Việt và Việt→Anh (quyết định bằng "direction").
+   Cách chơi:
+   - Bên trái là thẻ câu hỏi, bên phải là 4 đáp án.
+   - Người dùng bấm chọn (hoặc gõ phím 1–4). Ô vừa chọn sáng xanh
+     dương, rồi hiện đúng (xanh lá) / sai (đỏ), sau đó TỰ sang câu kế.
+   - Trả lời sai được xem lâu hơn một chút để kịp học đáp án đúng.
+   - Hết câu thì hiện điểm và nút "Làm lại".
+   - Cần tối thiểu 4 từ mới chơi được; nếu ít hơn sẽ báo nhắc lưu thêm từ.
+   ============================================================ */
 // WEB-05 / TIP-019a / TIP-033 — Quiz 2 chiều dùng chung (Figma: thẻ hỏi dọc bên trái,
 // 4 đáp án bên phải, tự sang câu sau khi chọn, menu ≡ dưới). direction qua prop.
 export function QuizGame({ direction }: { direction: QuizDirection }) {
@@ -39,10 +66,18 @@ export function QuizGame({ direction }: { direction: QuizDirection }) {
     fetchVocab()
       .then((items) => {
         if (quizableItems(items).length < 4) {
-          setTooFew(true);
+          setTooFew(true); // cần ≥4 tổng để có đủ đáp án nhiễu
           return;
         }
-        setQuestions(buildQuiz(items, direction));
+        // TIP-073 — có selection → CHỈ hỏi các từ đã chọn; rỗng → hỏi toàn bộ.
+        const sel = readSelection();
+        const selectedItems = sel.length ? items.filter((it) => sel.includes(it.id)) : [];
+        const quiz = buildQuiz(items, direction, selectedItems.length ? selectedItems : undefined);
+        if (quiz.length === 0) {
+          setTooFew(true); // từ đã chọn không đủ điều kiện (thiếu nghĩa) → nhắc
+          return;
+        }
+        setQuestions(quiz);
       })
       .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
   }, [direction]);

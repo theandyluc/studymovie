@@ -9,6 +9,20 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { fetchVocab, addVocab, deleteVocab, firstIpa, STUDY_SELECTION_KEY, type VocabItem } from "@/lib/vocabulary";
 import { toast, confirmDialog } from "@/components/ui/feedback";
 
+/* ============================================================
+   GIẢI THÍCH CHO KHÁCH — File: app/tu-vung/page.tsx
+   ------------------------------------------------------------
+   Trang "Từ vựng" — quản lý toàn bộ từ đã lưu. Gồm:
+   - Biểu đồ cột "Từ vựng đã học theo ngày" + vòng tròn tổng số từ đã học.
+   - Bảng danh sách từ: số thứ tự, từ (kèm phiên âm + nút loa), nghĩa,
+     ngày thêm, trạng thái ("Từ mới"/"Đã học").
+   - Công cụ: ô tìm kiếm, lọc theo ngày, lọc theo trạng thái, phân trang.
+   - Thêm từ thủ công; xoá từ (có hỏi xác nhận).
+   - Tích chọn từ rồi bấm "Học các từ đã chọn" để sang trang Flashcard.
+   Phần dưới có một số hàm phụ trợ (định dạng ngày, tính trục biểu đồ) —
+   mỗi hàm đều có chú thích riêng ngay phía trên.
+   ============================================================ */
+// (Giải thích) Phát file âm thanh đọc từ (khi bấm nút loa 🔊).
 function playAudio(url: string): void {
   try {
     void new Audio(url).play();
@@ -48,6 +62,9 @@ function niceAxis(rawMax: number): { niceMax: number; ticks: number[] } {
   return { niceMax, ticks };
 }
 
+// (Giải thích) Biểu đồ cột số từ học được theo từng ngày. Cửa sổ thời gian
+// tự co giãn từ ngày học đầu tiên đến hôm nay (tối thiểu 7 ngày, tối đa 30
+// ngày). Rê chuột lên một cột sẽ tô xanh và hiện số từ của ngày đó.
 function LearnedChart({ items }: { items: VocabItem[] }) {
   // TIP-037 — cửa sổ ĐỘNG từ ngày học sớm nhất → hôm nay (min 7, max 30 ngày) để tổng
   // các cột KHỚP tổng "đã học" (trước đây cửa sổ cố định 7 ngày cắt mất từ học lâu hơn).
@@ -181,6 +198,20 @@ function VocabList() {
       .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
   }, []);
 
+  // TIP-073 — tự cập nhật khi quay lại tab (vd vừa lưu từ qua extension). Chỉ setItems (không set null
+  // nên không nháy loading); filter/trang/selected giữ nguyên.
+  useEffect(() => {
+    const refetch = () => {
+      if (document.visibilityState === "visible") fetchVocab().then(setItems).catch(() => {});
+    };
+    document.addEventListener("visibilitychange", refetch);
+    window.addEventListener("focus", refetch);
+    return () => {
+      document.removeEventListener("visibilitychange", refetch);
+      window.removeEventListener("focus", refetch);
+    };
+  }, []);
+
   useEffect(() => {
     setPage(1);
   }, [search, status, dateApplied]);
@@ -264,6 +295,9 @@ function VocabList() {
     setDateApplied("");
   };
 
+  // (Giải thích) Lọc danh sách từ theo cả 3 điều kiện cùng lúc: từ khoá tìm
+  // kiếm, trạng thái (tất cả / từ mới / đã học), và ngày thêm. Kết quả này
+  // là danh sách hiển thị trong bảng.
   const filtered = useMemo(() => {
     const all = items ?? [];
     const q = search.trim().toLowerCase();
