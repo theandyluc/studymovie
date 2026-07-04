@@ -1,3 +1,18 @@
+/* ============================================================
+   GIẢI THÍCH CHO KHÁCH — File: lib/apiClient.ts
+   ------------------------------------------------------------
+   Đây là "người đưa thư" chung: mỗi khi trang web cần lấy hoặc
+   gửi dữ liệu (từ vựng, tiến độ, thanh toán...), nó gọi hàm
+   apiFetch ở đây để nói chuyện với máy chủ (backend).
+
+   apiFetch tự động làm 3 việc:
+   1) Đính kèm "vé đăng nhập" (token) của người dùng vào mỗi yêu cầu
+      để máy chủ biết đây là ai.
+   2) Nếu máy chủ báo lỗi, gói lỗi lại (ApiError) kèm mã lỗi để màn
+      hình hiển thị thông báo dễ hiểu.
+   3) Nếu vé đăng nhập hết hạn (lỗi 401), tự đăng xuất và đưa người
+      dùng về trang đầu để đăng nhập lại — tránh bị "kẹt".
+   ============================================================ */
 // TIP-003 — Gọi backend (NEXT_PUBLIC_BACKEND_URL) kèm Bearer token từ session Supabase.
 import { getSupabase } from "./supabaseClient";
 
@@ -35,6 +50,9 @@ export async function apiFetch<T = unknown>(path: string, init: RequestInit = {}
       /* body không phải JSON */
     }
 
+    // (Giải thích) Lỗi 401 = "vé đăng nhập" không còn hiệu lực (ví dụ người dùng
+    // đã đăng xuất ở tiện ích trình duyệt). Ở đây web tự dọn phiên cũ và quay về
+    // trang chủ để người dùng đăng nhập lại, thay vì hiện màn hình lỗi khó hiểu.
     // TIP-045 — 401 = token hết hiệu lực (vd bị thu hồi khi đăng xuất ở extension).
     // Dọn session cũ (local) + về trang login để web tự phục hồi, không kẹt "invalid token".
     if (res.status === 401) {

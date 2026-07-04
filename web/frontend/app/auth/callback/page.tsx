@@ -7,6 +7,16 @@ import { PageLoading } from "@/components/ui/Spinner";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 
+/* ============================================================
+   GIẢI THÍCH CHO KHÁCH — File: app/auth/callback/page.tsx
+   ------------------------------------------------------------
+   Trang "trung chuyển" sau khi đăng nhập Google (hoặc bấm link xác
+   nhận email). Google gửi người dùng về đây kèm một "mã", trang này
+   đổi mã đó lấy phiên đăng nhập thật rồi đưa vào trang Tiến độ học.
+   - Nếu thành công → chuyển sang /dashboard.
+   - Nếu lỗi → hiện thông báo "Đăng nhập thất bại" và nút "Thử lại".
+   (Người dùng thường chỉ thấy màn hình chờ thoáng qua ở đây.)
+   ============================================================ */
 // Callback OAuth — exchange code -> session -> về /dashboard.
 export default function AuthCallbackPage() {
   const router = useRouter();

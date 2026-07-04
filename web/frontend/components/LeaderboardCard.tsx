@@ -5,6 +5,15 @@ import { Avatar } from "@/components/ui/Avatar";
 import { useUser } from "@/hooks/useUser";
 import { fetchLeaderboard, type Leaderboard, type LeaderRow, type LeaderPeriod } from "@/lib/account";
 
+/* ============================================================
+   GIẢI THÍCH CHO KHÁCH — File: components/LeaderboardCard.tsx
+   ------------------------------------------------------------
+   Thẻ "Bảng xếp hạng" nằm trong trang Tiến độ học. Hiển thị:
+   - 3 tab: Tuần / Tháng / Toàn thời gian.
+   - Top 5 người học nhiều nhất, kèm huy chương 🥇🥈🥉 cho 3 hạng đầu.
+   - Nếu bạn không nằm trong Top 5, dòng của bạn được "ghim" hiện thêm
+     ở dưới để bạn luôn thấy vị trí của mình.
+   ============================================================ */
 // TIP-033 — Card Bảng xếp hạng trên Dashboard (theo Figma: tab + huy chương + ghim user).
 // Reuse backend leaderboard TUẦN hiện có (giữ trang /leaderboard riêng song song).
 // Tab "Tháng"/"Toàn thời gian" = visual theo Figma nhưng CHƯA có RPC → disabled ("Sắp có").

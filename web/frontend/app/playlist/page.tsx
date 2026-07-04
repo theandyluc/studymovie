@@ -8,6 +8,16 @@ import { ApiError } from "@/lib/apiClient";
 import { fetchPlaylist, addPlaylist, setPlaylistDone, deletePlaylistItem, type PlaylistItem } from "@/lib/playlist";
 import { toast, confirmDialog } from "@/components/ui/feedback";
 
+/* ============================================================
+   GIẢI THÍCH CHO KHÁCH — File: app/playlist/page.tsx
+   ------------------------------------------------------------
+   Trang "Playlist" — danh sách video YouTube để học:
+   - Dán link YouTube → hệ thống tự lấy ảnh thu nhỏ + tiêu đề.
+   - Mỗi video có nút "Học" (mở YouTube), "Xong" (đánh dấu đã học),
+     và "Xóa".
+   - Nếu link không hợp lệ, hiện thông báo dễ hiểu (không lộ chi tiết
+     kỹ thuật).
+   ============================================================ */
 // Map lỗi thêm video sang thông báo thân thiện (KHÔNG lộ HTTP/đường dẫn API).
 function friendlyAddError(e: unknown): string {
   if (e instanceof ApiError && e.code === "invalid_youtube_url") {

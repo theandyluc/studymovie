@@ -7,6 +7,17 @@ import { getSupabase } from "@/lib/supabaseClient";
 import { Card } from "@/components/ui/Card";
 import { PageLoading } from "@/components/ui/Spinner";
 
+/* ============================================================
+   GIẢI THÍCH CHO KHÁCH — File: app/page.tsx  (trang chủ "/")
+   ------------------------------------------------------------
+   Đây là trang đầu tiên khi mở web. Quy tắc đăng nhập của StudyMovie:
+   việc đăng nhập diễn ra ở TIỆN ÍCH trình duyệt, web nhận lại phiên
+   đăng nhập đó.
+   - Nếu đã đăng nhập → tự chuyển vào trang Tiến độ học (/dashboard).
+   - Nếu chưa → hiện lời nhắc đăng nhập bằng tiện ích StudyMovie.
+   - Trường hợp đặc biệt: nếu tiện ích mở web kèm "?login=google", web
+     sẽ tự khởi động đăng nhập Google.
+   ============================================================ */
 // WEB-01 / TIP-055 — Auth CHỈ ở extension. Web nhận session từ extension (đồng bộ ext→web TIP-047):
 // đã có session → vào /dashboard; chưa có → hiện prompt hướng dẫn đăng nhập bằng tiện ích.
 export default function LoginPage() {

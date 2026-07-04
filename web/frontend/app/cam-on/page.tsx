@@ -4,6 +4,10 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 
+/* GIẢI THÍCH CHO KHÁCH — app/cam-on/page.tsx
+   Trang "Cảm ơn" hiện ra ngay sau khi thanh toán thành công, chúc mừng
+   người dùng đã nâng cấp Pro và có nút "Vào học". Trang này cố tình
+   KHÔNG bị chặn bởi kiểm tra quyền học (để hiện được ngay sau khi trả tiền). */
 // TIP-019a — Trang cảm ơn sau thanh toán. KHÔNG bị access guard chặn (019b allowlist).
 function ThankYou() {
   return (

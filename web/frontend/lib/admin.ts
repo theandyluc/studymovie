@@ -1,3 +1,17 @@
+/* ============================================================
+   GIẢI THÍCH CHO KHÁCH — File: lib/admin.ts
+   ------------------------------------------------------------
+   Các thao tác dành riêng cho TRANG QUẢN TRỊ (admin):
+   - fetchAdminStats: thống kê tổng số người dùng, số người đã mua
+     Pro, tổng doanh thu.
+   - fetchAdminUsers: danh sách toàn bộ người dùng.
+   - setProPrice: đặt giá gói Pro.
+   - grantPro: tặng/kích hoạt Pro cho một người dùng trong X ngày.
+   - setUserAdmin: cấp hoặc thu quyền admin cho một người dùng.
+
+   Máy chủ luôn tự kiểm tra người gọi có đúng là admin không, nên
+   người thường có mở link này cũng không dùng được (bị chặn ở máy chủ).
+   ============================================================ */
 // TIP-020 — Admin API (backend /api/admin/*; RPC fail-closed is_caller_admin).
 import { apiFetch } from "./apiClient";
 

@@ -1,3 +1,14 @@
+/* ============================================================
+   GIẢI THÍCH CHO KHÁCH — File: app/layout.tsx
+   ------------------------------------------------------------
+   "Khung sườn" chung bọc quanh MỌI trang của web. Ở đây đặt:
+   - Phông chữ Inter (hỗ trợ tiếng Việt) dùng cho toàn trang.
+   - Thanh điều hướng trên cùng (Header).
+   - Vùng nội dung chính, được "Người gác cửa quyền học" (AccessGuard)
+     bảo vệ.
+   - Toaster + ConfirmHost: hệ thống thông báo và hộp xác nhận dùng chung.
+   - Tiêu đề + mô tả trang (metadata) hiện trên tab trình duyệt và Google.
+   ============================================================ */
 import type { ReactNode } from "react";
 import { Inter } from "next/font/google";
 import "./globals.css";

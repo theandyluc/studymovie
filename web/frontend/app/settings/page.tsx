@@ -8,6 +8,16 @@ import { PageLoading } from "@/components/ui/Spinner";
 import { getSupabase } from "@/lib/supabaseClient";
 import { fetchProfile, fetchMe, updateProfile, subscriptionText, type Me, type Profile } from "@/lib/account";
 
+/* ============================================================
+   GIẢI THÍCH CHO KHÁCH — File: app/settings/page.tsx
+   ------------------------------------------------------------
+   Trang "Cài đặt" tài khoản:
+   - Sửa biệt danh (hiển thị trên bảng xếp hạng) và số phút cam kết
+     học mỗi ngày, bấm "Lưu" để ghi lại.
+   - Xem email tài khoản và tình trạng gói (dùng thử / Pro / hết hạn).
+   - Nút "Đăng xuất".
+   - Ghi nguồn từ điển sử dụng (bản quyền, minh bạch).
+   ============================================================ */
 const DICT_SOURCE_URL = "https://github.com/manhminno/English-Vietnamese-Dictionary";
 const FREEDICT_URL = "https://dictionaryapi.dev/";
 

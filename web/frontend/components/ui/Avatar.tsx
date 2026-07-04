@@ -1,3 +1,7 @@
+/* GIẢI THÍCH CHO KHÁCH — components/ui/Avatar.tsx
+   Ảnh đại diện của người dùng. Nếu có ảnh (ví dụ ảnh Google) thì
+   hiển thị ảnh đó; nếu không có ảnh thì hiển thị một vòng tròn với
+   chữ cái đầu của tên. Dùng ở bảng xếp hạng, hồ sơ... */
 export function Avatar({
   src,
   name,

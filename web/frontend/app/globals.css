@@ -1,3 +1,15 @@
+/* ============================================================
+   GIẢI THÍCH CHO KHÁCH — File: app/globals.css
+   ------------------------------------------------------------
+   Đây là "bảng màu và phong cách" chung của toàn bộ web StudyMovie.
+   Mọi màu sắc, phông chữ, độ bo góc, đổ bóng đều được đặt tên và
+   khai báo TẬP TRUNG tại đây (phần @theme bên dưới).
+
+   Vì sao quan trọng: nếu sau này muốn ĐỔI GIAO DIỆN (ví dụ đổi màu
+   chủ đạo, đổi phông), chỉ cần chỉnh các giá trị trong file này —
+   không phải sửa từng trang. Các trang chỉ gọi tên màu (ví dụ
+   "primary", "accent") chứ không ghi mã màu cứng ở nhiều nơi.
+   ============================================================ */
 @import "tailwindcss";
 
 /* ============================================================

@@ -15,6 +15,16 @@ import { toast, confirmDialog } from "@/components/ui/feedback";
 const EMPTY: PlanInput = { plan_date: "", video_link: "", committed_time: "" };
 const inputCls = "w-full rounded-btn border border-border px-2 py-1 text-sm";
 
+/* ============================================================
+   GIẢI THÍCH CHO KHÁCH — File: components/WeeklyPlan.tsx
+   ------------------------------------------------------------
+   Bảng "Kế hoạch tuần này" — nơi người dùng tự lên lịch học:
+   - Mỗi dòng gồm: Ngày, Link video, Thời gian cam kết, ô tích Hoàn thành.
+   - Thêm dòng mới ở khu vực bên dưới (bấm Lưu mới ghi, không tự lưu).
+   - Sửa từng dòng tại chỗ (✏️ để sửa, 💾 lưu, ✖️ huỷ).
+   - Xoá dòng (🗑️) sẽ hỏi xác nhận trước để tránh bấm nhầm.
+   Mọi thay đổi được lưu lên máy chủ; mỗi người chỉ thấy kế hoạch của mình.
+   ============================================================ */
 // TIP-017 — Bảng "Kế hoạch tuần này": mọi ô input text, link clickable, tick hoàn thành,
 // thêm dòng (Lưu/Huỷ), sửa (✏️) inline, xóa (🗑️). CRUD qua backend /api/weekly-plan (RLS).
 export function WeeklyPlanTable() {

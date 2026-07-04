@@ -7,6 +7,15 @@ import { PageLoading } from "@/components/ui/Spinner";
 import { useUser } from "@/hooks/useUser";
 import { fetchLeaderboard, type Leaderboard, type LeaderRow } from "@/lib/account";
 
+/* ============================================================
+   GIẢI THÍCH CHO KHÁCH — File: app/leaderboard/page.tsx
+   ------------------------------------------------------------
+   Trang "Bảng xếp hạng tuần" đầy đủ (phiên bản riêng, song song với
+   thẻ xếp hạng nhỏ trên trang Tiến độ học). Hiển thị Top 5 người học
+   nhiều nhất trong tuần; nếu bạn ngoài Top 5, dòng của bạn được ghim
+   thêm ở dưới. Bảng reset mỗi thứ Hai.
+   ============================================================ */
+// (Giải thích) Đổi số phút thành chữ dễ đọc, ví dụ 90 → "1h 30p".
 function fmt(minutes: number): string {
   if (minutes >= 60) return `${Math.floor(minutes / 60)}h ${minutes % 60}p`;
   return `${minutes} phút`;

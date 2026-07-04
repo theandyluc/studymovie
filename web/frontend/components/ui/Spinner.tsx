@@ -1,3 +1,7 @@
+/* GIẢI THÍCH CHO KHÁCH — components/ui/Spinner.tsx
+   "Vòng xoay đang tải". Spinner là vòng tròn quay nhỏ; PageLoading là
+   cả một màn hình chờ (vòng xoay + dòng chữ "Đang tải") hiện khi web
+   đang lấy dữ liệu từ máy chủ. */
 export function Spinner({ size = 24 }: { size?: number }) {
   return (
     <span

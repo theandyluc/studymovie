@@ -1,3 +1,15 @@
+/* ============================================================
+   GIẢI THÍCH CHO KHÁCH — File: lib/level.ts
+   ------------------------------------------------------------
+   Quản lý TRÌNH ĐỘ tiếng Anh của người dùng theo thang chuẩn quốc
+   tế CEFR: A0 → A1 → A2 → B1 → B2 → C1 → C2 (thấp đến cao).
+   - fetchLevel: lấy tiến độ hiện tại (đang ở cấp nào, mục tiêu cấp
+     tiếp theo, đã học bao nhiêu giờ, còn thiếu bao nhiêu, %...).
+   - setLevel: người dùng tự chọn/đổi cấp hiện tại của mình.
+
+   Con số giờ học được máy chủ tính, dùng để vẽ vòng tròn tiến độ
+   ở trang "Tiến độ học".
+   ============================================================ */
 // TIP-016 — Level system (CEFR). Gọi backend /api/level (qua apiFetch → getUserClient RPC).
 import { apiFetch } from "./apiClient";
 

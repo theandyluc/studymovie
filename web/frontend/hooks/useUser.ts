@@ -1,3 +1,16 @@
+/* ============================================================
+   GIẢI THÍCH CHO KHÁCH — File: hooks/useUser.ts
+   ------------------------------------------------------------
+   Đây là "công tắc" giúp mọi màn hình biết: HIỆN AI ĐANG ĐĂNG NHẬP?
+   - Khi trang vừa mở, nó hỏi Supabase xem có phiên đăng nhập không
+     (trong lúc chờ thì "loading = đang tải").
+   - Nó cũng lắng nghe khi trạng thái đăng nhập thay đổi (đăng nhập,
+     đăng xuất) để cập nhật ngay.
+
+   Một mẹo nhỏ trong file: mỗi lần người dùng bấm qua lại tab, Supabase
+   hay báo lại "vẫn người này". Code chỉ cập nhật khi NGƯỜI DÙNG THẬT SỰ
+   đổi, tránh việc màn hình nhấp nháy / tải lại không cần thiết.
+   ============================================================ */
 "use client";
 import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";

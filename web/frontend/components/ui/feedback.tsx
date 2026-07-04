@@ -1,3 +1,17 @@
+/* ============================================================
+   GIẢI THÍCH CHO KHÁCH — File: components/ui/feedback.tsx
+   ------------------------------------------------------------
+   Hai công cụ báo cho người dùng, đẹp hơn hộp thoại mặc định của
+   trình duyệt:
+   1) Toast — thông báo nhỏ hiện ở góc phải rồi tự biến mất sau vài
+      giây (ví dụ "Xóa lỗi", "Đã lưu"). Có 3 màu: đỏ (lỗi), xanh lá
+      (thành công), xám (thông tin).
+   2) ConfirmDialog — hộp hỏi "Bạn có chắc không?" trước các thao tác
+      nguy hiểm như xoá, để tránh bấm nhầm.
+
+   Hai thành phần <Toaster/> và <ConfirmHost/> được gắn MỘT LẦN ở
+   khung chung (layout) nên mọi trang đều dùng được.
+   ============================================================ */
 "use client";
 import { useEffect, useState } from "react";
 

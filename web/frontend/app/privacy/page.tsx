@@ -1,6 +1,15 @@
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 
+/* ============================================================
+   GIẢI THÍCH CHO KHÁCH — File: app/privacy/page.tsx
+   ------------------------------------------------------------
+   Trang "Chính sách quyền riêng tư" — công khai, ai cũng xem được
+   (không cần đăng nhập). Giải thích StudyMovie thu thập dữ liệu gì,
+   dùng để làm gì, lưu ở đâu và quyền của người dùng. Trang này bắt buộc
+   phải có để đăng tiện ích lên Chrome Web Store.
+   Toàn bộ nội dung là chữ tĩnh (không lấy dữ liệu từ máy chủ).
+   ============================================================ */
 // TIP-031 WI-2 — Chính sách quyền riêng tư (public, render tĩnh).
 // Dùng cho Chrome Web Store (Privacy policy URL) + minh bạch với người dùng.
 // KHÔNG AuthGuard, KHÔNG nằm trong PROTECTED của AccessGuard → ai cũng xem được.

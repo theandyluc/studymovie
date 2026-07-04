@@ -1,3 +1,15 @@
+/* ============================================================
+   GIẢI THÍCH CHO KHÁCH — File: lib/weeklyPlan.ts
+   ------------------------------------------------------------
+   Quản lý bảng "KẾ HOẠCH TUẦN NÀY" trên trang Tiến độ học:
+   - fetchWeeklyPlan: lấy các dòng kế hoạch đã đặt.
+   - addWeeklyPlan: thêm một dòng (ngày, link video, thời gian cam kết).
+   - updateWeeklyPlan: sửa một dòng, hoặc tích "đã hoàn thành".
+   - deleteWeeklyPlan: xoá một dòng.
+
+   Mỗi người chỉ thấy và sửa được kế hoạch của chính mình (máy chủ
+   bảo đảm điều này).
+   ============================================================ */
 // TIP-017 — Kế hoạch tuần (weekly_plans). Gọi backend /api/weekly-plan (getUserClient + RLS).
 import { apiFetch } from "./apiClient";
 

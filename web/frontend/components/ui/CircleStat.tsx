@@ -1,3 +1,8 @@
+/* GIẢI THÍCH CHO KHÁCH — components/ui/CircleStat.tsx
+   "Vòng tròn số liệu": một vòng tròn mảnh với con số lớn ở giữa,
+   dùng ở trang Tiến độ học (giờ đã học, số từ, chuỗi ngày...).
+   Nếu truyền thêm "percent" (phần trăm), vòng sẽ vẽ một cung màu tím
+   chạy theo tiến độ — dùng cho ô "Mục tiêu tiếp theo". */
 // TIP-033 — Vòng tròn stat theo Figma: ring mảnh + giá trị ở giữa.
 // Dùng cho Dashboard: 3 stat (giờ học / từ vựng / streak) = ring xám trơn;
 // vòng "Mục tiêu tiếp theo" = ring có cung tiến độ tím (truyền percent).

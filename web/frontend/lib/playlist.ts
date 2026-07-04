@@ -1,3 +1,13 @@
+/* ============================================================
+   GIẢI THÍCH CHO KHÁCH — File: lib/playlist.ts
+   ------------------------------------------------------------
+   Quản lý DANH SÁCH VIDEO YouTube mà người dùng muốn xem để học:
+   - fetchPlaylist: lấy danh sách video đã lưu.
+   - addPlaylist: thêm video mới bằng cách dán link YouTube (máy chủ
+     tự lấy tiêu đề + ảnh thu nhỏ).
+   - setPlaylistDone: đánh dấu một video là "đã học xong" (hoặc bỏ đánh dấu).
+   - deletePlaylistItem: xoá một video khỏi danh sách.
+   ============================================================ */
 // TIP-011 — Logic playlist (tách khỏi presentation).
 import { apiFetch } from "./apiClient";
 

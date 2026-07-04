@@ -16,6 +16,18 @@ import {
   type AdminUser,
 } from "@/lib/admin";
 
+/* ============================================================
+   GIẢI THÍCH CHO KHÁCH — File: app/admin/page.tsx
+   ------------------------------------------------------------
+   Trang QUẢN TRỊ, chỉ dành cho admin. Gồm:
+   - 3 ô thống kê: tổng người dùng, số người Pro, doanh thu.
+   - Đặt giá gói Pro.
+   - Bảng người dùng: xem trạng thái, hạn Pro; bật/tắt quyền admin;
+     tặng Pro cho một người trong X ngày.
+   BẢO VỆ: nếu người mở không phải admin, máy chủ trả lỗi 403 và trang
+   tự chuyển họ về /dashboard — người thường không xem được nội dung này.
+   ============================================================ */
+// (Giải thích) Đổi số thành tiền Việt, ví dụ 49000 → "49.000đ".
 const VND = (n: number) => n.toLocaleString("vi-VN") + "đ";
 const inputCls = "rounded-btn border border-border px-2 py-1 text-sm";
 

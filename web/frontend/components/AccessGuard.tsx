@@ -5,6 +5,18 @@ import { usePathname, useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { fetchAccessStatus } from "@/lib/access";
 
+/* ============================================================
+   GIẢI THÍCH CHO KHÁCH — File: components/AccessGuard.tsx
+   ------------------------------------------------------------
+   "Người gác cửa quyền học". Khác với AuthGuard (chỉ hỏi đã đăng
+   nhập chưa), file này kiểm tra người dùng CÒN QUYỀN HỌC không
+   (còn dùng thử miễn phí hoặc đã mua Pro).
+   - Danh sách PROTECTED bên dưới là các trang cần quyền học.
+   - Nếu hết hạn → tự đưa sang trang thanh toán (/thanh-toan).
+   - Nếu việc kiểm tra bị lỗi tạm thời → KHÔNG khoá nhầm (ưu tiên trải
+     nghiệm), vì máy chủ vẫn chặn dữ liệu ở phía sau nếu thực sự hết hạn.
+   - Không chặn render: nội dung hiện ngay, việc kiểm tra chạy nền.
+   ============================================================ */
 // TIP-019b — Chặn TRANG HỌC khi hết trial + chưa trả → redirect /thanh-toan.
 // KHÔNG chặn: / (login), /thanh-toan, /cam-on, /ho-tro, /blog (tránh redirect loop).
 const PROTECTED = [

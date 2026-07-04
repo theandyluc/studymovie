@@ -1,3 +1,8 @@
+/* GIẢI THÍCH CHO KHÁCH — components/ui/Button.tsx
+   "Viên gạch" nút bấm dùng lại khắp nơi. Có nhiều kiểu (variant):
+   primary (nút tối chủ đạo), ghost/outline (viền nhẹ), info/success/
+   danger (xanh/lá/đỏ). Nhờ dùng chung một nút, cả web trông đồng nhất
+   và khi đổi phong cách chỉ cần sửa ở đây. */
 import type { ButtonHTMLAttributes } from "react";
 
 type Variant = "primary" | "ghost" | "outline" | "info" | "success" | "danger";

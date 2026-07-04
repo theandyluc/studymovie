@@ -8,6 +8,19 @@ import { createOrder, fetchOrderStatus, type PaymentOrder } from "@/lib/payment"
 import { fetchAccessStatus, type AccessStatus } from "@/lib/access";
 import { PageLoading } from "@/components/ui/Spinner";
 
+/* ============================================================
+   GIẢI THÍCH CHO KHÁCH — File: app/thanh-toan/page.tsx
+   ------------------------------------------------------------
+   Trang "Nâng cấp Pro" bằng chuyển khoản QR:
+   1) Nếu người dùng đã là Pro → hiện thông báo và mời vào học.
+   2) Chưa mua → hiện giá gói và nút "Mua Pro".
+   3) Bấm mua → tạo đơn, hiện mã QR VietQR + nội dung chuyển khoản +
+      đồng hồ đếm ngược 5 phút.
+   4) Trang tự động hỏi máy chủ mỗi vài giây xem tiền đã tới chưa; khi
+      đã thanh toán → tự chuyển sang trang "Cảm ơn".
+   5) Nếu quá 5 phút chưa trả → mã hết hạn, cho bấm "Tạo mã mới".
+   Người dùng không cần bấm xác nhận gì — hệ thống tự nhận biết.
+   ============================================================ */
 const POLL_MS = 4000; // poll trạng thái đơn mỗi 4s
 const QR_TTL = 300; // TIP-028: đồng hồ đếm ngược 5:00; về 0 → hết hạn (dừng poll) + nút "Tạo mã mới"
 const VND = (n: number) => n.toLocaleString("vi-VN") + "đ";

@@ -1,3 +1,21 @@
+/* ============================================================
+   GIẢI THÍCH CHO KHÁCH — File: lib/account.ts
+   ------------------------------------------------------------
+   File này gom mọi thao tác liên quan đến TÀI KHOẢN và số liệu
+   học tập của người dùng, gồm:
+   - fetchDashboard: lấy số liệu trang "Tiến độ học" (streak, số
+     phút học hôm nay, biểu đồ tuần/tháng, tổng từ đã học...).
+   - fetchLeaderboard: lấy bảng xếp hạng (tuần / tháng / toàn thời gian).
+   - fetchMe: lấy thông tin người đang đăng nhập (email, có phải
+     admin không, tình trạng gói).
+   - fetchProfile / updateProfile: xem và sửa hồ sơ (biệt danh,
+     số phút cam kết học mỗi ngày).
+   - subscriptionText: đổi tình trạng gói thành câu chữ dễ đọc
+     (ví dụ "Dùng thử — còn 5 giờ").
+
+   Các "interface" phía trên chỉ là bản mô tả HÌNH DẠNG dữ liệu
+   (có những trường gì), giúp code chặt chẽ, không phải logic chạy.
+   ============================================================ */
 // TIP-007 — Logic dashboard / leaderboard / profile (tách khỏi presentation).
 import { apiFetch } from "./apiClient";
 

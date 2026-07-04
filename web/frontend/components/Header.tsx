@@ -1,3 +1,13 @@
+/* ============================================================
+   GIẢI THÍCH CHO KHÁCH — File: components/Header.tsx
+   ------------------------------------------------------------
+   Thanh điều hướng trên cùng (luôn dính ở đầu trang). Gồm:
+   - Logo "SM." ở góc trái.
+   - Các liên kết: Tiến độ học, Từ vựng, Hỗ trợ — chỉ hiện khi đã
+     đăng nhập.
+   - Liên kết "Admin" CHỈ hiện với tài khoản quản trị (kiểm tra bằng
+     cách hỏi máy chủ). Nếu có trục trặc thì mặc định ẨN cho an toàn.
+   ============================================================ */
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";

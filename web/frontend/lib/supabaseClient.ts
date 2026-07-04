@@ -1,3 +1,18 @@
+/* ============================================================
+   GIẢI THÍCH CHO KHÁCH — File: lib/supabaseClient.ts
+   ------------------------------------------------------------
+   "Supabase" là dịch vụ lưu tài khoản + dữ liệu của StudyMovie.
+   File này tạo ra "cầu nối" để trang web nói chuyện với Supabase
+   ngay trên trình duyệt của người dùng.
+
+   Về AN TOÀN:
+   - Chỉ dùng "anon key" (chìa khoá công khai, quyền hạn chế).
+   - TUYỆT ĐỐI không đặt chìa khoá quản trị ở đây vì code này chạy
+     công khai trên máy người dùng.
+
+   Nếu chưa khai báo thông tin kết nối thì hàm trả về "rỗng" thay
+   vì làm sập trang — để web vẫn hiển thị được.
+   ============================================================ */
 // TIP-003 — Supabase browser client (CHỈ anon key, chạy phía client).
 // TUYỆT ĐỐI không dùng service_role ở client.
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";

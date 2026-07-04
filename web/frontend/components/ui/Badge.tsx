@@ -1,3 +1,7 @@
+/* GIẢI THÍCH CHO KHÁCH — components/ui/Badge.tsx
+   "Nhãn dán" nhỏ hình viên thuốc để hiển thị trạng thái bằng màu,
+   ví dụ: "Từ mới" (đỏ) và "Đã học" (xanh lá). Chỉ để nhìn cho dễ
+   phân biệt, không bấm được. */
 import type { HTMLAttributes } from "react";
 
 type Tone = "info" | "success" | "danger" | "neutral";
