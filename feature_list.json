@@ -266,6 +266,16 @@
       "evidence": "VERIFIED Homeowner (2026-07-03), /tu-vung LearnedChart. | TIP-064 (c6489d3): khớp style Figma — trục Y số TRÒN đẹp niceAxis (step nice 1/2/5×10^n thay bội-4 của TIP-061; vd max 4→0/2/4, 32→0/20/40), tiêu đề font-heading font-bold, hộp số trắng rounded-lg + viền + shadow (to/đậm), cột rounded-t-md xám/xanh, gridline border-border/50 mờ, nhãn ngày xám. | TIP-065 (c48b510): tương tác HOVER theo yêu cầu khách — BỎ 'cột đỉnh xanh cố định'; mọi cột bg-chart-base (xám), mỗi cột là group → group-hover:bg-chart-bar (xanh) + hộp số opacity-0→group-hover:opacity-100 (hiện số từ đã học của ngày hover trên đỉnh cột); rời chuột về xám/ẩn số. Giữ logic cửa sổ động + tổng (TIP-061). Trục Y co giãn theo data thật."
     },
     {
+      "id": "WEB-FLASHCARD-SWIPE",
+      "title": "Flashcard: swipe animation (bỏ mũi tên) + thẻ gọn hơn (feedback 4/7 #4)",
+      "area": "web",
+      "tip": "TIP-074",
+      "status": "done",
+      "depends_on": [],
+      "acceptance": "Bỏ nút mũi tên ‹›; swipe qua ngưỡng → thẻ bay hẳn ra (trượt+xoay+mờ) rồi hiện thẻ kế; thẻ gọn không còn trống lớn.",
+      "evidence": "Code verified + build/deploy (2026-07-04). Feedback 4/7 #4: flashcard UI lỗi (thẻ quá cao/trống) + khách muốn animation swipe thay mũi tên. FIX (TIP-074, app/hoc-tu-vung/page.tsx Flashcards): (A) xoá 2 nút ‹› hover; state exit(0/1/-1) + commitSwipe(dir) setExit→sau 250ms go(dir)+setExit(0); onPointerUp: dx≥THRESHOLD&&idx<len-1→commitSwipe(1), dx≤-THRESHOLD&&idx>0→commitSwipe(-1), chạm nhẹ→lật, else snap; cardStyle exit≠0→translateX(exit*130%) rotate(exit*8deg) opacity0 transition .25s (bay hẳn ra); giữ kéo-theo-tay/lật/audio/markLearned/phím ←→. (B) min-h-[400px]→min-h-[260px] + justify-center (bớt trống). Redeploy frontend prod. LƯU Ý: phần 'thẻ gọn' là phán đoán 'UI lỗi' — KHÁCH sẽ hướng dẫn cụ thể chiều 2026-07-04, có thể cần chỉnh thêm → để status=done (chưa verified). Animation cần nhìn mắt in-app."
+    },
+    {
       "id": "WEB-VOCAB-REFRESH-QUIZ",
       "title": "/tu-vung tự cập nhật sau khi lưu từ + quiz chỉ hỏi từ đã chọn (feedback 4/7)",
       "area": "web",
