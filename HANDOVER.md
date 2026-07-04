@@ -304,3 +304,46 @@ cd extension    && npm run lint && npm run build
 - **Extension lên Store:** `npm run build:prod` + zip `extension/dist` (file `studymovie-extension-v1.0.0.zip`
   đã build lại đợt này, gồm mọi thay đổi). Xem §8.
 - **Migration:** đảm bảo áp đủ, gồm `..._ai_context_meaning` (012) + `..._leaderboard_period` (013).
+
+## 12. Cập nhật đợt feedback khách 04/07/2026
+
+> Các điểm kỹ thuật đợt 04/07. Đều trên `main`, đã deploy production (frontend + backend + zip extension).
+
+### 12.1 Tra từ (phiên âm + phát âm + tốc độ)
+- **Lemmatize dạng gốc** để lấy phiên âm cho từ biến thể: số nhiều/-es/-ies, -ed, -ing, -ied
+  (moments→moment, studies→study, carried→carry…). Backend `lookup.ts` `lemmaCandidates()` — thử vài
+  ứng viên, chọn kết quả CÓ IPA. **Audio TTS fallback**: từ không có audio từ điển → dùng Google
+  `translate_tts` → mọi từ có nút loa.
+- **Popup tra từ render DẦN**: từ + phiên âm + loa hiện NGAY, nghĩa AI điền vào sau (không chờ AI mới
+  hiện). Extension `content/youtube.ts` `onWordClick`.
+- **Nút Phát âm** dùng **Web Speech API** (`speechSynthesis`, giọng en-GB của trình duyệt) — KHÔNG tải
+  media ngoài nên không bị CSP của YouTube chặn → luôn ra tiếng. `youtube.ts` `speakWord/playPronunciation`.
+
+### 12.2 Model AI đổi được qua ENV — CẬP NHẬT §3.5 (quan trọng cho bảo trì)
+- Model nghĩa-theo-ngữ-cảnh giờ đọc từ env **`OPENAI_MODEL`** (Vercel backend). **Hiện đặt = `gpt-5-nano`**
+  (rẻ hơn gpt-4o-mini). Đổi model = đổi env + redeploy, KHÔNG sửa code. Bỏ env → mặc định `gpt-4o-mini`.
+- Code tự tương thích tham số: `gpt-5-*` dùng `max_completion_tokens` + `reasoning_effort:"minimal"`,
+  KHÔNG gửi `temperature`; model khác dùng `temperature:0`. (`api/lookup-context.ts`)
+- Prompt đã siết "đúng 1 nghĩa gọn, không liệt kê, không dấu '/'". **Lưu ý:** thực tế gpt-5-nano KHÔNG
+  nhanh hơn 4o-mini rõ rệt (đều ~1–2s, phần lớn là latency OpenAI) — nano chỉ rẻ hơn. Muốn đổi lại:
+  `OPENAI_MODEL=gpt-4o-mini` rồi redeploy.
+
+### 12.3 Trang Từ vựng + Kiểm tra
+- **`/tu-vung` tự cập nhật** sau khi lưu từ (qua extension) khi quay lại tab — refetch on visibility/focus
+  (`app/tu-vung/page.tsx`).
+- **Quiz chỉ hỏi từ đã chọn**: `buildQuiz(items, dir, askItems?)` — câu hỏi = danh sách đã chọn
+  (`STUDY_SELECTION_KEY`); đáp án nhiễu (3 sai) vẫn lấy từ toàn kho (bình thường). `components/QuizGame.tsx`.
+
+### 12.4 Flashcard — vuốt (swipe) + CHỖ KHÁCH CHỈNH ĐƯỢC
+File `app/hoc-tu-vung/page.tsx` đã có chú thích "chỉnh được" ngay tại chỗ. Đổi thẻ bằng **vuốt**: kéo
+phải → thẻ kế, kéo trái → thẻ trước, thẻ đầu/cuối → bật về, chạm nhẹ → lật xem ví dụ (đã bỏ nút mũi tên).
+
+| Muốn đổi | Sửa ở (hoc-tu-vung/page.tsx) |
+|---|---|
+| Độ nhạy vuốt | `SWIPE_THRESHOLD` (số px kéo tối thiểu; tăng = phải kéo xa hơn) |
+| Tốc độ hiệu ứng bay | `250` (ms) trong `commitSwipe` **VÀ** `.25s` trong `cardStyle` — đổi phải KHỚP nhau |
+| Độ bay xa / độ nghiêng | `translateX(±130%)` / `rotate(±8deg)` trong nhánh `exit` của `cardStyle` (bỏ rotate = không nghiêng) |
+| Chiều cao / bề rộng thẻ | `min-h-[260px]` / `max-w-xs` trong `renderCard` |
+
+> "UI lỗi" khách nêu 04/07 đã tạm chỉnh (thẻ gọn 260px + căn giữa dọc). Nếu khách chỉ điểm khác thì
+> chỉnh theo bảng trên.
