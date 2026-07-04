@@ -85,40 +85,83 @@ async function freeDictLookup(word: string): Promise<FdResult> {
   }
 }
 
+// TIP-068 — TTS fallback: mọi từ có loa (đọc qua <audio>, không vướng CORS).
+const ttsUrl = (w: string): string =>
+  `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=${encodeURIComponent(w)}`;
+
+// TIP-068 — sinh ứng viên dạng gốc (heuristic EN): raw TRƯỚC, rồi các dạng gốc để lấy IPA.
+function lemmaCandidates(w: string): string[] {
+  const c = new Set<string>([w]);
+  if (w.length > 4 && w.endsWith("ies")) c.add(w.slice(0, -3) + "y"); // studies→study
+  if (w.length > 3 && w.endsWith("es")) c.add(w.slice(0, -2)); // boxes→box
+  if (w.length > 3 && w.endsWith("s") && !w.endsWith("ss")) c.add(w.slice(0, -1)); // moments→moment
+  if (w.length > 4 && w.endsWith("ed")) {
+    c.add(w.slice(0, -2)); // walked→walk
+    c.add(w.slice(0, -1)); // faked→fake
+  }
+  if (w.length > 5 && w.endsWith("ing")) {
+    const base = w.slice(0, -3);
+    c.add(base); // making→mak…
+    c.add(base + "e"); // making→make
+    if (base.length > 1 && base[base.length - 1] === base[base.length - 2]) c.add(base.slice(0, -1)); // running→run
+  }
+  return [...c];
+}
+
+// Gắn audio TTS nếu thiếu audio từ điển; giữ shape { word, result, source }.
+function withAudio(word: string, found: { result: LookupResult; source: string }) {
+  const r = found.result;
+  return {
+    word,
+    result: { ...r, audio_url: r.audio_url || ttsUrl(r.lemma || word) },
+    source: found.source,
+  };
+}
+
 export async function getLookup(c: Context) {
   const word = (c.req.query("word") ?? "").trim().toLowerCase();
   if (!word) return c.json({ error: "missing word" }, 400);
 
   const sb = getServiceClient();
 
-  // 1) FVDP qua RPC (đã có cache free_dict cũng nằm trong bảng dictionary → RPC tìm thấy luôn).
-  const { data, error } = await sb.rpc("lookup_word", { p_word: word });
-  if (error) return c.json({ error: error.message }, 500);
-  if (data && (data as { meanings?: unknown }).meanings) {
-    const r = data as LookupResult;
-    return c.json({ word, result: r, source: r.source ?? "fvdp" });
+  // TIP-068 — thử lần lượt raw + dạng gốc (~3 ứng viên đầu để tránh gọi free-dict quá nhiều).
+  // Chọn kết quả ĐẦU TIÊN CÓ IPA; nếu không có → kết quả đầu tiên tìm được (có meaning); hết → not_found.
+  const cands = lemmaCandidates(word).slice(0, 3);
+  let firstFound: { result: LookupResult; source: string } | null = null;
+  let lastFail: { status: "not_found" | "error"; message?: string } | null = null;
+
+  for (const cand of cands) {
+    // 1) FVDP qua RPC (bảng dictionary đã gồm cache free_dict → RPC tìm thấy luôn).
+    const { data, error } = await sb.rpc("lookup_word", { p_word: cand });
+    if (error) return c.json({ error: error.message }, 500);
+
+    let found: { result: LookupResult; source: string } | null = null;
+    if (data && (data as { meanings?: unknown }).meanings) {
+      const r = data as LookupResult;
+      found = { result: r, source: r.source ?? "fvdp" };
+    } else {
+      // 2) Fallback Free Dictionary API cho ứng viên này.
+      const fb = await freeDictLookup(cand);
+      if (fb.ok) {
+        // 3) Cache vào dictionary (idempotent theo lemma).
+        const row = { lemma: cand, ipa: fb.ipa, meanings: fb.meanings, audio_url: fb.audio_url, source: "free_dict" };
+        const { error: cacheErr } = await sb.from("dictionary").upsert(row, { onConflict: "lemma" });
+        if (cacheErr) console.warn("[lookup] cache lỗi:", cacheErr.message);
+        found = {
+          result: { lemma: cand, ipa: fb.ipa, meanings: fb.meanings, audio_url: fb.audio_url, source: "free_dict" },
+          source: "free_dict",
+        };
+      } else {
+        lastFail = { status: fb.status, message: fb.message };
+      }
+    }
+
+    if (found) {
+      if (!firstFound) firstFound = found;
+      if (firstIpa(found.result.ipa)) return c.json(withAudio(word, found)); // có IPA → chọn ngay
+    }
   }
 
-  // 2) Fallback Free Dictionary API.
-  const fb = await freeDictLookup(word);
-  if (!fb.ok) {
-    return c.json({ word, result: null, status: fb.status, message: fb.message ?? null });
-  }
-
-  // 3) Cache vào dictionary (idempotent theo lemma).
-  const row = { lemma: word, ipa: fb.ipa, meanings: fb.meanings, audio_url: fb.audio_url, source: "free_dict" };
-  const { error: cacheErr } = await sb.from("dictionary").upsert(row, { onConflict: "lemma" });
-  if (cacheErr) {
-    // Cache lỗi không nên chặn trả kết quả cho user.
-    console.warn("[lookup] cache lỗi:", cacheErr.message);
-  }
-
-  const result: LookupResult = {
-    lemma: word,
-    ipa: fb.ipa,
-    meanings: fb.meanings,
-    audio_url: fb.audio_url,
-    source: "free_dict",
-  };
-  return c.json({ word, result, source: "free_dict" });
+  if (firstFound) return c.json(withAudio(word, firstFound)); // có meaning nhưng không IPA
+  return c.json({ word, result: null, status: lastFail?.status ?? "not_found", message: lastFail?.message ?? null });
 }
