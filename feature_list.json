@@ -269,11 +269,11 @@
       "id": "AI-MODEL-ENV",
       "title": "Model AI tra nghĩa đổi qua ENV (OPENAI_MODEL) + tương thích GPT-5 (khách hỏi thử gpt-5-nano)",
       "area": "web",
-      "tip": "TIP-071",
+      "tip": "TIP-071/072",
       "status": "verified",
       "depends_on": [],
-      "acceptance": "Đổi model không cần sửa code (env OPENAI_MODEL); gpt-5-* dùng max_completion_tokens + reasoning_effort minimal (không temperature); gpt-4o-mini giữ cũ.",
-      "evidence": "VERIFIED code + smoke test call thật (2026-07-04). Khách muốn thử gpt-5-nano cho nhanh/rẻ. FIX (TIP-071): env.ts thêm OPENAI_MODEL (default gpt-4o-mini); lookup-context.ts askOpenAI dựng body theo isGpt5=/^gpt-5/: max_completion_tokens 256 (thay max_tokens); gpt-5 → reasoning_effort minimal + KHÔNG temperature; else temperature 0. Giữ cache-first + fallback + shape. SMOKE (call OpenAI thật, 4 từ): KHÔNG lỗi 400 (nano params OK); NHƯNG nano KHÔNG nhanh hơn (moved 1084ms nhanh, spring 2654ms chậm hơn 4o 748ms) + chất lượng kém hơn ở từ đa nghĩa (bank: nano 'Bờ vực sông/bờ sông' dài dòng vs 4o 'bờ' gọn đúng); nano chỉ rẻ hơn. Kết hợp render-dần TIP-069 → tốc độ cảm nhận đã ổn, đổi model không cải thiện. Model chọn qua Vercel env OPENAI_MODEL (đổi tức thì không build lại). Đề xuất giữ gpt-4o-mini trừ khi ưu tiên chi phí."
+      "acceptance": "Đổi model không cần sửa code (env OPENAI_MODEL); gpt-5-* dùng max_completion_tokens + reasoning_effort minimal (không temperature); prompt siết trả đúng 1 nghĩa gọn. LIVE: gpt-5-nano.",
+      "evidence": "VERIFIED code + smoke test call thật (2026-07-04). Khách muốn thử gpt-5-nano cho nhanh/rẻ. FIX (TIP-071): env.ts thêm OPENAI_MODEL (default gpt-4o-mini); lookup-context.ts askOpenAI dựng body theo isGpt5=/^gpt-5/: max_completion_tokens 256 (thay max_tokens); gpt-5 → reasoning_effort minimal + KHÔNG temperature; else temperature 0. Giữ cache-first + fallback + shape. SMOKE (call OpenAI thật, 4 từ): KHÔNG lỗi 400 (nano params OK); NHƯNG nano KHÔNG nhanh hơn (moved 1084ms nhanh, spring 2654ms chậm hơn 4o 748ms) + chất lượng kém hơn ở từ đa nghĩa (bank: nano 'Bờ vực sông/bờ sông' dài dòng vs 4o 'bờ' gọn đúng); nano chỉ rẻ hơn. Kết hợp render-dần TIP-069 → tốc độ cảm nhận đã ổn, đổi model không cải thiện. Model chọn qua Vercel env OPENAI_MODEL (đổi tức thì không build lại). TIP-072: siết system prompt (đúng 1 nghĩa, không '/'/liệt kê) — smoke với nano: bank(sông)→'bờ sông', bank(tiền)→'ngân hàng', spring→'lò xo'/'mùa xuân' (hết dài dòng). CHỐT theo khách 2026-07-04: đã set OPENAI_MODEL=gpt-5-nano trên Vercel production + redeploy (1lxjuufhw) → gpt-5-nano LIVE. Revert về gpt-4o-mini bằng đổi env (1 phút) nếu cần."
     },
     {
       "id": "EXT-PRONOUNCE-TTS",
