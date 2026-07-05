@@ -15,8 +15,10 @@ function ThankYou() {
       <Card className="w-full max-w-md text-center">
         <div className="text-5xl">🎉</div>
         <h1 className="mt-3 font-heading text-2xl font-bold">Cảm ơn bạn đã nâng cấp Pro!</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Tài khoản của bạn đã được kích hoạt. Chúc bạn học tiếng Anh hiệu quả cùng StudyMovie.
+        <p className="mt-2 text-sm font-normal leading-[18px] text-muted-foreground">
+          Tài khoản của bạn đã được kích hoạt.
+          <br />
+          Chúc bạn học tiếng Anh hiệu quả cùng StudyMovie.
         </p>
         <Link href="/tien-do-hoc" className="mt-5 inline-block">
           <Button>Vào học</Button>

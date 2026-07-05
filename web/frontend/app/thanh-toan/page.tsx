@@ -1,6 +1,6 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AuthGuard } from "@/components/AuthGuard";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -14,7 +14,9 @@ import { PageLoading } from "@/components/ui/Spinner";
    Trang "Nâng cấp Pro" bằng chuyển khoản QR:
    1) Nếu người dùng đã là Pro → hiện thông báo và mời vào học.
    2) Chưa mua → hiện giá gói và nút "Mua Pro".
-   3) Bấm mua → tạo đơn, hiện mã QR VietQR + nội dung chuyển khoản +
+      TIP-082: nếu vào bằng link ?auto=1 (nút trên landing studymovie.com/gia) →
+      bỏ qua màn giá, tự tạo đơn + hiện QR ngay.
+   3) Bấm mua (hoặc tự động ở bước 2 khi ?auto=1) → tạo đơn, hiện mã QR VietQR + nội dung chuyển khoản +
       đồng hồ đếm ngược 5 phút.
    4) Trang tự động hỏi máy chủ mỗi vài giây xem tiền đã tới chưa; khi
       đã thanh toán → tự chuyển sang trang "Cảm ơn".
@@ -34,13 +36,15 @@ function UpgradeInner() {
   const [creating, setCreating] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [paid, setPaid] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(QR_TTL);
   const [expired, setExpired] = useState(false);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const router = useRouter();
   const [access, setAccess] = useState<AccessStatus | null>(null);
   const [accChecked, setAccChecked] = useState(false);
+  const searchParams = useSearchParams();
+  const autoCreate = searchParams.get("auto") === "1"; // TIP-082: link từ landing studymovie.com/gia
+  const autoTried = useRef(false);
 
   useEffect(() => {
     fetchAccessStatus()
@@ -87,6 +91,14 @@ function UpgradeInner() {
     }
   };
 
+  // TIP-082 — ?auto=1 (link từ landing /gia): bỏ màn giá, tự tạo đơn ngay khi đủ điều kiện.
+  useEffect(() => {
+    if (!autoCreate || autoTried.current) return;
+    if (!accChecked || order || creating || access?.reason === "paid") return;
+    autoTried.current = true;
+    void onCreate();
+  }, [autoCreate, accChecked, order, creating, access]);
+
   // Poll khi có đơn (chưa paid, chưa hết hạn).
   useEffect(() => {
     if (!order || paid || expired) return;
@@ -110,17 +122,6 @@ function UpgradeInner() {
     }, 1000);
     return () => clearInterval(iv);
   }, [order, paid, expired, stopPoll]);
-
-  const copyContent = async () => {
-    if (!order) return;
-    try {
-      await navigator.clipboard.writeText(order.content);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      /* clipboard bị chặn — user tự gõ nội dung */
-    }
-  };
 
   if (paid) {
     return (
@@ -156,16 +157,21 @@ function UpgradeInner() {
   // Chưa tạo đơn — màn giới thiệu gói + nút mua.
   if (!order) {
     return (
-      <div className="mx-auto max-w-md space-y-4">
-        <h1 className="font-heading text-2xl font-bold">Nâng cấp Pro</h1>
-        <Card className="space-y-4 text-center">
+      <div className="mx-auto max-w-md text-center">
+        <h1 className="font-heading text-2xl font-bold">Hết hạn dùng thử</h1>
+        <p className="mt-[5px] text-sm text-muted-foreground">
+          Tài khoản của bạn đã hết hạn dùng thử,
+          <br />
+          vui lòng nâng cấp để tiếp tục sử dụng.
+        </p>
+        <Card className="mt-4 space-y-4 text-center">
           <p className="text-sm text-muted-foreground">Mở khoá toàn bộ tính năng StudyMovie với gói Pro.</p>
           <p className="font-heading text-3xl font-bold">
             {VND(49000)}
-            <span className="text-base font-normal text-muted-foreground"> / tháng</span>
+            <span className="text-base font-normal text-muted-foreground"> / năm</span>
           </p>
           <Button onClick={onCreate} disabled={creating} className="w-full">
-            {creating ? "Đang tạo đơn…" : "Mua Pro 49.000đ/tháng"}
+            {creating ? "Đang tạo đơn…" : "Nâng cấp ngay"}
           </Button>
           {err ? <p className="text-sm text-danger-foreground">{err}</p> : null}
         </Card>
@@ -175,19 +181,19 @@ function UpgradeInner() {
 
   // Đã tạo đơn — màn QR theo Figma (tiêu đề + countdown lớn + ảnh VietQR).
   return (
-    <div className="mx-auto max-w-md space-y-5 py-2 text-center">
+    <div className="mx-auto max-w-xl pt-[20px] pb-2 text-center">
       <div>
-        <h1 className="font-heading text-3xl font-bold">Quét mã QR bên dưới</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Sau khi quét mã, vui lòng kiểm tra đúng nội dung chuyển khoản phía dưới.
+        <h1 className="font-heading text-[32px] font-bold tracking-[-0.03em]">Quét mã QR bên dưới</h1>
+        <p className="mt-[3px] whitespace-nowrap text-[15px] font-light leading-[18px] text-[#1f1f1f]">
+          Sau khi quét mã vui lòng kiểm tra đúng nội dung chuyển khoản như hình.
           <br />
-          Hệ thống sẽ tự động kích hoạt sau khi chuyển khoản.
+          Hệ thống sẽ tự động kích hoạt sau khi chuyển khoản thành công.
         </p>
       </div>
 
       {expired ? (
         /* TIP-028 — hết hạn: dừng poll, cho tạo mã mới */
-        <div className="space-y-3">
+        <div className="mt-5 space-y-3">
           <p className="text-sm font-medium text-danger-foreground">Mã QR đã hết hạn</p>
           <Button className="w-full" onClick={() => setOrder(null)}>
             Tạo mã mới
@@ -196,10 +202,10 @@ function UpgradeInner() {
       ) : (
         <>
           {/* Countdown lớn (Figma) */}
-          <p className="font-heading text-4xl font-bold tabular-nums">{fmtMMSS(secondsLeft)}</p>
+          <p className="mt-[17px] text-[32px] font-semibold tabular-nums">{fmtMMSS(secondsLeft)}</p>
 
           {/* Ảnh VietQR compact2 — đã gồm logo + tên TK + số TK + số tiền + nội dung CK */}
-          <div className="flex justify-center">
+          <div className="mt-2 flex justify-center">
             <Card className="inline-block p-3">
               <img
                 src={order.qr_url}
@@ -209,21 +215,9 @@ function UpgradeInner() {
             </Card>
           </div>
 
-          {/* Nội dung CK + chép (không copy được từ ảnh) */}
-          <div className="flex items-center justify-center gap-2 text-sm">
-            <span className="text-muted-foreground">Nội dung CK:</span>
-            <span className="font-mono font-semibold">{order.content}</span>
-            <Button variant="ghost" className="px-2 py-1 text-xs" onClick={copyContent}>
-              {copied ? "Đã chép" : "Chép"}
-            </Button>
-          </div>
-
-          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+          <div className="mt-5 flex items-center justify-center gap-2 whitespace-nowrap text-[15px] font-light leading-[18px] text-[#1f1f1f]">
             <Spinner /> Đang chờ thanh toán… (tự động cập nhật sau khi chuyển khoản)
           </div>
-          <Button variant="ghost" onClick={() => void checkStatus(order.code)}>
-            Tôi đã chuyển khoản — kiểm tra lại
-          </Button>
         </>
       )}
     </div>
@@ -237,7 +231,9 @@ function Spinner() {
 export default function UpgradePage() {
   return (
     <AuthGuard>
-      <UpgradeInner />
+      <Suspense fallback={<PageLoading />}>
+        <UpgradeInner />
+      </Suspense>
     </AuthGuard>
   );
 }

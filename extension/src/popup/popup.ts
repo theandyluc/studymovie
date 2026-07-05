@@ -590,7 +590,7 @@ function renderUser(me: Me): void {
   a.href = "#";
   a.addEventListener("click", (e) => {
     e.preventDefault();
-    openTab(`${SITE_URL}/thanh-toan`);
+    openTab("https://studymovie.com/gia");
   });
   p.appendChild(a);
   p.append(" để tiếp tục sử dụng.");
