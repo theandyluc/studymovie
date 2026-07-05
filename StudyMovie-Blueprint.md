@@ -203,7 +203,7 @@ playlist_items (
 | REQ-ID | Trang | Tính năng |
 |--------|-------|-----------|
 | WEB-01 | `/` login | Google OAuth, chung tài khoản với extension. |
-| WEB-02 | `/dashboard` | Streak, đồ thị giờ học tuần/tháng, "hôm nay X/Y phút" + progress bar. |
+| WEB-02 | `/tien-do-hoc` | Streak, đồ thị giờ học tuần/tháng, "hôm nay X/Y phút" + progress bar. |
 | WEB-03 | `/vocabulary` (list) | Toàn bộ từ đã lưu (word/IPA/nghĩa/example/🔊), **xóa** từng từ; nút Flashcard / Quiz EN→VI / Quiz VI→EN — **học TẤT CẢ từ, không tick chọn**. |
 | WEB-04 | `/vocabulary` (flashcard) | Thẻ: từ + IPA + nghĩa + 🔊, swipe trái/phải (ref UI: langswipe). |
 | WEB-05 | `/vocabulary` (quiz) | 1 từ + 4 đáp án (3 sai random từ vocab của chính user), 2 chiều EN→VI và VI→EN. |
@@ -318,7 +318,7 @@ GĐ1  TIP-001  Scaffold: monorepo (web/frontend + web/backend tách riêng), Sup
      TIP-004  Web /vocabulary: list + flashcard (swipe) + quiz 2 chiều
         │
         ▼
-     TIP-005  Web /dashboard (streak+đồ thị) + /settings + /leaderboard
+     TIP-005  Web /tien-do-hoc (streak+đồ thị) + /settings + /leaderboard
         │
         ▼
      TIP-006  Web /playlist (todo + thumbnail + tick + nút Học)
