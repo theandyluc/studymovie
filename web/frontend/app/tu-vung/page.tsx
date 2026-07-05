@@ -23,14 +23,6 @@ import { DeleteIcon, CheckboxIcon } from "@/components/ui/icons";
    Phần dưới có một số hàm phụ trợ (định dạng ngày, tính trục biểu đồ) —
    mỗi hàm đều có chú thích riêng ngay phía trên.
    ============================================================ */
-// (Giải thích) Phát file âm thanh đọc từ (khi bấm nút loa 🔊).
-function playAudio(url: string): void {
-  try {
-    void new Audio(url).play();
-  } catch {
-    /* ignore */
-  }
-}
 // TIP-081 — luôn dd/mm/yyyy có số 0 đứng trước (toLocaleDateString tùy trình duyệt có thể trả "5/7/2026").
 const fmtDate = (s: string): string => {
   const d = new Date(s);
@@ -637,18 +629,6 @@ function VocabList() {
                         </td>
                         <td className="pr-2">
                           <span className="-ml-[5px] font-normal">{it.word}</span>
-                          {it.audio_url ? (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                playAudio(it.audio_url as string);
-                              }}
-                              aria-label="Phát âm"
-                              className="ml-1 align-middle text-sm"
-                            >
-                              🔊
-                            </button>
-                          ) : null}
                         </td>
                         <td className="pr-2">{it.meaning_vi || <span className="text-muted-foreground">—</span>}</td>
                         <td className="pr-2">{fmtDate(it.created_at)}</td>
