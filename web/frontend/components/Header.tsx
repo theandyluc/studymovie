@@ -7,7 +7,7 @@
      đăng nhập.
    - KHÔNG có link "Admin" trên nav (bỏ theo yêu cầu) — trang /admin
      vẫn vào được bằng cách gõ thẳng URL, tự bảo vệ độc lập ở phía
-     trang đó (kiểm tra is_admin qua API, không phải admin → /dashboard).
+     trang đó (kiểm tra is_admin qua API, không phải admin → /tien-do-hoc).
    ============================================================ */
 "use client";
 import Link from "next/link";
@@ -16,9 +16,9 @@ import { useUser } from "@/hooks/useUser";
 // TIP-019a — Nav route VN: Tiến độ học / Từ vựng / Hỗ trợ. (TIP-036 bỏ Blog)
 // TIP-042: /ho-tro redirect NGOÀI (Facebook) → tắt prefetch để Next không fetch RSC bị CORS chặn.
 // TIP-043: bỏ avatar+tên+dropdown (đăng xuất ở popup extension; /playlist, /leaderboard, /settings,
-//   /admin vẫn vào được bằng URL — bảng xếp hạng đã nhúng trong dashboard).
+//   /admin vẫn vào được bằng URL — bảng xếp hạng đã nhúng trong /tien-do-hoc).
 const MAIN_NAV: { href: string; label: string; prefetch?: false }[] = [
-  { href: "/dashboard", label: "Tiến độ học" },
+  { href: "/tien-do-hoc", label: "Tiến độ học" },
   { href: "/tu-vung", label: "Từ vựng" },
   { href: "/ho-tro", label: "Hỗ trợ", prefetch: false },
 ];
@@ -49,7 +49,7 @@ export function Header() {
   // Vị trí text: "Tiến độ học" x=295, "Từ vựng" x=435, "Hỗ trợ" x=554, tất cả y=18.
   // TIP-081 — nav bar giảm còn 596px (636-40); dịch cả cụm sang trái 20px để vẫn căn giữa (~86px mỗi bên).
   const NAV_X: Record<string, number> = {
-    "/dashboard": 185,
+    "/tien-do-hoc": 185,
     "/tu-vung": 335,
     "/ho-tro": 454,
   };

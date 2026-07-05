@@ -11,7 +11,7 @@ import { WeeklyPlanTable } from "@/components/WeeklyPlan";
 import { LeaderboardCard } from "@/components/LeaderboardCard";
 
 /* ============================================================
-   GIẢI THÍCH CHO KHÁCH — File: app/dashboard/page.tsx
+   GIẢI THÍCH CHO KHÁCH — File: app/tien-do-hoc/page.tsx
    ------------------------------------------------------------
    Trang "Tiến độ học" — màn hình chính sau khi đăng nhập. Gồm:
    - Hàng trên: 3 vòng số liệu (tổng giờ học, số từ đã học, chuỗi ngày

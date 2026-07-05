@@ -25,7 +25,7 @@ import {
    - Bảng người dùng: xem trạng thái, hạn Pro; bật/tắt quyền admin;
      tặng Pro cho một người trong X ngày.
    BẢO VỆ: nếu người mở không phải admin, máy chủ trả lỗi 403 và trang
-   tự chuyển họ về /dashboard — người thường không xem được nội dung này.
+   tự chuyển họ về /tien-do-hoc — người thường không xem được nội dung này.
    ============================================================ */
 // (Giải thích) Đổi số thành tiền Việt, ví dụ 49000 → "49.000đ".
 const VND = (n: number) => n.toLocaleString("vi-VN") + "đ";
@@ -50,7 +50,7 @@ function GrantCell({ disabled, onGrant }: { disabled: boolean; onGrant: (days: n
   );
 }
 
-// TIP-020 — Trang admin. Guard: gọi API admin; 403 (RPC fail-closed) → không phải admin → /dashboard.
+// TIP-020 — Trang admin. Guard: gọi API admin; 403 (RPC fail-closed) → không phải admin → /tien-do-hoc.
 function AdminInner() {
   const router = useRouter();
   const [stats, setStats] = useState<AdminStats | null>(null);
@@ -79,7 +79,7 @@ function AdminInner() {
   }, [load]);
 
   useEffect(() => {
-    if (denied) router.replace("/dashboard"); // không phải admin
+    if (denied) router.replace("/tien-do-hoc"); // không phải admin
   }, [denied, router]);
 
   if (loading) return <PageLoading />;

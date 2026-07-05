@@ -18,7 +18,7 @@ function ThankYou() {
         <p className="mt-2 text-sm text-muted-foreground">
           Tài khoản của bạn đã được kích hoạt. Chúc bạn học tiếng Anh hiệu quả cùng StudyMovie.
         </p>
-        <Link href="/dashboard" className="mt-5 inline-block">
+        <Link href="/tien-do-hoc" className="mt-5 inline-block">
           <Button>Vào học</Button>
         </Link>
       </Card>

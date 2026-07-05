@@ -20,7 +20,7 @@ import { fetchAccessStatus } from "@/lib/access";
 // TIP-019b — Chặn TRANG HỌC khi hết trial + chưa trả → redirect /thanh-toan.
 // KHÔNG chặn: / (login), /thanh-toan, /cam-on, /ho-tro, /blog (tránh redirect loop).
 const PROTECTED = [
-  "/dashboard",
+  "/tien-do-hoc",
   "/tu-vung",
   "/hoc-tu-vung",
   "/kiem-tra-anh-viet",

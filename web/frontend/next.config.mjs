@@ -35,6 +35,7 @@ const nextConfig = {
   // TIP-036: bỏ /blog (khách không dùng blog nữa).
   async redirects() {
     return [
+      { source: "/dashboard", destination: "/tien-do-hoc", permanent: false },
       { source: "/vocabulary", destination: "/tu-vung", permanent: false },
       { source: "/vocabulary/flashcard", destination: "/hoc-tu-vung", permanent: false },
       // Quiz cũ 1 route + ?mode → 2 route VN (vi2en trước vì khớp cụ thể hơn).

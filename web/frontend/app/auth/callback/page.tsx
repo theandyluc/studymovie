@@ -13,11 +13,11 @@ import { Button } from "@/components/ui/Button";
    Trang "trung chuyển" sau khi đăng nhập Google (hoặc bấm link xác
    nhận email). Google gửi người dùng về đây kèm một "mã", trang này
    đổi mã đó lấy phiên đăng nhập thật rồi đưa vào trang Tiến độ học.
-   - Nếu thành công → chuyển sang /dashboard.
+   - Nếu thành công → chuyển sang /tien-do-hoc.
    - Nếu lỗi → hiện thông báo "Đăng nhập thất bại" và nút "Thử lại".
    (Người dùng thường chỉ thấy màn hình chờ thoáng qua ở đây.)
    ============================================================ */
-// Callback OAuth — exchange code -> session -> về /dashboard.
+// Callback OAuth — exchange code -> session -> về /tien-do-hoc.
 export default function AuthCallbackPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -63,7 +63,7 @@ export default function AuthCallbackPage() {
         setError("Thiếu mã xác thực trong URL callback.");
         return;
       }
-      router.replace("/dashboard");
+      router.replace("/tien-do-hoc");
     };
     run();
   }, [router]);

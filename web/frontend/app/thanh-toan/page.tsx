@@ -145,7 +145,7 @@ function UpgradeInner() {
           <p className="mt-2 text-sm text-muted-foreground">
             {until ? `Gói Pro của bạn có hạn đến ${until}.` : "Tài khoản của bạn đang là Pro."}
           </p>
-          <a href="/dashboard" className="mt-4 inline-block">
+          <a href="/tien-do-hoc" className="mt-4 inline-block">
             <Button>Vào học</Button>
           </a>
         </Card>
