@@ -13,7 +13,7 @@ export interface Settings {
   bgColor: "black" | "white"; // TIP-060b: màu nền phụ đề, chỉ đen ↔ trắng
   bgOpacity: number; // độ đậm nền, % 0..100
   fontSizePx: number; // cỡ chữ EN (px) — 12..32 bước 2; VI = 80% EN
-  lineGapPx: number; // khoảng cách dọc EN↔VI (px) — 2..16 bước 2, chỉ dùng mode='both'
+  lineGapPx: number; // khoảng cách dọc EN↔VI (px) — 0..16 bước 2, chỉ dùng mode='both'
 }
 
 export const SETTINGS_KEY = "sm-ext-settings";
@@ -25,9 +25,9 @@ export const DEFAULT_SETTINGS: Settings = {
   viColor: "white",
   bgEnabled: true,
   bgColor: "black",
-  bgOpacity: 20,
-  fontSizePx: 20,
-  lineGapPx: 8,
+  bgOpacity: 80,
+  fontSizePx: 24,
+  lineGapPx: 0,
 };
 
 // Cỡ chữ EN: 12..32 bước 2.
@@ -40,7 +40,7 @@ export function clampFont(px: number): number {
 }
 
 // Khoảng cách dòng: 2..16 bước 2.
-export const GAP_MIN = 2;
+export const GAP_MIN = 0;
 export const GAP_MAX = 16;
 export const GAP_STEP = 2;
 export function clampGap(px: number): number {
@@ -87,7 +87,7 @@ function normalize(raw: Record<string, unknown> | undefined): Settings {
 
     bgOpacity: Math.min(100, Math.max(0, Math.round(Number(r.bgOpacity ?? DEFAULT_SETTINGS.bgOpacity) || 0))),
     fontSizePx: clampFont(Number(r.fontSizePx) || DEFAULT_SETTINGS.fontSizePx),
-    lineGapPx: clampGap(Number(r.lineGapPx) || DEFAULT_SETTINGS.lineGapPx),
+    lineGapPx: clampGap(Number(r.lineGapPx ?? DEFAULT_SETTINGS.lineGapPx)),
   };
 }
 

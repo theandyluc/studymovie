@@ -161,7 +161,7 @@ function styleBubble(bubble: HTMLElement): void {
     borderRadius: "10px",
     background: bg ? bgRgba(COLOR_HEX[settings.bgColor], settings.bgOpacity) : "transparent",
     textAlign: "center",
-    fontFamily: "Arial, sans-serif",
+    fontFamily: '"Inter", Arial, sans-serif',
   } as Partial<CSSStyleDeclaration>);
 }
 
@@ -182,6 +182,7 @@ function styleLine(el: HTMLElement, vi: boolean): void {
     lineHeight: "1.3",
     color,
     fontWeight: vi ? "400" : "700",
+    letterSpacing: "-0.03em",
     textShadow: shadow,
   } as Partial<CSSStyleDeclaration>);
 }
