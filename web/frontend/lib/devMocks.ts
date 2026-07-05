@@ -1,6 +1,9 @@
 // DEV-ONLY: dữ liệu giả để xem UI local khi chưa có backend/Supabase thật.
 // Chỉ dùng khi NEXT_PUBLIC_DEV_FAKE_LOGIN=1 (xem apiClient.ts). Không dùng ở production.
 
+// TIP-083/084 — giá Pro giả lập, đổi được qua /admin (mutable, reset khi reload trang).
+let mockProPrice = 49000;
+
 const MOCK_DASHBOARD = {
   streak: 12,
   today_met: true,
@@ -316,8 +319,28 @@ export function resolveDevMock(path: string, method: string, body?: string): unk
     mockWeeklyPlanItems = mockWeeklyPlanItems.filter((x) => x.id !== id);
     return { deleted: true };
   }
-  if (p === "/api/payment/create-order") return MOCK_PAYMENT_ORDER;
-  if (p.startsWith("/api/payment/order/")) return MOCK_ORDER_STATUS;
+  if (p === "/api/admin/stats") return { total_users: 6, pro_users: 1, revenue: mockProPrice };
+  if (p === "/api/admin/users") {
+    return [
+      {
+        id: "dev-fake-user",
+        email: "dev@local.test",
+        created_at: "2026-06-27T00:00:00Z",
+        status: "trial",
+        paid_until: null,
+        is_admin: true,
+      },
+    ];
+  }
+  if (p === "/api/payment/price") return { price: mockProPrice };
+  if (p === "/api/payment/create-order") return { ...MOCK_PAYMENT_ORDER, amount: mockProPrice };
+  if (p.startsWith("/api/payment/order/")) return { ...MOCK_ORDER_STATUS, amount: mockProPrice };
+  if (p === "/api/admin/price" && m === "POST") {
+    const b = parsedBody();
+    const price = Number(b.price);
+    if (Number.isFinite(price) && price > 0) mockProPrice = price;
+    return { ok: true };
+  }
 
   return undefined;
 }

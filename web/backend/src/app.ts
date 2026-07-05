@@ -12,7 +12,7 @@ import { getLeaderboard } from "./api/leaderboard.js";
 import { getProfile, patchProfile } from "./api/profile.js";
 import { postStudySession } from "./api/study-session.js";
 import { getPlaylist, postPlaylist, patchPlaylist, deletePlaylist } from "./api/playlist.js";
-import { postCreateOrder, getOrder, postSepayWebhook } from "./api/payment.js";
+import { getPrice, postCreateOrder, getOrder, postSepayWebhook } from "./api/payment.js";
 import { getLevel, setLevel } from "./api/level.js";
 import { getAccessStatus } from "./api/access.js";
 import {
@@ -91,6 +91,7 @@ app.get("/api/playlist", requireAuth, getPlaylist); // WEB-06
 app.post("/api/playlist", requireAuth, postPlaylist); // WEB-06
 app.patch("/api/playlist/:id", requireAuth, patchPlaylist); // WEB-06
 app.delete("/api/playlist/:id", requireAuth, deletePlaylist); // WEB-06
+app.get("/api/payment/price", requireAuth, getPrice); // BE-05 TIP-020: giá hiện tại cho màn giới thiệu
 app.post("/api/payment/create-order", requireAuth, postCreateOrder); // BE-05 TIP-013
 app.get("/api/payment/order/:code", requireAuth, getOrder); // BE-05 TIP-013
 app.get("/api/captions-vi/:videoId", requireAuth, requireActive, getViCaption); // TIP-078

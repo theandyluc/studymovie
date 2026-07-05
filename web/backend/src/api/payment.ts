@@ -97,6 +97,13 @@ async function getProPrice(sb: ReturnType<typeof getServiceClient>): Promise<num
 
 // ── Handlers ────────────────────────────────────────────────────────────────
 
+// GET /api/payment/price (protected): giá Pro hiện tại (DB, fallback env) — cho FE hiện giá
+// đúng ở màn giới thiệu TRƯỚC khi tạo đơn (đồng bộ với giá admin vừa đổi ở /admin).
+export async function getPrice(c: Context) {
+  const price = await getProPrice(getServiceClient());
+  return c.json({ price });
+}
+
 // POST /api/payment/create-order (protected): tạo đơn pending + trả VietQR + thông tin CK.
 export async function postCreateOrder(c: Context) {
   const user = c.get("user");

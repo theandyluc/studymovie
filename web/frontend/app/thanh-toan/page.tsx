@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { AuthGuard } from "@/components/AuthGuard";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { createOrder, fetchOrderStatus, type PaymentOrder } from "@/lib/payment";
+import { createOrder, fetchOrderStatus, fetchProPrice, type PaymentOrder } from "@/lib/payment";
 import { fetchAccessStatus, type AccessStatus } from "@/lib/access";
 import { PageLoading } from "@/components/ui/Spinner";
 
@@ -42,6 +42,7 @@ function UpgradeInner() {
   const router = useRouter();
   const [access, setAccess] = useState<AccessStatus | null>(null);
   const [accChecked, setAccChecked] = useState(false);
+  const [price, setPrice] = useState(49000); // TIP-083: fallback trước khi fetch xong
   const searchParams = useSearchParams();
   const autoCreate = searchParams.get("auto") === "1"; // TIP-082: link từ landing studymovie.com/gia
   const autoTried = useRef(false);
@@ -51,6 +52,10 @@ function UpgradeInner() {
       .then(setAccess)
       .catch(() => undefined)
       .finally(() => setAccChecked(true));
+    // TIP-083 — giá hiện tại (đồng bộ khi admin đổi giá ở /admin), không chặn render nếu lỗi.
+    fetchProPrice()
+      .then((r) => setPrice(r.price))
+      .catch(() => undefined);
   }, []);
 
   const stopPoll = useCallback(() => {
@@ -167,7 +172,7 @@ function UpgradeInner() {
         <Card className="mt-4 space-y-4 text-center">
           <p className="text-sm text-muted-foreground">Mở khoá toàn bộ tính năng StudyMovie với gói Pro.</p>
           <p className="font-heading text-3xl font-bold">
-            {VND(49000)}
+            {VND(price)}
             <span className="text-base font-normal text-muted-foreground"> / năm</span>
           </p>
           <Button onClick={onCreate} disabled={creating} className="w-full">
@@ -202,7 +207,7 @@ function UpgradeInner() {
       ) : (
         <>
           {/* Countdown lớn (Figma) */}
-          <p className="mt-[17px] text-[32px] font-semibold tabular-nums">{fmtMMSS(secondsLeft)}</p>
+          <p className="mt-[17px] text-[32px] font-semibold tracking-[-0.03em] tabular-nums">{fmtMMSS(secondsLeft)}</p>
 
           {/* Ảnh VietQR compact2 — đã gồm logo + tên TK + số TK + số tiền + nội dung CK */}
           <div className="mt-2 flex justify-center">

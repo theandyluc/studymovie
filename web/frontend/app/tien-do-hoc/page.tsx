@@ -125,8 +125,8 @@ function LevelCard() {
   if (lv.needs_input) {
     return (
       <div className={cardCls}>
-        <p className="text-sm text-muted-foreground">Level hiện tại</p>
-        <p className="mt-1 text-sm">Chọn trình độ tiếng Anh hiện tại của bạn (A0–C2) để theo dõi mục tiêu.</p>
+        <p className="font-heading text-lg font-normal text-foreground">Level hiện tại</p>
+        <p className="mt-1 text-sm">Chọn trình độ tiếng Anh hiện tại của bạn</p>
         <LevelPicker initial="A1" saving={saving} onSave={save} />
       </div>
     );

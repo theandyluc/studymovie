@@ -28,6 +28,10 @@ export interface OrderStatus {
   paid_at: string | null;
 }
 
+// TIP-083 — giá hiện tại (đồng bộ với giá admin vừa đổi ở /admin), dùng cho màn giới thiệu
+// TRƯỚC khi tạo đơn (create-order đã tự lấy giá mới nhất, chỉ màn hiển thị cần gọi riêng).
+export const fetchProPrice = (): Promise<{ price: number }> => apiFetch<{ price: number }>("/api/payment/price");
+
 export const createOrder = (): Promise<PaymentOrder> =>
   apiFetch<PaymentOrder>("/api/payment/create-order", { method: "POST" });
 
