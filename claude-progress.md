@@ -22,6 +22,24 @@
 
 ## Session log
 
+### Session 38 — TIP-085→094: pixel-perfect polish popup extension + phụ đề YouTube + fix thanh toán/leaderboard (2026-07-05/06)
+- **Bối cảnh:** tiếp nối phong cách Session 37 nhưng chuyển sang **extension** — khách chỉnh tay từng px/màu/font/spacing qua rất nhiều lượt phản hồi trực tiếp cho popup (KHÔNG dùng Playwright đo như web, vì extension popup không mở được qua localhost — đã giải thích rõ giới hạn này cho khách: popup phụ thuộc `chrome.*` API, chỉ chạy được khi load unpacked thật trong Chrome).
+- **Đã làm (rất nhiều lượt, tóm tắt theo khối):**
+  - **Trước đó trong session (web, đã push riêng — xem thêm ở feature_list `payment.price`/`leaderboard`):** thêm `GET /api/payment/price` (giá Pro động đồng bộ /admin), gói Pro 1 năm (`PRO_DURATION_DAYS` 30→365), UI trang `/thanh-toan` + `/cam-on` theo thông số Figma mới, migration `20260705000015_leaderboard_next_rank.sql` (user chưa ranked + top<5 → gán hạng kế tiếp thay vì ẩn số hạng) — **đã push + apply lên Supabase production**.
+  - **Extension popup — màn đăng nhập/đăng ký:** tab 144x24 bo góc riêng, icon SVG thay emoji (kể cả cờ 🇬🇧 — tránh lỗi không hiện trên Windows), input/nút submit đúng size theo Figma (scale ×1.15 rồi ×1.05 theo yêu cầu khách), toggle link tách khỏi text tĩnh, letter-spacing -3% toàn bộ, màu đen chuẩn hoá `#1f1f1f`.
+  - **Extension popup — màn chính (đã đăng nhập):** card Thời gian học 194x135 + card Chế độ phụ đề 242x204 cố định (trước đó co giãn theo trạng thái → lệch hàng với card stat), icon SVG cho nút play/pause/stop + footer (đăng xuất/hỗ trợ/tắt StudyMovie), hover/active đồng bộ opacity 50%→100% (cả icon lẫn viền), chấm đổi màu nền luôn hiện (bỏ phụ thuộc toggle), stepper +/- bỏ số hiển thị giữa.
+  - **Extension popup — màn loading mới:** logo "film-open-star" (đồng bộ web app, thay text "SM." cũ) + text "StudyMovie" căn giữa, vòng tròn xoay quanh (CSS animation, không cần JS).
+  - **Phụ đề YouTube (`youtube.ts`):** thêm `font-family: Inter` + `letter-spacing: -3%`, giữ nguyên bold(EN)/normal(VI).
+  - **`settings.ts`:** đổi default `fontSizePx` 20→24, `bgOpacity` 20→80, `lineGapPx` 2→0 (`GAP_MIN` 2→0). **FIX BUG THẬT:** `normalize()` dùng `Number(x) || default` khiến `lineGapPx=0` (giá trị hợp lệ) bị ghi đè ngược về default (vì `0` falsy trong JS) — đổi sang `??`.
+  - **Tooling:** thêm `npm run dev` (esbuild `--watch`) trong `extension/` để rebuild tự động khi sửa code, đỡ phải gõ lại `build:prod` mỗi lần.
+- **Verification:** `npm run lint`/`typecheck`/`build`/`build:prod` (extension) — PASS sau mỗi vòng chỉnh sửa (chạy rất nhiều lần trong session). Web: lint/typecheck/build (frontend) + lint/typecheck/test (backend) PASS trước khi push phần payment/leaderboard.
+- **Còn dở / chưa verify:**
+  - Code đã push lên `main` (commit `66012bb`, `8312c92`, `6b343ad`) nhưng **CHƯA build:prod + nộp Chrome Web Store** — cần Homeowner tự làm (cần tài khoản developer Chrome Web Store thật, ngoài quyền Thợ).
+  - Khách từng bị crash "supabaseUrl is required" do lỡ load nhầm bản `npm run build` (dev, thiếu root `.env`) thay vì `build:prod` — đã giải thích, không phải bug.
+  - Khách gặp `chrome.storage` không tự cập nhật default mới khi đã có giá trị cũ lưu sẵn (không phải bug — do cách chrome.storage hoạt động, chỉ default cho lần cài đầu) — đã hướng dẫn cách xoá storage qua DevTools service worker.
+- **Cách resume:** đọc lại phần "Extension popup" ở trên để biết style/spacing hiện tại (nhiều số liệu px cụ thể, xem trực tiếp `popup.html`/`popup.ts` nếu cần chính xác). Nếu khách muốn tiếp tục chỉnh UI, làm tương tự — không có cách preview qua localhost, phải load unpacked thật.
+- **Commit:** style(extension): pixel-perfect polish popup theo Figma (đăng nhập, home, loading) [66012bb]; style(extension): chỉnh phụ đề YouTube + fix bug lineGapPx=0 [8312c92]; style(extension): dòng cuối màn đăng nhập/đăng ký cách đáy layout 20px [6b343ad]; feat(payment,leaderboard): giá Pro động + fix hạng ẩn khi top chưa đủ 5 [7a5f41a]; fix(web): card Level cố định 374x174 [dc58acb].
+
 ### Session 37 — TIP-081: pixel-perfect polish 5 trang web theo Figma + fix bug mock CRUD (2026-07-05)
 - **Bối cảnh:** tiếp nối reskin TIP-033 — khách chỉnh tay từng chi tiết nhỏ (px/màu/font/vị trí) qua rất nhiều lượt phản hồi trực tiếp, đo bằng Playwright thay vì đoán, cho 5 trang: Dashboard, Từ vựng, Học từ vựng (flashcard), Kiểm tra Anh-Việt/Việt-Anh (`QuizGame.tsx` dùng chung).
 - **Việc đã làm (tóm tắt, chi tiết ở evidence `feature_list.json` id `WEB-TIP081`):**
