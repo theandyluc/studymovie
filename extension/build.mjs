@@ -12,7 +12,10 @@ const here = dirname(fileURLToPath(import.meta.url));
 
 // --prod: build bản production, đọc extension/.env.production (trỏ về URL Vercel).
 // mặc định (dev): đọc root .env (trỏ localhost). Giữ được CẢ 2 bản.
+// --watch: TIP-085 — esbuild tự build lại mỗi khi lưu file trong src/ (npm run dev). Vẫn phải
+// tự bấm "reload" ở chrome://extensions sau mỗi lần build xong (Chrome không tự nạp lại được).
 const PROD = process.argv.includes("--prod");
+const WATCH = process.argv.includes("--watch");
 const ENV_FILE = PROD ? resolve(here, ".env.production") : resolve(here, "../.env");
 
 async function readEnvFile() {
@@ -60,7 +63,7 @@ for (const [k, v] of Object.entries(define)) {
 await rm("dist", { recursive: true, force: true });
 await mkdir("dist/popup", { recursive: true });
 
-await esbuild.build({
+const buildOptions = {
   entryPoints: [
     "src/background/service-worker.ts",
     "src/content/auth-bridge.ts",
@@ -76,7 +79,16 @@ await esbuild.build({
   target: "chrome110",
   define,
   logLevel: "info",
-});
+};
+
+if (WATCH) {
+  const ctx = await esbuild.context(buildOptions);
+  await ctx.watch();
+  console.log("[StudyMovie] watch mode — đang theo dõi src/, tự build lại khi lưu file (Ctrl+C để dừng).");
+  console.log("[StudyMovie] sau mỗi lần build lại, vào chrome://extensions bấm reload để nạp bản mới.");
+} else {
+  await esbuild.build(buildOptions);
+}
 
 // TIP-031 WI-4 — bản PROD (store): loại mọi entry chứa "localhost" khỏi host_permissions
 // và content_scripts[*].matches (Chrome Web Store không chấp nhận localhost). Bản dev GIỮ nguyên.
