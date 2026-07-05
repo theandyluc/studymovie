@@ -7,11 +7,11 @@
     <style>
       /* TIP-022 — Design tokens extension (theme sáng, đồng bộ web). */
       :root {
-        --primary: #111827;
+        --primary: #1f1f1f;
         --primary-hover: #1f2937;
         --primary-foreground: #ffffff;
         --accent: #f5b301;
-        --fg: #111827;
+        --fg: #1f1f1f;
         --muted: #6b7280;
         --border: #e5e7eb;
         --surface: #ffffff;
@@ -24,18 +24,25 @@
       }
       * { box-sizing: border-box; }
       body {
-        width: 330px;
+        width: 300px;
         margin: 0;
-        padding: 14px;
+        padding: 0;
         font-family: "Inter", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+        letter-spacing: -0.03em;
         color: var(--fg);
         background: var(--background, #fafafa);
       }
-      .logo { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; margin: 0 0 8px; color: var(--fg); }
-      .logo .dot { color: var(--accent); }
+      .logo { display: inline-flex; margin: 0 0 8px; color: rgba(31, 31, 31, 0.8); }
+      /* TIP-094 — màn loading: logo + "StudyMovie" căn giữa layout, vòng tròn xoay bao quanh cả cụm. */
+      .loading-screen { display: flex; align-items: center; justify-content: center; height: 300px; }
+      .loading-ring-wrap { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 110px; height: 110px; }
+      .loading-ring { position: absolute; inset: 4px; border: 3px solid var(--border); border-top-color: rgba(31, 31, 31, 0.8); border-radius: 50%; animation: sm-spin 0.9s linear infinite; }
+      .loading-content { display: flex; flex-direction: column; align-items: center; gap: 0; }
+      .loading-title { font-size: 14px; font-weight: 600; color: rgba(31, 31, 31, 0.8); letter-spacing: -0.03em; margin-top: -9px; }
+      @keyframes sm-spin { to { transform: rotate(360deg); } }
       .muted { color: var(--muted); font-size: 13px; }
       /* Card chung */
-      .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 14px; box-shadow: var(--shadow-card); margin-bottom: 12px; }
+      .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 14px; margin-bottom: 12px; }
       .row { display: flex; align-items: center; gap: 10px; margin: 10px 0; }
       .row.clickable { cursor: pointer; border-radius: var(--radius-btn); padding: 6px; margin: 4px -6px; transition: background 0.12s; }
       .row.clickable:hover { background: var(--surface-muted); }
@@ -48,69 +55,94 @@
       .btn.ghost { background: transparent; color: var(--fg); border: 1px solid var(--border); font-weight: 500; }
       .btn:disabled { opacity: 0.45; cursor: not-allowed; }
       /* Timer (TIP-014) — card trắng, time lớn, 2 nút TRÒN */
-      .timer-card { text-align: center; }
-      .timer-label { font-size: 15px; font-weight: 700; }
-      .timer-time { font-size: 34px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: 1px; margin: 2px 0 12px; color: var(--muted); }
-      .timer-controls { display: flex; justify-content: center; gap: 28px; }
-      .tbtn-wrap { display: flex; flex-direction: column; align-items: center; gap: 5px; }
-      .tbtn { width: 52px; height: 52px; margin: 0; border-radius: 999px; border: 1px solid var(--border); background: var(--surface-muted); color: var(--fg); font-size: 18px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
-      .tbtn:hover:not(:disabled) { background: #e9eaee; }
+      /* TIP-088 — card đầu tiên cố định 194x135, cách lề trên 19px (không dùng padding chung .card) */
+      .timer-card { width: 194px; height: 135px; margin: 19px auto 12px; padding: 6px 14px 14px; text-align: center; }
+      .timer-label { font-size: 18px; font-weight: 700; color: #1f1f1f; margin: 0; }
+      .timer-time { font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.03em; margin: 6px 0 5px; color: rgba(31, 31, 31, 0.5); }
+      .timer-controls { display: flex; justify-content: center; gap: 45px; }
+      .tbtn-wrap { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+      /* TIP-088 — icon SVG tự vẽ sẵn nền tròn + viền, nút chỉ còn là khung trong suốt bọc icon. */
+      .tbtn { width: 40px; height: 40px; margin: 0; padding: 0; border: 0; background: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
       .tbtn:disabled { opacity: 0.4; cursor: not-allowed; }
-      .tbtn-label { font-size: 12px; color: var(--muted); }
-      /* Card chế độ phụ đề (TIP-015 controls, restyle TIP-022) */
-      .set-title { font-size: 15px; font-weight: 700; text-align: center; margin-bottom: 10px; }
-      .set-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 9px 0; }
-      .set-label { font-size: 13px; }
-      .set-val { font-size: 13px; font-variant-numeric: tabular-nums; min-width: 40px; text-align: right; }
+      .tbtn:hover:not(:disabled) svg path, .tbtn:hover:not(:disabled) svg rect,
+      .tbtn:active:not(:disabled) svg path, .tbtn:active:not(:disabled) svg rect { fill-opacity: 1; stroke-opacity: 1; }
+      .tbtn-label { font-size: 12px; color: rgba(31, 31, 31, 0.5); }
+      /* Card chế độ phụ đề (TIP-015 controls, restyle TIP-022) — TIP-089: card cố định 242x194 */
+      .settings { width: 242px; height: 204px; margin: 0 auto 2px; padding: 10px 14px 14px; }
+      .set-title { font-size: 18px; font-weight: 700; text-align: center; margin: 0 0 6px; color: #1f1f1f; }
+      .set-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 5px 0; }
+      .set-label { font-size: 12px; color: rgba(31, 31, 31, 0.5); }
+      .set-val { font-size: 13px; font-variant-numeric: tabular-nums; min-width: 40px; text-align: right; color: rgba(31, 31, 31, 0.5); }
       .set-slider { flex: 1; accent-color: var(--primary); }
       /* switch toggle */
-      .switch { position: relative; display: inline-block; width: 38px; height: 22px; flex: none; }
+      /* TIP-092 — nhóm bên phải dòng "Màu nền": switch + (khi bật) chấm đổi màu, switch đẩy sang trái. */
+      .switch-group { display: flex; align-items: center; gap: 8px; }
+      .bg-color-dot { width: 16px; height: 16px; border-radius: 999px; padding: 0; cursor: pointer; border: 1.5px solid #448aff; }
+      .switch { position: relative; display: inline-block; width: 28px; height: 15px; flex: none; }
       .switch input { opacity: 0; width: 0; height: 0; }
-      .switch-slider { position: absolute; inset: 0; cursor: pointer; background: var(--border); border-radius: 999px; transition: 0.18s; }
-      .switch-slider::before { content: ""; position: absolute; height: 16px; width: 16px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: 0.18s; }
-      .switch input:checked + .switch-slider { background: var(--primary); }
-      .switch input:checked + .switch-slider::before { transform: translateX(16px); }
-      /* Tabs chế độ (segmented) */
-      .seg { display: flex; gap: 4px; background: var(--surface-muted); border-radius: var(--radius-btn); padding: 3px; margin-bottom: 10px; }
-      .seg-btn { flex: 1; border: 0; background: none; border-radius: 7px; padding: 6px 4px; font-size: 13px; color: var(--muted); cursor: pointer; }
-      .seg-btn.active { background: var(--surface); color: var(--fg); font-weight: 600; box-shadow: var(--shadow-card); }
+      .switch-slider { position: absolute; inset: 0; cursor: pointer; background: #e6e6e6; border-radius: 999px; transition: 0.18s; }
+      .switch-slider::before { content: ""; position: absolute; height: 11px; width: 11px; left: 2px; top: 2px; background: #fff; border-radius: 50%; transition: 0.18s; }
+      .switch input:checked + .switch-slider { background: #448aff; }
+      .switch input:checked + .switch-slider::before { transform: translateX(13px); }
+      /* Tabs chế độ (segmented) — TIP-089: 3 nút liền nhau 60x22, cả cụm căn giữa */
+      .seg { display: flex; justify-content: center; gap: 0; margin-bottom: 20px; }
+      .seg-btn { flex: none; width: 60px; height: 22px; border: 1px solid #e6e6e6; background: #e6e6e6; padding: 0; font-size: 11px; font-weight: 400; color: rgba(31, 31, 31, 0.5); cursor: pointer; }
+      .seg-btn:hover { background: #fcfcfc; }
+      .seg-btn-first { border-radius: 5px 0 0 5px; }
+      .seg-btn-middle { border-radius: 0; }
+      .seg-btn-last { border-radius: 0 5px 5px 0; }
+      .seg-btn.active { background: var(--surface); color: rgba(31, 31, 31, 0.5); font-weight: 400; }
       /* Chấm chọn màu chữ */
-      .dots { display: inline-flex; gap: 8px; }
-      .dot-btn { width: 18px; height: 18px; border-radius: 999px; cursor: pointer; padding: 0; border: 1px solid var(--border); }
+      .dots { display: inline-flex; gap: 2px; margin-left: 4px; }
+      .dot-btn { width: 16px; height: 16px; border-radius: 999px; cursor: pointer; padding: 0; border: 1px solid var(--border); }
       .dot-btn.dot-white { background: #ffffff; }
       .dot-btn.dot-black { background: #000000; }
       .dot-btn.dot-yellow { background: #f5c518; border-color: #f5c518; }
-      .dot-btn.sel { outline: 2px solid var(--primary); outline-offset: 1px; }
-      /* stepper − [px] + */
-      .stepper { display: inline-flex; align-items: center; gap: 8px; }
-      .step-btn { width: 28px; height: 28px; border: 1px solid var(--border); background: var(--surface); border-radius: var(--radius-btn); font-size: 16px; font-weight: 600; cursor: pointer; color: var(--fg); line-height: 1; }
-      .step-btn:hover:not(:disabled) { background: var(--surface-muted); }
+      .dot-btn.sel { border-width: 2px; border-color: #448aff; }
+      /* stepper − [px] + — TIP-091: bỏ số ở giữa, 2 nút liền nhau 24x15, nền 1f1f1f 50%, viền e6e6e6 */
+      .stepper { display: inline-flex; align-items: center; gap: 0; }
+      .step-btn { width: 26px; height: 15px; padding: 0; border: 1px solid #e6e6e6; background: #e6e6e6; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+      .step-btn:hover:not(:disabled) { background: #fcfcfc; }
+      .step-btn-minus { border-radius: 5px 0 0 5px; }
+      .step-btn-plus { border-radius: 0 5px 5px 0; }
       .step-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-      /* Auth email/mật khẩu (TIP-027) */
-      .auth-title { font-size: 18px; font-weight: 700; text-align: center; margin: 4px 0 10px; }
-      .auth-input { width: 100%; border: 1px solid var(--border); border-radius: var(--radius-btn); padding: 10px 12px; font-size: 14px; margin-bottom: 8px; color: var(--fg); background: var(--surface); }
-      .auth-input:focus { outline: 2px solid var(--primary); outline-offset: -1px; }
-      .auth-msg { font-size: 13px; margin: 8px 0; padding: 8px 10px; border-radius: var(--radius-btn); }
+      /* Auth email/mật khẩu (TIP-027) — TIP-087: x1.05 nữa (tổng ~x1.2075) + dịch cả khối lên 20px */
+      .auth-title { font-size: 24px; font-weight: 700; letter-spacing: -0.03em; text-align: center; margin: 14px 0 13px; }
+      .auth-input { width: 223px; height: 32px; display: block; margin: 0 auto 9px; border: 1px solid #e6e6e6; border-radius: 6px; padding: 0 13px; font-size: 11px; letter-spacing: -0.03em; color: var(--fg); background: #fcfcfc; }
+      .auth-input::placeholder { color: #cccccc; font-size: 11px; font-weight: 400; letter-spacing: -0.03em; }
+      .auth-input:focus { outline: 1px solid var(--primary); outline-offset: -1px; }
+      .auth-msg { font-size: 16px; margin: 9px 0; padding: 9px 13px; border-radius: var(--radius-btn); }
       .auth-msg.err { color: var(--danger); background: #fee2e2; }
       .auth-msg.ok { color: var(--success); background: #dcfce7; }
-      .auth-link { width: auto; margin: 6px auto 0; padding: 4px; display: block; background: none; border: 0; color: var(--muted); font-size: 13px; cursor: pointer; }
+      .auth-link { width: auto; margin: 7px auto 0; padding: 5px; display: block; background: none; border: 0; color: var(--muted); font-size: 16px; cursor: pointer; }
       .auth-link:hover { color: var(--fg); background: none; }
-      .auth-divider { display: flex; align-items: center; text-align: center; color: var(--muted); font-size: 12px; margin: 12px 0 8px; }
-      .auth-divider::before, .auth-divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
-      .auth-divider span { padding: 0 10px; }
+      .auth-divider { display: flex; align-items: center; justify-content: center; text-align: center; color: #cccccc; font-family: "Inter", ui-sans-serif, system-ui, "Segoe UI", sans-serif; font-size: 9px; font-weight: 400; letter-spacing: -0.03em; margin: 15px 0 9px; }
+      .auth-divider::before, .auth-divider::after { content: ""; flex: none; width: 90px; height: 1px; background: var(--border); }
+      .auth-divider span { padding: 0 13px; }
       /* TIP-052 — Đăng nhập/Đăng ký theo Figma */
-      .auth-tabs { display: flex; gap: 4px; background: #f3f4f6; border-radius: 10px; padding: 4px; margin-bottom: 12px; }
-      .auth-tab { flex: 1; width: auto; margin: 0; border: 0; border-radius: 7px; padding: 8px 6px; font-size: 13px; font-weight: 600; cursor: pointer; background: transparent; color: var(--muted); }
+      .auth-tabs { display: flex; gap: 0; width: 174px; height: 29px; margin: 15px auto 15px; }
+      .auth-tab { height: 29px; margin: 0; border: 0; display: flex; align-items: center; justify-content: flex-start; gap: 3px; font-size: 13px; font-weight: 400; white-space: nowrap; cursor: pointer; background: #e6e6e6; color: var(--fg); }
+      .auth-tab svg { flex-shrink: 0; }
+      .auth-tab:hover { background: #fcfcfc; }
+      .auth-tab-login { width: 90px; padding-left: 7px; border-radius: 6px 0 0 6px; }
+      .auth-tab-register { width: 83px; padding-left: 11px; border-radius: 0 6px 6px 0; }
       .auth-tab.active { background: var(--surface); color: var(--fg); box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
-      .google-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--border); border-radius: var(--radius-btn); padding: 10px 12px; font-size: 14px; font-weight: 600; cursor: pointer; background: var(--surface); color: var(--fg); margin-top: 4px; }
-      .g-icon { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 1px solid var(--border); color: #4285f4; font-weight: 700; font-size: 12px; }
-      .auth-label { font-size: 12px; font-weight: 600; color: var(--fg); margin: 8px 0 3px; }
-      .auth-switch { width: auto; margin: 10px auto 0; padding: 4px; display: block; background: none; border: 0; color: var(--muted); font-size: 13px; cursor: pointer; }
-      .auth-switch:hover { color: var(--fg); background: none; }
+      .google-btn { width: 223px; height: 32px; margin: 5px auto 0; display: flex; align-items: center; justify-content: center; gap: 14px; border: 1px solid #e6e6e6; border-radius: 6px; padding: 0; font-size: 13px; font-weight: 400; letter-spacing: -0.03em; white-space: nowrap; cursor: pointer; background: #fcfcfc; color: var(--fg); }
+      .google-btn svg { flex-shrink: 0; }
+      .auth-label { width: 223px; font-size: 13px; font-weight: 400; letter-spacing: -0.03em; color: var(--fg); margin: 9px auto 3px; }
+      .auth-label-first { margin-top: 18px; }
+      /* TIP-085 — nút submit (Tạo tài khoản/Đăng nhập) theo Figma: 184x26, fill 1f1f1f 90%, chữ trắng */
+      .auth-submit { width: 223px; height: 32px; display: flex; align-items: center; justify-content: center; margin: 24px auto 0; padding: 0; border: 0; border-radius: 6px; background: rgba(31, 31, 31, 0.9); color: #ffffff; font-size: 13px; font-weight: 400; letter-spacing: -0.03em; cursor: pointer; }
+      .auth-submit:disabled { opacity: 0.45; cursor: not-allowed; }
+      .auth-toggle { display: flex; align-items: center; justify-content: center; gap: 2px; margin: 13px auto 0; }
+      .auth-toggle-label { font-size: 11px; font-weight: 400; letter-spacing: -0.03em; color: rgba(31, 31, 31, 0.5); }
+      .auth-toggle-link { width: auto; margin: 0; padding: 0; background: none; border: 0; font-size: 11px; font-weight: 400; letter-spacing: -0.03em; color: #1f1f1f; text-decoration: underline; cursor: pointer; }
+      .auth-toggle-link:hover { color: #1f1f1f; background: none; }
       /* Footer: Đăng xuất / Hỗ trợ */
-      .footer { display: flex; justify-content: center; gap: 18px; padding-top: 10px; margin-top: 4px; border-top: 1px solid var(--border); }
-      .footer-link { width: auto; margin: 0; padding: 4px 6px; background: none; border: 0; color: var(--muted); font-size: 13px; font-weight: 500; cursor: pointer; }
-      .footer-link:hover { color: var(--fg); background: none; }
+      .footer { display: flex; justify-content: center; gap: 14px; padding-top: 10px; margin-top: 2px; margin-bottom: 15px; }
+      .footer-link { width: auto; margin: 0; padding: 4px 0; background: none; border: 0; color: rgba(31, 31, 31, 0.5); font-size: 12px; font-weight: 400; cursor: pointer; display: inline-flex; align-items: center; gap: 1px; }
+      .footer-link:hover { color: rgba(31, 31, 31, 0.8); background: none; }
+      .footer-link:hover svg path, .footer-link:hover svg rect { fill-opacity: 0.8; stroke-opacity: 0.8; }
       /* TIP-053 — màn "Hết hạn dùng thử" */
       .expired-box { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; padding: 28px 18px; background: var(--surface, #fff); border-radius: 12px; }
       .expired-title { font-size: 18px; font-weight: 700; color: var(--fg); }
