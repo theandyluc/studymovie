@@ -41,7 +41,7 @@ function LevelPicker({
 }) {
   const [sel, setSel] = useState(initial);
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-2">
+    <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
       <select
         value={sel}
         onChange={(e) => setSel(e.target.value)}
@@ -116,15 +116,18 @@ function LevelCard() {
     }
   };
 
-  // TIP-081 — bỏ <Card> dùng chung (baked-in p-6 hay xung đột cascade khi override) → div riêng, tự khai padding.
-  const cardCls = "rounded-card border border-border bg-surface p-6";
+  // TIP-085 — card LUÔN cố định 374x174 (y hệt card stat) ở MỌI trạng thái (lỗi/đang tải/
+  // chưa chọn level/đã chọn level) — trước đây chỉ trạng thái "đã chọn" mới cố định kích
+  // thước, còn lại tự co giãn theo nội dung (p-6, không khai h/w) → lệch hàng với card stat.
+  const cardCls = "flex h-[174px] w-[374px] items-center justify-center rounded-card border border-border bg-surface p-6 text-center";
   if (err) return <div className={cardCls}><p className="text-sm text-danger-foreground">Không tải được level: {err}</p></div>;
   if (!lv) return <div className={cardCls}><p className="text-sm text-muted-foreground">Đang tải</p></div>;
 
-  // Chưa nhập level → card cho chọn.
+  // Chưa nhập level → card cho chọn. pt-[18px] để "Level hiện tại" cùng y với headline CircleStat
+  // (card "đã chọn" bên dưới: cụm CircleStat bắt đầu từ pt-[18px] tính từ viền trên card).
   if (lv.needs_input) {
     return (
-      <div className={cardCls}>
+      <div className="h-[174px] w-[374px] rounded-card border border-border bg-surface px-6 pt-[18px] text-center">
         <p className="font-heading text-lg font-normal text-foreground">Level hiện tại</p>
         <p className="mt-1 text-sm">Chọn trình độ tiếng Anh hiện tại của bạn</p>
         <LevelPicker initial="A1" saving={saving} onSave={save} />
