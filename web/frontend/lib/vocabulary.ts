@@ -41,14 +41,30 @@ export async function fetchVocab(): Promise<VocabItem[]> {
   return items;
 }
 
-// TIP-024 — thêm từ thủ công từ web ({word, meaning_vi}). Idempotent: trùng → duplicate=true.
+// TIP-024/TIP-081 — thêm từ thủ công từ web ({word, meaning_vi}). Idempotent: trùng → duplicate=true.
+// TIP-081 — BUG FIX: trước đây chỉ gửi {word, meaning_vi} lên /api/vocabulary → backend lưu
+// ipa=null (nó KHÔNG tự tra từ điển, xem web/backend/src/api/vocabulary.ts). Extension có phiên âm
+// vì gọi RIÊNG /api/lookup khi bắt từ từ video; web thêm tay lại bỏ qua bước này. Giờ gọi
+// /api/lookup trước để lấy ipa/audio_url thật (từ điển FVDP hoặc Free Dictionary API — KHÔNG phải
+// AI), rồi mới POST kèm theo. Lookup lỗi/không tìm thấy → vẫn lưu bình thường, chỉ là ipa=null.
 export async function addVocab(
   word: string,
   meaning_vi: string
 ): Promise<{ saved: boolean; duplicate: boolean; item: VocabItem | null }> {
+  let ipa: string | null = null;
+  let audio_url: string | null = null;
+  try {
+    const lookup = await apiFetch<{ result: { ipa: string | null; audio_url: string | null } | null }>(
+      `/api/lookup?word=${encodeURIComponent(word)}`
+    );
+    ipa = lookup.result?.ipa ?? null;
+    audio_url = lookup.result?.audio_url ?? null;
+  } catch {
+    /* tra từ điển thất bại (rate-limit/network/không tìm thấy) → vẫn lưu từ, chỉ thiếu phiên âm */
+  }
   return apiFetch("/api/vocabulary", {
     method: "POST",
-    body: JSON.stringify({ word, meaning_vi }),
+    body: JSON.stringify({ word, meaning_vi, ipa, audio_url }),
   });
 }
 

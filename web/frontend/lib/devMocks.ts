@@ -227,6 +227,15 @@ export function resolveDevMock(path: string, method: string, body?: string): unk
   if (p === "/api/leaderboard" && m === "GET") return MOCK_LEADERBOARD;
   if (p === "/api/me" && m === "GET") return MOCK_ME;
   if (p === "/api/profile") return { profile: MOCK_ME.profile };
+  // TIP-081 — mock GET /api/lookup (tra từ điển IPA/audio, dùng bởi addVocab trước khi lưu).
+  // Tra bảng MOCK_IPA_LOOKUP tạm (không phải dictionary thật) — từ không có trong bảng → not_found,
+  // khớp đúng hành vi thật khi từ chưa có trong dictionary.
+  if (p === "/api/lookup" && m === "GET") {
+    const word = new URLSearchParams(path.split("?")[1] ?? "").get("word")?.trim().toLowerCase() ?? "";
+    const ipa = MOCK_IPA_LOOKUP[word];
+    if (!ipa) return { word, result: null, status: "not_found", message: null };
+    return { word, result: { lemma: word, ipa, meanings: [], audio_url: null, source: "mock" } };
+  }
   if (p === "/api/vocabulary" && m === "GET") return { items: mockVocabItems };
   if (p === "/api/vocabulary" && m === "POST") {
     const b = parsedBody();
@@ -238,14 +247,12 @@ export function resolveDevMock(path: string, method: string, body?: string): unk
       id: `v${mockVocabSeq++}`,
       word,
       lemma: word,
-      // TIP-081 — mock KHÔNG nối dictionary lookup thật (đó là việc của backend thật, xem
-      // supabase/seed/import_dictionary.mjs + web/backend/src/api/lookup.ts). Tra tạm bảng IPA nhỏ
-      // dưới đây cho các từ phổ biến hay dùng để test; từ lạ vẫn trả null như hành vi thật (từ
-      // chưa có trong dictionary sẽ không có phiên âm cho tới khi biên tập viên bổ sung).
-      ipa: MOCK_IPA_LOOKUP[word.toLowerCase()] ?? null,
+      // TIP-081 — giờ tin theo đúng body (addVocab đã tự gọi /api/lookup trước rồi mới POST kèm
+      // ipa/audio_url), khớp hành vi backend thật (vocabulary.ts: `ipa: body.ipa ?? null`).
+      ipa: (b.ipa as string | null) ?? null,
       meaning_vi,
       example: null,
-      audio_url: null,
+      audio_url: (b.audio_url as string | null) ?? null,
       learned_at: null,
       created_at: new Date().toISOString(),
     };
