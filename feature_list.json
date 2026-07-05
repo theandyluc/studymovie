@@ -1,7 +1,13 @@
 {
   "project": "StudyMovie",
   "blueprint": "StudyMovie-Blueprint.md (v1.4)",
-  "status_legend": ["todo", "in_progress", "done", "verified", "blocked"],
+  "status_legend": [
+    "todo",
+    "in_progress",
+    "done",
+    "verified",
+    "blocked"
+  ],
   "build_order_note": "Web (frontend+backend) trước Extension. Bám Task Graph trong Blueprint mục 7.",
   "features": [
     {
@@ -20,7 +26,9 @@
       "area": "backend",
       "tip": "TIP-002",
       "status": "verified",
-      "depends_on": ["INF-01"],
+      "depends_on": [
+        "INF-01"
+      ],
       "acceptance": "Migration chạy sạch; bảng profiles/subscriptions/vocabulary/study_sessions/playlist_items/dictionary tồn tại; RLS theo user; từ điển import xong.",
       "evidence": "2 migration (20260627000001_init_schema, 20260627000002_rpc) push lên cloud ojsdchkwfzhmzvmwlgmo (Singapore) qua supabase CLI. Introspect xác nhận đủ 6 bảng + constraints (status CHECK, vocabulary UNIQUE(user_id,word), FK), RLS bật cả 6 bảng, policy theo auth.uid()=user_id (profiles=id), dictionary read-only authenticated. Trigger on_auth_user_created → profiles+subscriptions(trial,+24h) verify PASS. BE-06: import từ điển EN-VI FVDP (© Hồ Ngọc Đức, free, cần credit) qua supabase/seed/import_dictionary.mjs → dictionary 103,401 dòng. verify_rpc.mjs 13/13 PASS. [TIP-009] migration 20260628000003: + cột dictionary.source (default 'fvdp'); lookup_word v2 thêm rule lemmatize 's + -er/-est/-ier/doubled/+e (re-verify từ cũ không hồi quy, dog's/bigger/happier/larger giờ HIT). Cache free_dict ghi vào dictionary."
     },
@@ -30,7 +38,9 @@
       "area": "backend",
       "tip": "TIP-002",
       "status": "verified",
-      "depends_on": ["BE-02"],
+      "depends_on": [
+        "BE-02"
+      ],
       "acceptance": "Mỗi RPC trả đúng dữ liệu; lookup_word lemmatize + tra từ điển; leaderboard/streak compute-on-read theo tuần ISO.",
       "evidence": "Triển khai trong TIP-002 (migration 20260627000002_rpc.sql). lookup_word (lemmatize -s/-es/-ies/-ed/-ing+e/doubled → tra dictionary), today_minutes(p_user_id) guard chính chủ/service_role, get_dashboard (streak Duolingo UTC+7 + today_met + week[7]/month[30]), get_leaderboard_weekly (tuần ISO, compute-on-read, append caller). Tất cả SECURITY DEFINER. verify_rpc.mjs: streak=3/today_met/today_minutes=35/guard chặn user khác/leaderboard caller/lookup_word đều PASS. Chờ Chủ thầu duyệt → verified."
     },
@@ -40,7 +50,10 @@
       "area": "frontend",
       "tip": "TIP-003",
       "status": "verified",
-      "depends_on": ["INF-01", "BE-02"],
+      "depends_on": [
+        "INF-01",
+        "BE-02"
+      ],
       "acceptance": "Login Google OAuth; session lưu; protected route redirect; logout; backend verify JWT (/api/me) + CORS chỉ origin frontend.",
       "evidence": "FE: design tokens tập trung Tailwind v4 @theme (globals.css, placeholder) + app shell (Header user/logout + nav) + UI primitives (Button/Card/Avatar/Spinner). Auth: lib/supabaseClient (PKCE, anon), apiClient (Bearer), useUser, app/page login Google, app/auth/callback exchangeCodeForSession, app/dashboard protected (AuthGuard), logout. BE: env loader root .env, requireAuth (getUser), GET /api/me, CORS origin SITE_URL. Verify: init.sh exit 0 (lint+typecheck 3 pkg), FE build 4 routes, BE 3 test pass, verify_auth.mjs 6/6 PASS (401/200/đúng user/profile/CORS). AC-3/4/5 (Google login thật) = manual browser test bởi Homeowner sau khi thêm 2 biến NEXT_PUBLIC_SUPABASE_*.",
       "human_note": "Cần Homeowner thêm NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY vào root .env (= SUPABASE_URL/ANON_KEY) rồi test login Google qua browser."
@@ -51,7 +64,9 @@
       "area": "frontend",
       "tip": "TIP-006",
       "status": "verified",
-      "depends_on": ["BE-03"],
+      "depends_on": [
+        "BE-03"
+      ],
       "acceptance": "Hiện toàn bộ từ đã lưu (word/IPA/nghĩa/example/audio); XÓA từng từ; 3 nút Flashcard/Quiz EN-VI/Quiz VI-EN học TẤT CẢ từ (KHÔNG tick).",
       "evidence": "app/vocabulary/page.tsx: list data thật từ GET /api/vocabulary (word/IPA/nghĩa/example/🔊), nút Xóa → DELETE /api/vocabulary/:id (chỉ của user), empty state, 3 nút điều hướng; nav 'Từ vựng' bật trong Header. Backend GET/DELETE + verify_vocab.mjs 10/10 PASS (list/delete/401/không xóa của user khác). init.sh exit 0, FE build route /vocabulary. List/xóa UI cần Homeowner test browser."
     },
@@ -61,7 +76,9 @@
       "area": "frontend",
       "tip": "TIP-006",
       "status": "verified",
-      "depends_on": ["WEB-03"],
+      "depends_on": [
+        "WEB-03"
+      ],
       "acceptance": "Lật thẻ (word+IPA+audio ↔ nghĩa+example); trước/sau qua hết bộ; dùng TẤT CẢ từ.",
       "evidence": "app/vocabulary/flashcard: lật thẻ (mặt trước word+IPA+🔊, mặt sau nghĩa+example), nút Trước/Sau + đếm vị trí (n/total), dùng toàn bộ vocab, empty state. logic tách ở lib/vocabulary.ts. FE build OK. Cần Homeowner test browser."
     },
@@ -71,7 +88,9 @@
       "area": "frontend",
       "tip": "TIP-006",
       "status": "verified",
-      "depends_on": ["WEB-03"],
+      "depends_on": [
+        "WEB-03"
+      ],
       "acceptance": "4 đáp án; 3 sai random từ vocab của chính user; 2 chế độ chiều; <4 từ → chặn có thông báo.",
       "evidence": "app/vocabulary/quiz: buildQuiz (lib/vocabulary.ts) en2vi/vi2en, mỗi câu 4 đáp án (1 đúng + 3 sai random từ chính vocab user, distinct), chấm điểm + kết quả cuối, tối đa 20 câu. <4 từ quizable → màn 'cần ít nhất 4 từ' + nút quay lại (AC-7), không crash. Mode đọc từ query. FE build OK. Cần Homeowner test browser (đủ ≥4 từ)."
     },
@@ -81,7 +100,9 @@
       "area": "frontend",
       "tip": "TIP-007",
       "status": "verified",
-      "depends_on": ["BE-03"],
+      "depends_on": [
+        "BE-03"
+      ],
       "acceptance": "Streak đúng theo logic (đạt daily_commit liên tiếp); biểu đồ tuần/tháng; progress bar hôm nay.",
       "evidence": "app/dashboard (thay placeholder TIP-003): GET /api/dashboard (RPC get_dashboard qua getUserClient). Streak + lửa sáng/xám theo today_met, progress X/Y phút + bar, biểu đồ cột giờ tuần(7)/tháng(30) bằng CSS div (no chart lib), zero-state. verify_account.mjs PASS (streak=1/met/min=35/week7/month30). UI cần Homeowner test browser."
     },
@@ -91,7 +112,9 @@
       "area": "frontend",
       "tip": "TIP-007",
       "status": "verified",
-      "depends_on": ["BE-03"],
+      "depends_on": [
+        "BE-03"
+      ],
       "acceptance": "Lưu nickname + commit_minutes; hiển thị paid_until; logout hoạt động.",
       "evidence": "app/settings: GET/PATCH /api/profile (nickname + daily_commit_minutes), trạng thái subscription (read từ /api/me), Đăng xuất, CREDIT từ điển FVDP © Hồ Ngọc Đức (GPL v2) + link nguồn (bắt buộc license). verify_account.mjs PASS (profile GET/PATCH/reload). UI cần Homeowner test browser."
     },
@@ -101,7 +124,9 @@
       "area": "frontend",
       "tip": "TIP-007",
       "status": "verified",
-      "depends_on": ["BE-03"],
+      "depends_on": [
+        "BE-03"
+      ],
       "acceptance": "Top theo SUM(duration) tuần ISO; 🥇🥈🥉; dòng user hiện tại luôn hiện ở cuối.",
       "evidence": "app/leaderboard: GET /api/leaderboard (RPC get_leaderboard_weekly), top tuần ISO + avatar + nickname + giờ, 🥇🥈🥉 top 3, highlight 'bạn' theo user_id, ghim caller nếu ngoài top, ghi chú reset thứ Hai. verify_account.mjs PASS (2 user xếp hạng đúng B>A, caller hiển thị). UI cần Homeowner test browser (>1 user)."
     },
@@ -111,7 +136,9 @@
       "area": "frontend",
       "tip": "TIP-011",
       "status": "verified",
-      "depends_on": ["BE-03"],
+      "depends_on": [
+        "BE-03"
+      ],
       "acceptance": "Thêm/xóa video; thumbnail+title; tick done; nút Học mở tab + tín hiệu auto-start timer extension.",
       "evidence": "app/playlist + lib/playlist.ts: dán link → POST /api/playlist (parse videoId watch?v=/youtu.be/shorts, oEmbed title server-side timeout 5s + fallback videoId, thumbnail img.youtube.com/{id}/hqdefault.jpg) → list thumbnail+title+trạng thái; nút Học mở tab YouTube (timer TIP-010 tự bám video → KHÔNG cần tín hiệu start riêng), tick done (PATCH toggle), xóa (DELETE own). Backend getUserClient (RLS). verify_playlist.mjs 12/12 PASS (link sai→400, oEmbed title thật 'Rick Astley…', youtu.be, CRUD, 401, not-own delete=false). nav Playlist bật. UI cần Homeowner test browser. LƯU Ý: 'auto-start timer' = timer tự động (TIP-010) khi video phát — nút Học chỉ mở video."
     },
@@ -121,7 +148,10 @@
       "area": "extension",
       "tip": "TIP-004",
       "status": "verified",
-      "depends_on": ["BE-01", "BE-03"],
+      "depends_on": [
+        "BE-01",
+        "BE-03"
+      ],
       "acceptance": "Login Google chung tài khoản; trial 24h tạo khi đăng ký; mỗi lần vào YouTube check hạn server-side; hết hạn ẩn sub + nút Nâng cấp → /upgrade.",
       "evidence": "Extension MV3 nâng cấp: manifest (storage/tabs/scripting + host youtube+localhost), build esbuild 3 entry (background/content/popup) → dist. Shared-session auth: content/auth-bridge đọc localStorage web (sb-<ref>-auth-token) → background setSession vào chrome.storage (supabaseExt, autoRefresh, CHỈ anon). Popup: chưa login→nút mở web; đã login→avatar+email (EXT-05) + trạng thái sub (EXT-06: trial còn X giờ/active/expired) + nút Nâng cấp khi hết hạn (EXT-07)→/upgrade; logout. Backend /api/me trả subscription + is_active tính server-side theo now(). /upgrade placeholder. Verify: init.sh exit 0, extension build dist hợp lệ MV3, AC-8 service_role KHÔNG có trong bundle (anon có), verify_auth.mjs 8/8 PASS (401/200/profile/subscription trial/is_active=true/CORS). LƯU Ý: 'check hạn mỗi lần vào YouTube' + ẩn sub = phần content YouTube ở TIP-005 (TIP này làm nền tảng + popup + server-side check). AC-1..6 (load unpacked + login/refresh/logout) = Homeowner test trên Chrome thật."
     },
@@ -131,7 +161,9 @@
       "area": "extension",
       "tip": "TIP-005",
       "status": "verified",
-      "depends_on": ["EXT-05-06-07"],
+      "depends_on": [
+        "EXT-05-06-07"
+      ],
       "acceptance": "Hiện 2 dòng đồng bộ currentTime; lấy VI qua tlang=vi từ client; video không caption → chỉ EN, không vỡ.",
       "evidence": "content/youtube.ts: overlay 2 dòng (EN trên/VI dưới) trong #movie_player, sync currentTime qua interval 250ms (đúng khi seek). lib/captions.ts: đọc captionTracks từ ytInitialPlayerResponse (fetch lại trang watch, cùng origin), EN = track gốc + fmt=json3; VI = cùng baseUrl + tlang=vi (auto-translate, D-1). Không caption → loadCues trả [] → không overlay (fallback im lặng, không throw). Ẩn caption gốc YouTube qua style. init.sh exit 0, build dist OK. [TIP-009 fix phụ đề — Homeowner verified Chrome] (1) Anti-bot: lấy caption qua URL ĐÃ KÝ player tự gọi (intercept body EN player → bớt 1 request), VI fetch sau delay 500ms + retry 1 lần khi gặp trang Google 'Sorry/automated queries', phân biệt 3 trạng thái VI (ok/blocked/empty) + nhãn tương ứng. (2) Chọn cue: max-start match (bỏ break, cue mới nhất start≤t<start+dur) → sửa lag do cue gối nhau; khoảng trống → ẩn. Test OK: cue gối + thường + tua + song ngữ."
     },
@@ -141,7 +173,10 @@
       "area": "extension",
       "tip": "TIP-005",
       "status": "verified",
-      "depends_on": ["EXT-01", "BE-03"],
+      "depends_on": [
+        "EXT-01",
+        "BE-03"
+      ],
       "acceptance": "Click 1 từ → lemmatize → lookup_word trả nghĩa+IPA; audio từ Free Dictionary; Lưu ghi vocabulary kèm example. KHÔNG dịch câu.",
       "evidence": "Click từ EN → video.pause() + giữ phụ đề → GET /api/lookup?word= (RPC lookup_word lemmatize+tra dictionary) → popup lemma/IPA/nghĩa/audio(nếu có)/Lưu. Lưu → POST /api/vocabulary (word/lemma/ipa/meaning_vi/example=câu EN/audio_url), idempotent UNIQUE(user_id,word). Click ra ngoài/Đóng → video.play(). Backend e2e verify_vocab.mjs 5/5 PASS (lookup 200, save, dup không lỗi, DB 1 dòng+example). LƯU Ý: audio Free Dictionary API chưa tích hợp (audio_url từ dict hiện null → nút audio chỉ hiện khi có); để bổ sung sau. UI click trên YouTube cần Homeowner test Chrome. [TIP-009] /api/lookup giờ có FALLBACK Free Dictionary API server-side khi FVDP miss (định nghĩa EN + IPA + audio + ví dụ), CACHE vào dictionary (source='free_dict', lần sau qua RPC khỏi gọi lại API), xử lý 404/429/timeout. Popup gắn nhãn 'định nghĩa tiếng Anh' khi source=free_dict. verify_lookup.mjs 8/8 PASS (lemmatize mới, neuron→free_dict 3 nghĩa+IPA, cache, 404 not_found)."
     },
@@ -151,7 +186,9 @@
       "area": "extension",
       "tip": "TIP-015",
       "status": "verified",
-      "depends_on": ["EXT-01"],
+      "depends_on": [
+        "EXT-01"
+      ],
       "acceptance": "4 mục (toggle EN, toggle VI, màu nền+%, cỡ chữ ±) lưu chrome.storage; overlay áp realtime; settings bền.",
       "evidence": "VERIFIED (Homeowner Chrome 2026-06-29): toggle EN/VI, độ đậm nền, cỡ chữ realtime + click-từ vẫn chạy — PASS. | TIP-015 dời cài đặt phụ đề từ panel gear trong player (TIP-005) sang POPUP (theo Figma + khách). lib/settings.ts gộp 1 nguồn (key cũ sm-ext-settings, KHÔNG trùng): model mới {showEn,showVi,bgEnabled,bgOpacity%(0..100),fontSizePx} + normalize/clamp (bỏ field cũ enabled/mode/textColor/bgColor). Popup card 'Cài đặt': 2 switch EN/VI, toggle 'Màu nền'+slider % (disable khi tắt), stepper − [Npx] + (12..32 bước 2, disable ở biên). Mỗi đổi → setSettings → chrome.storage. youtube.ts: onSettingsChange → applySettings re-render cue hiện tại NGAY (ẩn/hiện EN-VI, nền rgba(0,0,0,%/100) hoặc transparent+textShadow, cỡ chữ). GỠ panel gear+toggleSettingsPanel trong player (trùng, dùng model cũ). Giữ nguyên cue/click-từ/anti-bot VI. TỰ TEST: init.sh exit 0 (lint+typecheck 3 pkg), ext build dev OK (youtube.js 16.8→12.8kb). CẦN HOMEOWNER (Chrome): AC-1..5 toggle/nền/cỡ chữ realtime trên video CC + click từ vẫn chạy."
     },
@@ -161,7 +198,9 @@
       "area": "extension",
       "tip": "TIP-014",
       "status": "verified",
-      "depends_on": ["EXT-05-06-07"],
+      "depends_on": [
+        "EXT-05-06-07"
+      ],
       "acceptance": "Bắt đầu/Kết thúc thủ công ghi study_sessions (cộng hết); popup hiện HH:MM:SS đếm lên; state bền khi đóng popup; streak chỉ tính ngày >10 phút.",
       "evidence": "VERIFIED (Homeowner Chrome 2026-06-29): AC-1→AC-5 PASS (Bắt đầu/Kết thúc, HH:MM:SS đếm lên, state bền đóng/mở popup, cộng hết nhiều phiên, tắt Chrome an toàn); migration streak 005 đã áp production (co_600=true). | ĐỔI từ tự động (TIP-010) sang THỦ CÔNG (Figma + comment khách). Đã GỠ content/timer.ts (auto wall-clock bám <video>) + bỏ khỏi manifest/build → KHÔNG double-track (AC-7). Timer state ở BACKGROUND service-worker + chrome.storage (key sm-timer-state: running/sessionStartedAt/flushedSec) — bền khi popup đóng (AC-3). Messages SM_TIMER_START/STOP/STATE. Flush định kỳ qua chrome.alarms 0.5'(~30s) khi running → POST /api/study-session phần CHƯA flush (cộng HẾT, không loại trừ tua/double — AC-4); lỗi mạng giữ flushedSec gửi lại sau. onStartup: running→finalize (KHÔNG đếm thời gian Chrome đóng — AC-5). Popup: card 'Thời gian học' HH:MM:SS đếm lên realtime (tick 1s khi mở, seed từ background), nút Bắt đầu/Kết thúc enable/disable đúng (AC-2); Kết thúc xong refresh 'phút hôm nay'. Backend MAX_SEC 3600→86400 (cap an toàn). RPC get_dashboard (migration 20260629000005): streak dùng ngưỡng cố định >600s/ngày (UTC+7) thay goal cam kết; today_met/tổng giờ/biểu đồ GIỮ NGUYÊN (AC-6). Thêm permission alarms. TỰ TEST: init.sh exit 0 (lint+typecheck 3 pkg), ext build dev OK (không còn timer.js), backend 20/20 test. CẦN HOMEOWNER (Chrome): AC-1/2/3/5 Start/Stop thật + đóng/mở popup + tắt Chrome; AC-6 cần áp migration + dữ liệu nhiều ngày (hoặc kiểm DB)."
     },
@@ -171,7 +210,9 @@
       "area": "backend",
       "tip": "TIP-013",
       "status": "verified",
-      "depends_on": ["BE-02"],
+      "depends_on": [
+        "BE-02"
+      ],
       "acceptance": "QR generate đúng mã user; trang /upgrade hiện QR + text + copy.",
       "evidence": "Backend api/payment.ts: POST /api/payment/create-order (đơn pending + code SMxxxxxxxx duy nhất nhúng nội dung CK; buildVietQrUrl api.vietqr.io/image/{BANK_ID}-{ACC}-{template}.jpg?amount&addInfo) + GET /api/payment/order/:code (poll, chỉ đơn của mình). Frontend app/upgrade/page.tsx: nút Mua Pro 49.000đ → QR ảnh + thông tin CK (số TK/tên/nội dung) + nút Chép + poll 4s + nút 'tôi đã CK'. lib/payment.ts. Giá/bank ở env (PRO_PRICE/BANK_*). TỰ TEST: vitest buildVietQrUrl/generateOrderCode/parseOrderCode (20/20); FE build /upgrade OK; backend dev create-order no-auth=401. CHỜ HOMEOWNER: nhập env Vercel + áp migration → test thật trên production."
     },
@@ -181,7 +222,9 @@
       "area": "backend",
       "tip": "TIP-013",
       "status": "verified",
-      "depends_on": ["BE-05"],
+      "depends_on": [
+        "BE-05"
+      ],
       "acceptance": "Webhook verify + match nội dung CK → cập nhật paid_until, status=active; test sandbox end-to-end.",
       "evidence": "POST /api/sepay-webhook (KHÔNG qua JWT — SePay gọi). Cửa bảo mật: (1) verify header 'Authorization: Apikey <SEPAY_API_KEY>' constant-time, key trống→reject; (2) chỉ transferType='in'; (3) idempotency theo payload.id (cột sepay_tx_id UNIQUE + pre-check); (4) đối soát: bóc code từ content/field code, tìm đơn pending, số tiền ≥ amount; (5) update đơn guard status='pending' (chỉ 1 lần) → subscriptions paid_until=max(now,cũ)+30 ngày, status=active (service_role). Mọi nhánh không khớp → 200 không kích hoạt. migration 20260629000004_payment_orders.sql (RLS user select, ghi qua service_role). TỰ TEST vitest 20/20 (AC-2 401 sai/thiếu apikey; AC-4/AC-5 logic parseOrderCode + computeNextPaidUntil cộng dồn; tiền ra/thiếu id→200). VERIFIED PRODUCTION (2026-06-29): SePay 'Phát lại' tx 65630775 → webhook 200, kích hoạt Pro (hạn 29/7/2026); phát lại 3 lần KHÔNG cộng đôi (AC-4 idempotency PASS). FIX deadlock: adapter @hono/node-server/vercel treo ở Readable.toWeb(incoming) khi đọc body SePay (verify key OK rồi timeout 300s) → buffer rawBody tầng Node trong api/index.ts (for await kéo stream → req.rawBody → adapter fast-path); sửa cả webhook lẫn mọi POST trên Vercel."
     },
@@ -191,7 +234,10 @@
       "area": "qa",
       "tip": "TIP-029",
       "status": "verified",
-      "depends_on": ["EXT-03", "BE-04"],
+      "depends_on": [
+        "EXT-03",
+        "BE-04"
+      ],
       "acceptance": "Các flow chính qua /qa không lỗi; /cso không còn finding nghiêm trọng; regression test cho mỗi fix.",
       "evidence": "VERIFIED (2026-07-01): TIP-030 smoke tự động 44/44 PASS (13 route FE=200 không crash, 31 API auth-contract 401 đúng + webhook + CORS không '*', build 3 gói); Homeowner smoke browser gộp PASS (login Google+email, dashboard, vocab→flashcard→quiz, leaderboard, thanh toán QR+countdown, settings, extension overlay EN+VI+tra từ+Tắt/Bật+timer). Không lỗi CRITICAL/HIGH/MEDIUM. | TIP-029 QA sweep: gstack không có trên PATH → Thợ QA thủ công. GATE PASS (init.sh exit 0, lint+typecheck 3 gói, backend 21/21, ext build OK). /cso PASS (không lộ service_role client/ext; RLS đủ 8 bảng; requireAuth mọi /api trừ /health+webhook; CORS reflect origin không '*'; webhook Apikey constant-time+idempotency; .env không commit). /review sạch (không CRITICAL/HIGH/MEDIUM). 3 finding LOW/INFO Chủ thầu ACCEPT (SEC-1 lộ độ dài key: constant-time compare vốn cũng cần cùng độ dài → đã đạt chuẩn, key cố định vô hại; REV-1 stopPoll trong updater: vô hại idempotent; REV-2 mark-learned chatty: đúng thiết kế TIP-026). /qa browser UNTESTABLE bởi Thợ. Đang giao TIP-030 smoke tự động HTTP-level (route+API) cho Thợ + smoke gộp browser cho Homeowner."
     },
@@ -201,7 +247,9 @@
       "area": "infra",
       "tip": "TIP-031",
       "status": "done",
-      "depends_on": ["QA-01"],
+      "depends_on": [
+        "QA-01"
+      ],
       "acceptance": "Extension đóng gói submit; web deploy chạy; .env.example + HANDOVER.md đầy đủ; checklist handover (Blueprint mục 9) pass.",
       "evidence": "DONE (TIP-031, 6 WI, static verified 2026-07-01 — CHỜ Homeowner runtime deployed + transfer để lên verified): WI-1 .env.example vá NEXT_PUBLIC_SITE_URL=https://app.studymovie.com + audit đủ biến (FE6/BE12). WI-2 web/frontend/app/privacy/page.tsx (public tĩnh, ngoài AccessGuard → reviewer/chưa-login xem được; nội dung VN: dữ liệu thu, mục đích, Supabase Singapore, bên thứ ba YouTube/SePay/Supabase không bán, quyền user, email dkhiem2k4@gmail.com). WI-3 icon từ logo.png (sharp: trim viền + pad + nền trắng → 16/48/128) + manifest icons + action.default_icon + build.mjs copy icons/→dist (không lọt logo.png nguồn). WI-4 manifest version 1.0.0; build.mjs --prod lọc localhost khỏi host_permissions + content_scripts.matches (bản dev GIỮ localhost); prod còn app.studymovie.com + youtube. WI-5 HANDOVER.md (kiến trúc, repo/dịch vụ, bảng env tên+nơi KHÔNG giá trị, deploy, 10 migration, dev setup, verify, checklist transfer ownership + xoay TOÀN BỘ key, việc treo /blog; tự grep 0 secret/JWT). WI-6 Chrome Web Store trong HANDOVER §8 (mô tả VN, category Education, privacy URL app.studymovie.com/privacy, data usage, giải trình 5 permission, email, bước submit $5 + zip dist). Verify Chủ thầu: source icons + manifest icons + build.mjs copy + build.mjs prod-strip localhost + HANDOVER 0 secret. GATE: FE lint+typecheck+build OK, ext build dev+prod OK, init.sh exit 0, dev flow không hỏng. CÒN (Homeowner → verified): (a) push → Vercel auto-deploy → mở app.studymovie.com/privacy render; (b) load extension/dist → icon 'SM.' hiện; (c) submit Chrome Web Store (zip dist); (d) transfer GitHub+Supabase(giữ Singapore)+Vercel + xoay toàn bộ key theo HANDOVER.md."
     },
@@ -211,7 +259,9 @@
       "area": "infra",
       "tip": "TIP-012",
       "status": "verified",
-      "depends_on": ["WEB-06"],
+      "depends_on": [
+        "WEB-06"
+      ],
       "acceptance": "Backend chạy serverless Vercel; frontend deploy; CORS+OAuth redirect cho domain production; secret ở Vercel env (không commit); dev flow không hỏng; extension build được bản production.",
       "evidence": "VERIFIED PRODUCTION (Homeowner test 2026-06-29): frontend https://studymovie-frontend.vercel.app + backend https://studymovie-backend.vercel.app — login Google, dashboard, vocab, playlist, CORS, /health 200 OK. manifest đổi placeholder -> studymovie-frontend.vercel.app (giữ localhost). | Backend serverless: web/backend/api/index.ts (@hono/node-server/vercel handle, Node runtime) + vercel.json (rewrite /(.*) -> /api để Hono định tuyến). env.ts đọc process.env (Vercel env vars), local đọc root .env. CORS giữ localhost dev + SITE_URL (env=prod frontend) + chrome-extension, KHÔNG '*'. Frontend Next: NEXT_PUBLIC_* qua Vercel env (next.config inline). Extension: build.mjs --prod đọc .env.production (giữ bản dev); manifest thêm host production placeholder (Homeowner đổi domain thật) + giữ localhost. .env.example ghi rõ var nào ở project nào. Khuyến nghị 2 project Vercel riêng (frontend + backend) cho CORS độc lập. TỰ TEST: init.sh exit 0 (lint+typecheck 3 pkg, api/ included), ext build dev + build:prod chạy, backend dev boot (health 200, /api/me 401) — dev flow KHÔNG hỏng. LIVE DEPLOY + nhập env Vercel + Supabase redirect = HOMEOWNER làm theo checklist; verified sau khi production chạy."
     },
@@ -221,7 +271,9 @@
       "area": "infra",
       "tip": "TIP-032b",
       "status": "verified",
-      "depends_on": ["INF-03"],
+      "depends_on": [
+        "INF-03"
+      ],
       "acceptance": "app.studymovie.com trỏ Vercel frontend + SSL cấp; frontend & backend env NEXT_PUBLIC_SITE_URL=https://app.studymovie.com (backend = CORS); Supabase Auth Site URL + Redirect URLs thêm app.studymovie.com; extension manifest + build:prod trỏ app.studymovie.com; login web (email+Google) + extension sync + thanh toán + paywall chạy trên domain mới. Landing studymovie.com KHÔNG có app/login (khách tự làm).",
       "evidence": "VERIFIED (Homeowner runtime + Chủ thầu curl 2026-07-01): app.studymovie.com LIVE — DNS 'app' CNAME → Vercel (76.76.21.61), SSL hợp lệ (ssl_verify=0), serve HTTP 200. Chủ thầu verify server-side: backend trả 'Access-Control-Allow-Origin: https://app.studymovie.com' cho origin mới, origin cũ studymovie.com KHÔNG được cấp (CORS cắt đúng) → Bước env backend + redeploy chuẩn. Homeowner runtime: login web Google+email → dashboard PASS (R-1 phần web). Extension bản prod (build:prod, dist trỏ app.studymovie.com ×2, service_role không lộ) nạp Chrome: R-2 sync session ✓, R-3 logout→tự về màn login ✓ (nhờ D-02), R-4 phụ đề song ngữ YouTube ✓, guard lỗi mạng vẫn hiện hộp lỗi ✓. Landing apex studymovie.com để KHÁCH tự làm (đã gỡ khỏi Vercel frontend project). TREO: /blog trước lặp ERR_TOO_MANY_REDIRECTS nay tự HẾT vì app ở subdomain (BLOG_URL=studymovie.com/blog khác host) — khách sẽ cấp URL blog thật sau. CÒN: .env.example (root) dòng SITE_URL vẫn studymovie.com, cần đổi app.studymovie.com → gộp TIP-031 (audit .env.example). | KIẾN TRÚC 2 DOMAIN (khách chốt 2026-07-01, screenshot): studymovie.com = landing page (khách tự làm, không login); app.studymovie.com = web app (nơi user đăng nhập & học). | TIP-032→032b DONE (code, commit local, CHƯA push): ban đầu trỏ studymovie.com (TIP-032, a0276e3), sửa fix-forward sang app.studymovie.com (TIP-032b) sau khi khách làm rõ. extension/manifest.json host_permissions + content_scripts[auth-bridge].matches → https://app.studymovie.com/* (giữ youtube + localhost, sạch studymovie-frontend.vercel.app); extension/.env.production.example NEXT_PUBLIC_SITE_URL=https://app.studymovie.com. Backend GIỮ studymovie-backend.vercel.app → webhook SePay KHÔNG đổi. | KÈM D-01 (commit trước đó): fix auth-bridge văng 'Extension context invalidated' khi reload extension (stop poll khi context chết). TỰ TEST: typecheck sạch, build dev + build:prod OK, dist/manifest.json trỏ app.studymovie.com (×2), service_role không lộ trong dist. CHỜ HOMEOWNER Runbook: (1) Vercel frontend project add domain app.studymovie.com; (2) DNS thêm record 'app' trỏ Vercel (CNAME cname.vercel-dns.com); (3) env NEXT_PUBLIC_SITE_URL=https://app.studymovie.com ở CẢ frontend + backend project (backend quyết định CORS), redeploy cả 2; (4) Supabase Auth → Site URL = https://app.studymovie.com + Redirect URLs thêm https://app.studymovie.com/** (giữ localhost); (5) Google Cloud OAuth → Authorized redirect thêm callback Supabase (nếu đổi) + Authorized JS origins app.studymovie.com; (6) test Google+email login trên domain mới. Verify tổng trước khi gate verified: app.studymovie.com login web → extension sync session → /thanh-toan QR+countdown → paywall redirect."
     },
@@ -311,7 +363,9 @@
       "area": "extension",
       "tip": "TIP-070",
       "status": "verified",
-      "depends_on": ["EXT-LOOKUP-LEMMA-AUDIO"],
+      "depends_on": [
+        "EXT-LOOKUP-LEMMA-AUDIO"
+      ],
       "acceptance": "Bấm 🔊 Phát âm luôn ra tiếng (audio thật nếu phát được, else giọng TTS trình duyệt).",
       "evidence": "VERIFIED code + build prod (2026-07-04). Feedback 4/7: bấm Phát âm không ra tiếng. ROOT CAUSE: new Audio(url).play() tải media ngoài (dictionaryapi/gstatic/Google TTS) trên trang youtube.com bị CSP media-src của YouTube chặn; host_permissions cũng không có domain audio. TIP-068 khiến mọi từ đều có nút loa nên mới lộ. FIX (TIP-070, extension/youtube.ts): thêm speakWord(text) dùng SpeechSynthesisUtterance (lang en-GB, rate 0.9, cancel() trước speak — không tải media ngoài → không vướng CSP) + playPronunciation(url,text) thử new Audio(url).play(), .catch (CSP chặn/lỗi) → speakWord. Nút loa LUÔN hiện (không gate audio_url), đọc lemma||word. KHÔNG thêm host_permissions. Build PROD (SM_BACKEND_URL=studymovie-backend.vercel.app), zip rebuild. Không hồi quy render dần (TIP-069)/lemmatize/lưu."
     },
@@ -321,7 +375,9 @@
       "area": "extension",
       "tip": "TIP-069",
       "status": "verified",
-      "depends_on": ["EXT-LOOKUP-LEMMA-AUDIO"],
+      "depends_on": [
+        "EXT-LOOKUP-LEMMA-AUDIO"
+      ],
       "acceptance": "Popup + từ + IPA + nút Phát âm hiện tức thì; nghĩa AI ngữ cảnh điền vào sau; không chặn chờ AI.",
       "evidence": "VERIFIED smoke + Homeowner (2026-07-04). Feedback 4/7 #2: 'tra nghĩa load hơi chậm'. ROOT CAUSE: onWordClick await Promise.allSettled([lookup, lookup-context]) → chờ CẢ hai xong mới vẽ popup; AI (OpenAI) là phần chậm nhất → toàn popup chờ theo AI. FIX (TIP-069): (A) extension/youtube.ts onWordClick → non-async, render DẦN: mở popup hiện ngay head=từ + 'Đang tra nghĩa…'; fire 2 request song song KHÔNG await chung; /api/lookup .then → điền IPA + nút 🔊 Phát âm + Lưu/Đóng; /api/lookup-context .then → renderMeaning() điền nghĩa AI (fallback từ điển; 📖 nếu free_dict; cả hai rỗng+settled → 'Không tìm thấy nghĩa'). Nút Lưu đọc currentResult/currentMeaning lúc bấm (lưu được trước khi AI xong). Guard alive() bỏ qua cập nhật nếu popup đã đóng. 403 hết hạn giữ TIP-062. (B) backend/lookup.ts free-dict timeout 5000→3000ms (fail-fast chuỗi ứng viên lemmatize). SMOKE: nguồn hiện-trước nhanh — free-dict 'moment' 0.15s, TTS 0.58s → từ+IPA+loa ~150ms, nghĩa AI vào sau (không chặn). EXT build OK (youtube.js 18.8kb), zip 301KB rebuild; backend redeploy prod (ly2n3jn73). Không đổi API shape / AI prompt."
     },
@@ -391,7 +447,9 @@
       "area": "web+extension",
       "tip": "TIP-054/055/055b",
       "status": "verified",
-      "depends_on": ["AUTH-SYNC"],
+      "depends_on": [
+        "AUTH-SYNC"
+      ],
       "acceptance": "Web không có form login (chỉ prompt); đăng nhập ở extension → web tự vào dashboard; Google login extension chạy qua web bounce; dashboard tự refetch khi quay lại tab.",
       "evidence": "VERIFIED Homeowner local (2026-07-02). Khách chốt: đăng nhập/đăng ký CHỈ ở extension, web không cần (tạm thời). | TIP-054 (04f0b9e): dashboard tự refetch khi visibilitychange/focus → học+Kết thúc ở extension → quay lại tab dashboard số 'Thời gian đã học' tự cập nhật, khỏi reload tay. | TIP-055 (e0c4811): GỠ form login/đăng ký khỏi web (đảo UI TIP-046) — web chỉ prompt 'đăng nhập bằng tiện ích StudyMovie'; web nhận session từ extension (ext→web sync TIP-047); GIỮ /auth/callback verifyOtp cho xác nhận email. | TIP-055b (d6f57f2): FIX Google login extension bị tắc sau 055 — Google OAuth BẮT BUỘC redirect qua web; extension mở /?login=google → app/page.tsx tự signInWithOAuth(google) → /auth/callback → session → đồng bộ về extension. Email/mật khẩu login NATIVE trong extension (không cần web)."
     },
@@ -431,7 +489,9 @@
       "area": "web",
       "tip": "TIP-016",
       "status": "verified",
-      "depends_on": ["WEB-02"],
+      "depends_on": [
+        "WEB-02"
+      ],
       "acceptance": "Nhập level lần đầu; mục tiêu = cấp kế + giờ theo bảng; vòng tròn % + tooltip; giờ reset mỗi cấp; tự lên cấp + thông báo; C2 max; dashboard cũ không đổi.",
       "evidence": "VERIFIED PRODUCTION (Homeowner web 2026-06-29): migration 006 đã áp; nhập level, mục tiêu+giờ theo bảng, vòng tròn %, tự lên cấp + thông báo, dashboard cũ đúng — PASS. | DB (migration 20260629000006): profiles thêm current_level (CHECK A0..C2) + level_started_at; RPC set_current_level(p_level) (set + reset mốc now()) + get_level_progress() (security definer, auth.uid). get_level_progress: needs_input nếu current_level null; studied = sum(duration_sec) study_sessions started_at>=level_started_at (RESET mỗi cấp); target theo bảng A0→A1=95,A1→A2=95,A2→B1=185,B1→B2=175,B2→C1=200,C1→C2=350; TỰ LÊN CẤP 1 cấp/lần (side-effect update profiles: current_level=next, level_started_at=now) + just_leveled_up/old/new; C2 is_max; trả percent/remaining. Backend api/level.ts GET/POST /api/level (getUserClient RPC), wire app.ts. Frontend lib/level.ts + dashboard: LevelSection (2 card), ProgressRing SVG % + tooltip 'giờ mục tiêu/còn lại', LevelPicker (nhập lần đầu + Đổi level), banner '🎉 lên cấp'. KHÔNG đụng get_dashboard cũ. TỰ TEST: init.sh exit 0 (lint+typecheck 3 pkg), FE build OK (/dashboard 4.36kB), backend 20/20. CẦN HOMEOWNER: áp migration 006 + test web login (nhập level, mục tiêu+giờ, vòng tròn, tự lên cấp qua insert study_sessions test)."
     },
@@ -441,7 +501,9 @@
       "area": "web",
       "tip": "TIP-017",
       "status": "verified",
-      "depends_on": ["WEB-02"],
+      "depends_on": [
+        "WEB-02"
+      ],
       "acceptance": "Thêm/sửa/xóa dòng + tick hoàn thành; mọi ô input text; link clickable mở tab mới; bền + RLS user chỉ thấy của mình; dashboard cũ không đổi.",
       "evidence": "VERIFIED PRODUCTION (Homeowner web 2026-06-29): migration 007 đã áp; thêm/sửa/xóa/tick/link/reload PASS, dashboard cũ đúng. | DB (migration 20260629000007): bảng RIÊNG public.weekly_plans (id, user_id FK auth.users, plan_date text, video_link text, committed_time text, done bool, created_at) — KHÔNG đụng playlist_items. RLS 4 policy auth.uid()=user_id + grant authenticated + index(user_id). Backend api/weekly-plan.ts: GET list, POST add, PATCH (sửa text fields HOẶC toggle done), DELETE — getUserClient (RLS), wire app.ts. Frontend lib/weeklyPlan.ts + components/WeeklyPlan.tsx (WeeklyPlanTable) render trong dashboard dưới biểu đồ: bảng cột (sửa/xóa | Ngày | Link | Thời gian cam kết | Hoàn thành?), link clickable target=_blank rel=noopener, checkbox done lưu ngay, ✏️ sửa inline + 💾/✖️, 🗑️ xóa (confirm), form 'Thêm dòng' (3 input + Lưu/Huỷ, không auto-save), empty state. KHÔNG đụng Level/Playlist/dashboard cũ. TỰ TEST: init.sh exit 0 (lint+typecheck 3 pkg), FE build OK (/dashboard 5.49kB), backend 20/20. CẦN HOMEOWNER: áp migration 007 + test web (thêm/sửa/xóa/tick/link/reload/RLS)."
     },
@@ -451,7 +513,9 @@
       "area": "web",
       "tip": "TIP-018",
       "status": "verified",
-      "depends_on": ["WEB-04"],
+      "depends_on": [
+        "WEB-04"
+      ],
       "acceptance": "Lần đầu hiện overlay hướng dẫn khớp tương tác thật; lần sau bỏ qua; audio tự phát thẻ mới (URL/speechSynthesis); nút loa thủ công; autoplay chặn không vỡ UI; flashcard cũ không đổi.",
       "evidence": "VERIFIED (Homeowner web 2026-06-29): hướng dẫn lần đầu + bỏ qua lần sau, audio tự phát thẻ mới, nút loa, flashcard cũ chạy đúng — PASS. | Flashcard hiện tại = NÚT bấm (click thẻ lật + ← Trước/Sau →), KHÔNG kéo → hướng dẫn mô tả đúng nút (không ghi 'kéo', đúng AC-3). Thêm: overlay hướng dẫn lần đầu (localStorage key sm-flashcard-tutorial-seen; lần sau vào thẳng) + nút nhỏ 'Hướng dẫn' xem lại. Audio TỰ PHÁT mỗi thẻ mới qua useEffect [idx] (không phát khi đang xem hướng dẫn, không phát lại khi lật): playWord ưu tiên audio_url (TIP-009), lỗi/không có → fallback speechSynthesis en-US; try/catch + p.catch nuốt lỗi autoplay (AC-5 không vỡ UI). Nút loa 🔊 thủ công giữ (giờ luôn hiện, gọi playWord). KHÔNG đổi tương tác/logic flashcard (lật/chuyển/học tất cả/2 chiều). TỰ TEST: lint+typecheck sạch, FE build OK (/vocabulary/flashcard 3.61kB). CẦN HOMEOWNER: web test — xóa localStorage → vào thấy hướng dẫn → Bắt đầu → học; chuyển thẻ nghe audio tự phát; nút loa phát lại; vào lại không hiện hướng dẫn; flashcard cũ chạy đúng."
     },
@@ -461,7 +525,9 @@
       "area": "web",
       "tip": "TIP-019a",
       "status": "verified",
-      "depends_on": ["WEB-06"],
+      "depends_on": [
+        "WEB-06"
+      ],
       "acceptance": "Route VN canonical hoạt động; route cũ redirect; /cam-on sau thanh toán; /ho-tro,/blog redirect ngoài; nav VN giữ Settings/Playlist; không phá tính năng cũ.",
       "evidence": "VERIFIED (Homeowner dev 2026-06-30): route VN, redirect cũ→VN (gồm ?mode=vi2en), nút /tu-vung, /cam-on + /ho-tro + /blog, nav mới + dropdown giữ Settings/Playlist/BXH, tính năng cũ — PASS. QR /thanh-toan trên dev vỡ do .env local thiếu BANK_* (KHÔNG phải bug route; test production sau push). | TÁCH từ TIP-019 (019a routing, 019b trial guard sau). Route VN canonical (đổi tên thư mục page, git mv giữ history): /tu-vung (←vocabulary), /hoc-tu-vung (←vocabulary/flashcard), /thanh-toan (←upgrade); quiz 1 route+?mode → 2 route VN /kiem-tra-anh-viet + /kiem-tra-viet-anh dùng CHUNG components/QuizGame.tsx (direction prop, không nhân đôi). Redirect route cũ→VN + /ho-tro→FB thaytruongtienganh + /blog→NEXT_PUBLIC_BLOG_URL qua next.config redirects() (vi2en match query trước). Trang /cam-on (mới); /thanh-toan khi paid → router.push('/cam-on'). Nav (Header): Tiến độ học(/dashboard)/Từ vựng(/tu-vung)/Blog/Hỗ trợ + dropdown avatar giữ Playlist/Bảng xếp hạng/Cài đặt + Đăng xuất (không mất truy cập). Cập nhật mọi link nội bộ (tu-vung/hoc-tu-vung/quiz). KHÔNG đụng dashboard/, login /, leaderboard, settings, playlist path; KHÔNG trial guard (019b); KHÔNG reskin (021); extension /upgrade tự redirect. TỰ TEST: lint+typecheck sạch, FE build OK (route /cam-on,/hoc-tu-vung,/kiem-tra-anh-viet,/kiem-tra-viet-anh,/thanh-toan,/tu-vung). CẦN HOMEOWNER: web test route VN + path cũ redirect + /cam-on + /ho-tro/blog + nav + Settings/Playlist."
     },
@@ -471,7 +537,10 @@
       "area": "web",
       "tip": "TIP-019b",
       "status": "verified",
-      "depends_on": ["WEB-ROUTE", "BE-04"],
+      "depends_on": [
+        "WEB-ROUTE",
+        "BE-04"
+      ],
       "acceptance": "get_access_status (trial=created_at+24h OR paid_until>now); guard chặn trang học khi has_access=false → /thanh-toan; KHÔNG chặn /,/thanh-toan,/cam-on,/ho-tro,/blog; Pro vào /thanh-toan báo đã Pro; không phá tính năng cũ.",
       "evidence": "VERIFIED (Homeowner web 2026-06-30): migration 008 đã áp production; trial hết hạn → đẩy /thanh-toan, trang public không chặn, Pro vào /thanh-toan báo đã Pro — PASS. | DB (migration 20260629000008): RPC get_access_status (security definer, auth.uid): đọc profiles.created_at + subscriptions.paid_until (left join); has_access = paid_until>now (reason=paid) OR now<created_at+24h (reason=trial) else expired; trả trial_expires_at/paid_until. Backend api/access.ts GET /api/access-status (getUserClient → RPC), wire app.ts. Frontend lib/access.ts. components/AccessGuard.tsx đặt trong app/layout.tsx bọc {children}: pathname-based, chỉ chặn PROTECTED (/dashboard,/tu-vung,/hoc-tu-vung,/kiem-tra-anh-viet,/kiem-tra-viet-anh,/playlist,/leaderboard,/settings) — has_access=false → router.replace(NEXT_PUBLIC_PAYWALL_REDIRECT ?? /thanh-toan); KHÔNG chặn /,/thanh-toan,/cam-on,/ho-tro,/blog (tránh loop); chưa login → để AuthGuard lo; lỗi API → fail-open (không khoá nhầm); loading nhẹ khi check. Pro guard /thanh-toan: fetch access-status, reason=paid → card 'Bạn đã là Pro (hạn đến X)' + Vào học, KHÔNG cho tạo đơn. Config NEXT_PUBLIC_PAYWALL_REDIRECT. TỰ TEST: backend lint+typecheck+20test, FE lint+typecheck sạch, route /api/access-status 401 no-auth. CẦN HOMEOWNER: áp migration 008 + test web (trial còn/hết, paid vào được, expired→/thanh-toan, trang public không chặn, Pro guard). Giả lập expired: tạm set subscriptions.paid_until=null + profiles.created_at lùi >24h cho 1 tài khoản test."
     },
@@ -481,7 +550,10 @@
       "area": "web",
       "tip": "TIP-020",
       "status": "verified",
-      "depends_on": ["WEB-TRIAL", "BE-04"],
+      "depends_on": [
+        "WEB-TRIAL",
+        "BE-04"
+      ],
       "acceptance": "Chỉ admin vào /admin + gọi API admin (RPC fail-closed is_admin); thống kê/danh sách user; set giá Pro→DB (đơn sau áp, fallback env); gán Pro free; thêm/bớt admin; không phá thanh toán cũ.",
       "evidence": "VERIFIED (Homeowner web 2026-06-30): migration 009 + bootstrap admin (dokhiem562@gmail.com) đã áp production; admin vào /admin xem stats/users, set giá→tạo đơn áp giá mới+QR, gán Pro, toggle admin (chặn tự gỡ admin mình), user thường /admin→đẩy /dashboard — PASS. | BẢO MẬT FAIL-CLOSED: migration 20260629000009 — profiles.is_admin + app_settings(key-value, RLS không policy authenticated) + helper is_caller_admin() (coalesce false). MỌI RPC admin (security definer) check `if not is_caller_admin() then raise 'forbidden'` ở ĐẦU: admin_get_stats/admin_list_users/admin_set_pro_price/admin_grant_pro(cộng dồn max(now,paid)+days)/admin_set_admin(không cho tự gỡ admin chính mình). Grant execute authenticated nhưng bảo mật ở TRONG hàm. Backend api/admin.ts proxy RPC qua getUserClient, forbidden→403. Frontend lib/admin.ts + app/admin/page.tsx (AuthGuard + 403→/dashboard): thống kê, bảng user, form set giá, gán Pro/dòng (ngày), toggle admin. Header dropdown link /admin chỉ hiện khi me.profile.is_admin. ĐỔI GIÁ: payment.ts getProPrice đọc app_settings.pro_price → fallback env PRO_PRICE (không vỡ TIP-013); create-order dùng price từ DB cho amount+QR. me.ts select('*') tự có is_admin. TỰ TEST: backend lint+typecheck+20test, FE lint+typecheck sạch, admin routes 401 no-auth (không 404). CẦN HOMEOWNER: áp migration 009 + BOOTSTRAP `update profiles set is_admin=true where email='dokhiem562@gmail.com'` + test (admin vào /admin, user thường bị chặn+API 403, set giá→tạo đơn áp giá mới+QR chạy, gán Pro, toggle admin)."
     },
@@ -491,7 +563,9 @@
       "area": "frontend",
       "tip": "TIP-021",
       "status": "verified",
-      "depends_on": ["WEB-ADMIN"],
+      "depends_on": [
+        "WEB-ADMIN"
+      ],
       "acceptance": "Tokens mới (theme sáng) build pass không placeholder cũ; nav pill + logo SM. chấm vàng + giữ link/dropdown; trang khớp Figma hợp lý; không phá logic; lint+typecheck+build sạch.",
       "evidence": "VERIFIED (Homeowner browser local 2026-06-30): nav pill + logo chấm vàng + dropdown không 404 (AC-2), các trang dashboard/quiz/leaderboard/settings/playlist/thanh-toan/cam-on/admin khớp Figma (AC-3), thao tác streak/level/weekly-plan/quiz/admin guard không vỡ (AC-4) — PASS. | UI-ONLY (không đụng backend/supabase/extension/route/API/logic). globals.css @theme thay token theme sáng: primary #111827 (nút tối), accent #f5b301 (chấm logo), background #fafafa, surface/border #fff/#e5e7eb, fg #111827, muted #6b7280, semantic info/success/danger, level-ring #7c3aed, chart-bar #60a5fa/base #e5e7eb, radius card16/btn10/pill, shadow-card; font Inter (next/font subsets vietnamese -> --font-inter). Button +variant info/success/danger/outline. Badge mới (Từ mới=danger/Đã học=success, dùng lại TIP sau). Header: nav PILL bo tròn trắng shadow + logo 'SM.' đen + chấm accent; giữ MAIN_NAV + dropdown avatar (Playlist/BXH/Cài đặt/Admin-nếu-is_admin/Đăng xuất) KHÔNG đổi route. Dashboard: ProgressRing tím (stroke-level-ring) + BarChart cột cao nhất xanh. QuizGame: layout 2 cột (card hỏi trái + chấm đen, 4 đáp án phải) màu token (đúng=success, sai=danger) GIỮ logic chấm điểm. login/dashboard/leaderboard/settings/playlist/thanh-toan/cam-on/admin tự reskin qua token. KHÔNG reskin sâu /tu-vung + /hoc-tu-vung (mục 5). TỰ TEST AC-5: lint+typecheck+build PASS (14 route, Inter nạp). CẦN HOMEOWNER (AC-2/3/4): so Figma + thao tác feature không mất chức năng. DEVIATION: token hex suy từ baseline TIP-021 (chưa có hex Figma chính thức); QuizGame 2 cột (style, giữ logic)."
     },
@@ -501,7 +575,10 @@
       "area": "extension",
       "tip": "TIP-022",
       "status": "verified",
-      "depends_on": ["EXT-03", "EXT-04"],
+      "depends_on": [
+        "EXT-03",
+        "EXT-04"
+      ],
       "acceptance": "Popup theme sáng khớp Figma (timer card + chế độ phụ đề + footer + avatar) giữ logic timer/settings; overlay pill EN đậm/VI nhạt + biến thể không nền giữ logic cue/click-từ; build pass.",
       "evidence": "VERIFIED (Homeowner Chrome 2026-06-30): AC-2 popup (logo chấm vàng + timer nút tròn + chế độ phụ đề realtime + footer) + AC-3 overlay pill EN đậm/VI nhạt + không nền + AC-4 click-từ/đổi video/timer không vỡ — PASS. | UI-ONLY extension (KHÔNG đụng web/backend/supabase; KHÔNG đổi model settings TIP-015/logic timer/auth/lookup). popup.html: tokens theme sáng (primary #111827, accent #f5b301, surface #fff, border #e5e7eb, radius card16/btn10, shadow, Inter); class .card/.timer-card/.tbtn(tròn)/.footer/.logo. popup.ts: logo 'SM.' chấm vàng (thay title); buildTimerCard nút TRÒN ▶/■ + label (giữ onStart/onStop TIP-014); buildSettingsCard title 'Chế độ phụ đề' (GIỮ control TIP-015: switch EN/VI, Màu nền+slider %, cỡ chữ ±); footer Đăng xuất + Hỗ trợ (→/ho-tro). youtube.ts: overlay 1 PILL bo tròn nền đen (rgba theo %) ôm EN+VI; EN đậm trắng, VI opacity .82 + 0.9x size; tắt nền → trong suốt + text-shadow; GIỮ logic cue max-start/anti-bot VI/click-từ. TỰ TEST AC-1/5: init.sh exit 0 (lint+typecheck 3 pkg), ext build OK (popup.js 766k, youtube.js 13.1k). CẦN HOMEOWNER (AC-2/3/4 Chrome): load dist → popup khớp Figma + timer/settings chạy; overlay pill EN/VI + không nền khớp + click-từ/đổi video chạy. DEVIATION: VI nhỏ/nhạt tĩnh (0.9x/.82) — tinh chỉnh chính xác VI=80%/khoảng cách/màu = TIP-023; footer thêm Hỗ trợ (khớp Figma); nút 'Tắt StudyMovie' CHƯA thêm (TIP-028); login giữ Google-only (email/mật khẩu = TIP-027); KHÔNG thêm tab 'Tiếng Anh/Song ngữ/Tiếng Việt' (field mới = TIP-023)."
     },
@@ -511,7 +588,10 @@
       "area": "extension",
       "tip": "TIP-023",
       "status": "verified",
-      "depends_on": ["EXT-04", "EXT-RESKIN"],
+      "depends_on": [
+        "EXT-04",
+        "EXT-RESKIN"
+      ],
       "acceptance": "Model mới mode/enColor/viColor/lineGap (migrate TIP-015 không crash); popup tabs+màu chữ+size+khoảng cách; overlay đúng mode/màu/VI=80%/gap + né control bar (ẩn 20/hiện 60; FS ẩn 24/hiện 80); giữ click-từ; build pass.",
       "evidence": "VERIFIED (Homeowner Chrome 2026-06-30): AC-2 tabs chế độ, AC-3 màu chữ EN/VI realtime, AC-4 size+VI=80%, AC-5 khoảng cách, AC-6 né control (thường ẩn20/hiện60 + full screen ẩn24/hiện80 không bị che), AC-7 click-từ/đổi video — PASS. | CHỈ extension. settings.ts model mới {mode'en|both|vi', enColor/viColor'white|black|yellow', bgEnabled, bgOpacity, fontSizePx, lineGapPx} giữ key sm-ext-settings; MIGRATE TIP-015: showEn&&showVi→both, chỉ EN→en, chỉ VI→vi (field cũ bỏ qua, không crash); COLOR_HEX white#fff/black#000/yellow#f5c518; clampGap 2..16 bước 2. popup.ts buildSettingsCard: tabs segmented (Tiếng Anh/Song ngữ/Tiếng Việt) đổi mode realtime; hàng màu chữ 🇬🇧/🇻🇳 (3 chấm) hiện theo mode; Màu nền toggle+slider%; stepper Kích thước (EN 12..32); stepper Khoảng cách (2..16) CHỈ hiện mode=both; mỗi đổi → setSettings → realtime. youtube.ts: render theo mode (en/both/vi); màu chữ theo enColor/viColor; VI size = round(EN*0.8); marginTop VI = lineGapPx khi có cả EN; pill nền giữ; NÉ CONTROL = updateOverlayPosition() đọc #movie_player class 'ytp-autohide' (control ẩn) + fullscreen (document.fullscreenElement|class 'ytp-fullscreen') → bottom thường ẩn20/hiện60, FS ẩn24/hiện80; gọi trong syncTick(250ms) + fullscreenchange; box transition .2s. GIỮ cue max-start/anti-bot VI/click-từ/dựng lại đổi video. TỰ TEST AC-1/8: init.sh exit 0 (lint+typecheck 3 pkg), ext build OK (popup.js 769k, youtube.js 14.9k). CẦN HOMEOWNER (AC-2..7 Chrome): tabs/màu/size/gap realtime + né control ẩn/hiện + full screen + click-từ. PHÁT HIỆN CONTROL (rà nếu YouTube đổi DOM): class .ytp-autohide trên #movie_player = control ẩn; .ytp-fullscreen / document.fullscreenElement = full screen."
     },
@@ -521,7 +601,10 @@
       "area": "web",
       "tip": "TIP-024",
       "status": "verified",
-      "depends_on": ["WEB-03", "WEB-RESKIN"],
+      "depends_on": [
+        "WEB-03",
+        "WEB-RESKIN"
+      ],
       "acceptance": "Cột learned_at (migrate); GET trả learned_at; thêm từ thủ công {word,meaning_vi} idempotent; bảng STT/Từ/Nghĩa/Ngày/Trạng thái(Badge)/Xóa mới-nhất-trước; trùng từ báo; không phá cũ.",
       "evidence": "VERIFIED (Homeowner web 2026-06-30): migration 010 đã áp; thêm từ→'Từ mới' đỏ lên đầu, trùng báo 'đã có từ này', update learned_at→'Đã học' xanh, xóa/🔊/3 nút chạy — PASS. | DB (migration 20260629000010): vocabulary + cột learned_at timestamptz (null='Từ mới', có giá trị='Đã học'); KHÔNG đổi RLS. Backend vocabulary.ts: GET select thêm learned_at (giữ order created_at desc); POST giữ idempotent UNIQUE(user_id,word) + lemma fallback = word.toLowerCase() khi thêm thủ công, learned_at để DB default null. lib/vocabulary.ts: VocabItem +learned_at; addVocab(word,meaning_vi). Frontend app/tu-vung/page.tsx reskin: bảng STT|Từ vựng(+ipa/🔊)|Nghĩa|Ngày thêm(dd/mm/yyyy)|Trạng thái <Badge danger 'Từ mới'/success 'Đã học'>|🗑️Xóa, mới-nhất-trước; form 'Thêm từ vựng' (Từ Tiếng Anh + Nghĩa Tiếng Việt + Lưu) → addVocab → list refresh (item lên đầu) + clear; trùng → 'đã có từ này' (không ghi đè); validate rỗng; giữ 3 nút Flashcard/Quiz + empty state. KHÔNG làm search/lọc/phân trang/biểu đồ (TIP-025) + checkbox chọn-từ/mark-learned (TIP-026). TỰ TEST AC-6: init.sh exit 0 (lint+typecheck 3 pkg), FE build (/tu-vung 3.97kB), backend 20/20. CẦN HOMEOWNER: áp migration 010 + test web (thêm từ→Từ mới ở đầu, trùng báo, trạng thái pill, xóa, 3 nút). Giả lập 'Đã học': update vocabulary set learned_at=now() where word='...' (mark-learned thật = TIP-026)."
     },
@@ -531,7 +614,9 @@
       "area": "frontend",
       "tip": "TIP-025",
       "status": "verified",
-      "depends_on": ["WEB-VOCAB"],
+      "depends_on": [
+        "WEB-VOCAB"
+      ],
       "acceptance": "Biểu đồ 7 ngày learned_at (UTC+7) + vòng tròn tổng đã học; search word/nghĩa; lọc trạng thái + ngày thêm (AND); phân trang pageSize10 + 'Hiển thị X–Y/N' + reset trang khi đổi lọc; flashcard/quiz vẫn dùng toàn bộ từ.",
       "evidence": "VERIFIED (Homeowner web 2026-06-30): biểu đồ 7 ngày + vòng tròn tổng, search, lọc trạng thái+ngày (AND), phân trang, flashcard/quiz dùng full — PASS. | FRONTEND-ONLY (chỉ app/tu-vung/page.tsx; KHÔNG đụng backend/supabase/migration; KHÔNG thư viện — CSS thuần). Tính client từ list fetchVocab. Biểu đồ LearnedChart: 7 ngày gần nhất (UTC+7 qua dayKeyVN = +7h rồi lấy ngày UTC), đếm từ có learned_at rơi vào ngày, cột cao nhất bg-chart-bar còn lại bg-chart-base, nhãn dd/MM. TotalLearnedRing: đếm learned_at!=null giữa vòng. Search (word|meaning_vi, lowercase includes); lọc trạng thái (all/new=null/learned=!null); lọc ngày thêm (created_at theo UTC+7 = parseVNDate DD/MM/YYYY) + Áp dụng + Xóa lọc + báo ngày không hợp lệ. Lọc AND (useMemo filtered). Phân trang PAGE_SIZE=10: slice trang, 'Hiển thị X–Y trong tổng số N từ vựng' + ‹ ›(disable biên) + trang/pageCount; useEffect reset page=1 khi đổi search/status/dateApplied. GIỮ form thêm từ/xóa/🔊/3 nút Flashcard-Quiz (flashcard/quiz vẫn fetch TOÀN BỘ — search/lọc chỉ áp lên view bảng). TỰ TEST AC-7: lint+typecheck sạch, FE build (/tu-vung 5.23kB). CẦN HOMEOWNER: test web (set tay vài learned_at để thấy biểu đồ/vòng; search; lọc trạng thái+ngày; phân trang; flashcard/quiz dùng full)."
     },
@@ -541,7 +626,11 @@
       "area": "web",
       "tip": "TIP-026",
       "status": "verified",
-      "depends_on": ["WEB-04", "WEB-VOCAB", "WEB-VOCAB2"],
+      "depends_on": [
+        "WEB-04",
+        "WEB-VOCAB",
+        "WEB-VOCAB2"
+      ],
       "acceptance": "Flashcard kéo (swipe) đổi thẻ thay nút; chọn từ (tick) → học chỉ từ đó; xem thẻ → learned_at set (idempotent); ≡ menu chuyển route; không phá quiz/list/lọc.",
       "evidence": "VERIFIED (Homeowner web 2026-06-30): AC-1 swipe đổi thẻ, AC-2 chạm lật+audio+tutorial, AC-3 học từ đã chọn, AC-4 xem thẻ→'Đã học'+biểu đồ tăng, AC-6 ≡ menu, AC-7 quiz/list/lọc không phá — PASS. | ĐẢO QĐ cũ (Homeowner duyệt): flashcard NÚT→SWIPE, học TẤT CẢ→thêm chọn-từ. Backend vocabulary.ts: POST /api/vocabulary/mark-learned {ids} (getUserClient/RLS, update learned_at=now() where id in ids AND learned_at IS NULL → idempotent; rỗng→no-op 200; requireAuth→401). lib/vocabulary.ts markLearned(ids) + STUDY_SELECTION_KEY. Flashcard /hoc-tu-vung rewrite: SWIPE pointer events (ngưỡng 90px; kéo phải→thẻ sau, trái→trước, chưa đủ→nảy về transform translateX+rotate; chạm<6px→lật) — BỎ nút ←/→; audio tự phát + tutorial sửa thành 'kéo' (giữ localStorage key); thẻ mới hiện → markLearned([id]) fire-and-forget (idempotent); ≡ menu (Học từ vựng/Kiểm tra Anh-Việt/Kiểm tra Việt-Anh); selection: đọc sessionStorage sm-study-selection → học chỉ ids đó (rỗng→tất cả). /tu-vung: cột 'Học từ này?' checkbox/dòng + nút 'Học các từ đã chọn (N)' (lưu ids→sessionStorage→/hoc-tu-vung, disable khi 0) + nút Flashcard=học tất cả (xóa selection); giữ search/lọc/phân trang. TỰ TEST AC-8: init.sh exit 0, FE build (/hoc-tu-vung 4.47k, /tu-vung 5.54k), backend 21/21 (+test mark-learned 401). CẦN HOMEOWNER: swipe đổi thẻ; chọn từ→học đúng; xem thẻ→reload /tu-vung thấy 'Đã học' + biểu đồ tăng; ≡ menu; quiz/list/lọc chạy. DEVIATION: mark-learned gọi NGAY khi thẻ hiện (spec 'từ đã xem'), idempotent; ngưỡng swipe 90px."
     },
@@ -551,7 +640,9 @@
       "area": "extension",
       "tip": "TIP-027",
       "status": "verified",
-      "depends_on": ["TIP-004"],
+      "depends_on": [
+        "TIP-004"
+      ],
       "acceptance": "Popup có form email/mật khẩu: đăng nhập (signInWithPassword) + đăng ký (signUp, CÓ xác nhận email); giữ nút Google; sau đăng nhập → render như cũ (avatar/sub/timer/settings); KHÔNG service_role trong bundle.",
       "evidence": "VERIFIED (Homeowner Chrome 2026-07-01): AC-1 form đủ, AC-2 đăng ký email thật→'Đã gửi email xác nhận', AC-3 chưa xác nhận→báo, AC-4 bấm link→đăng nhập→user view, AC-5 sai mật khẩu/validate, AC-6 Google mở web, AC-7 đăng xuất về form — PASS. | ĐẢO QĐ cũ (Homeowner duyệt): extension Google-only → THÊM email/mật khẩu (CÓ xác nhận email). CHỈ sửa popup (popup.ts renderLogin + popup.html CSS; KHÔNG đụng auth-bridge/service-worker/apiExt/supabaseExt/settings). renderLogin(notice?) mới: authMode login↔register; ô email(type=email)+mật khẩu(type=password) + nút submit 'Đăng nhập'/'Tạo tài khoản' + link đổi mode + phân cách 'hoặc' + nút Google (giữ openTab(SITE_URL)) + vùng auth-msg (ok xanh/err đỏ). ĐĂNG NHẬP: supabaseExt.auth.signInWithPassword → session ghi chrome.storage → onChanged listener tự render user view (không tự render). ĐĂNG KÝ: supabaseExt.auth.signUp; confirm ON → !data.session → về mode login + báo 'Đã gửi email xác nhận…'. Validate client: email regex + mật khẩu ≥6. mapAuthError: 'Invalid login credentials'→'Email hoặc mật khẩu không đúng'; 'Email not confirmed'→'Email chưa được xác nhận…'; 'already registered'→'Email đã đăng ký…'; else raw. CSS auth-input/title/msg/divider/link theo token. TỰ TEST AC-8: init.sh exit 0, ext build OK (popup.js 772k), SECURITY: KEY service_role thật KHÔNG trong dist (chỉ chuỗi lib supabase-js), anon key inline OK. CẦN HOMEOWNER (Supabase TRƯỚC test): bật Email provider + Confirm email ON + thêm SITE_URL Redirect URLs; rồi test AC-1..7 Chrome (form + đăng ký email thật→mail xác nhận→đăng nhập→user view; sai mật khẩu; Google vẫn mở web; đăng xuất về form)."
     },
@@ -561,9 +652,27 @@
       "area": "mixed",
       "tip": "TIP-028",
       "status": "verified",
-      "depends_on": ["WEB-08", "EXT-04"],
+      "depends_on": [
+        "WEB-08",
+        "EXT-04"
+      ],
       "acceptance": "Thanh toán: khi có đơn hiện đếm ngược 5:00 (cosmetic), hết → 'Tạo mã mới'. Extension: nút Tắt/Bật StudyMovie ẩn/hiện phụ đề realtime (settings.enabled). Leaderboard chỉ hiện top 5; user ngoài top 5 vẫn được ghim dòng của mình.",
       "evidence": "VERIFIED (Homeowner web+Chrome 2026-07-01): A countdown 5:00→hết hạn→tạo mã mới, B bật/tắt overlay realtime (caption gốc trở lại), C leaderboard top5 + ghim — PASS. Ghi chú: 2 hiện tượng ban đầu (tắt vẫn hiện / song ngữ thiếu VI) là STALE-TAB (content script cũ trên tab chưa hard-refresh sau reload extension), KHÔNG phải lỗi code; hard refresh (Ctrl+Shift+R) → hết. | 3 hạng mục độc lập, KHÔNG migration. (A) app/thanh-toan/page.tsx: state secondsLeft=300 (QR_TTL) reset mỗi lần tạo đơn + expired; useEffect setInterval 1s giảm, dừng khi paid/order null/expired/unmount; hiện 'Mã QR hết hạn sau MM:SS' dưới QR; về 0 → expired → 'Mã QR đã hết hạn' + 'Tạo mã mới' (order=null) + dừng poll; luồng paid→/cam-on giữ nguyên. (B) settings.ts +field enabled (default true, normalize r.enabled!==false, giữ key sm-ext-settings migrate an toàn); youtube.ts tôn trọng enabled: ensureHideNativeStyle disabled khi !enabled (trả caption gốc YouTube), applySettings/onMessage/syncTick guard (tắt→removeOverlay+không build, vẫn lưu cues; bật lại→applySettings dựng lại NGAY); popup footerNode +nút '⏻ Tắt/Bật StudyMovie' (getSettings label async, setSettings realtime). (C) app/leaderboard/page.tsx: top5=data.top.slice(0,5); meInTop=find uid; inTop5 rank<=5→không ghim; else ghim meInTop (hạng 6-20) hoặc data.caller (ngoài 20); giữ zero-state/tiêu đề/reset. KHÔNG đổi backend/RPC. TỰ TEST AC-D: init.sh exit 0, FE build (/thanh-toan 3.79k, /leaderboard 3.13k), backend 21/21, ext build OK + service_role KEY thật KHÔNG trong dist. CẦN HOMEOWNER: A đếm ngược→hết hạn→tạo mã mới (+CK thành công vẫn /cam-on); B bật/tắt overlay realtime + caption gốc trở lại + bền qua reload; C bảng ≤5 dòng + ghim đúng hạng 6-20/ngoài 20/không ghim khi trong top5."
+    },
+    {
+      "id": "WEB-TIP081",
+      "title": "Pixel-perfect polish theo Figma: Dashboard/Từ vựng/Học từ vựng/Kiểm tra Anh-Việt+Việt-Anh + fix bug mock CRUD",
+      "area": "frontend",
+      "tip": "TIP-081",
+      "status": "verified",
+      "depends_on": [
+        "WEB-RESKIN",
+        "WEB-VOCAB",
+        "WEB-VOCAB2",
+        "WEB-FLASH2"
+      ],
+      "acceptance": "Toàn bộ 5 trang (Tiến độ học, Từ vựng, Học từ vựng, Kiểm tra Anh-Việt, Kiểm tra Việt-Anh) khớp pixel/spacing/màu/font theo Figma đã đo bằng Playwright; lint+typecheck+build sạch; các bug CRUD trong dev mock (weekly-plan, vocabulary add/delete, mark-learned) đã sửa để phản ánh đúng dữ liệu thay vì trả item cố định.",
+      "evidence": "TỰ TEST 2026-07-05: npm run lint / typecheck / build (web/frontend) đều PASS sau đợt chỉnh sửa lớn. Phạm vi: (1) Header — logo/nav pill 596px, bỏ link Admin (route tự guard riêng). (2) Dashboard — 3 CircleStat (giờ hôm nay/tổng giờ đã học/streak) + Level card (tooltip Mục tiêu tiếp theo hiện giờ dạng thập phân VN 1 số sau phẩy, width tự co w-max); WeeklyPlan luôn đủ 7 dòng, sửa tại chỗ; LeaderboardCard huy chương + ghim + tên dài truncate kèm tooltip, tag (bạn) tách khỏi span truncate để không bị cắt mất. (3) Từ vựng /tu-vung — LearnedChart 7 ngày cố định + tooltip hover, TotalLearnedRing 44px, bảng: colgroup khớp header flex overlay, lọc ngày/trạng thái dạng overlay đúng vị trí dòng đầu (đo Playwright), phân trang cố định vị trí giữa card bất kể độ dài nút bên cạnh, PAGE_SIZE=6, card tự co theo số dòng thật. (4) Học từ vựng /hoc-tu-vung — flashcard 300x412 với text/icon loa/phiên âm đúng toạ độ Figma, card-stack 3 lớp hiện đúng nội dung thẻ kế tiếp thật (không placeholder), swipe không còn hiệu ứng bay-vào sai, tutorial overlay làm lại từ đầu (nền tối 50% + cursor+circle hoạt hình lặp 3 pha, đúng toạ độ tuyệt đối), menu ngang burger đổi icon hamburger/X. (5) Kiểm tra Anh-Việt/Việt-Anh (component dùng chung QuizGame.tsx) — adapt card+burger từ hoc-tu-vung, căn giữa layout, thêm phiên âm + auto-play audio (chiều Anh→Việt), sound đúng/sai, sửa border trạng thái 'đang chọn' (token info-foreground vốn dùng cho chữ bị dùng nhầm làm border → đổi #005FB9). (6) Bug mock fix — devMocks.ts: mark-learned giờ thật sự set learned_at (trước chỉ trả {updated:1} giả); thêm bảng IPA tra cứu tạm cho từ mới thêm qua UI; popup ConfirmDialog + xoá dòng: font medium, nút xoá đỏ đậm hơn (red-700), radius 10px. KHÔNG đổi backend/RPC/schema."
     }
   ]
 }

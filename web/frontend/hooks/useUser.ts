@@ -16,12 +16,20 @@ import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabaseClient";
 
+// DEV-ONLY: giả lập user đã login để xem UI local khi chưa có Supabase/extension.
+// Bật bằng NEXT_PUBLIC_DEV_FAKE_LOGIN=1 trong .env.local (không commit/push lên main).
+const DEV_FAKE_USER =
+  process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_DEV_FAKE_LOGIN === "1"
+    ? ({ id: "dev-fake-user", email: "dev@local.test" } as User)
+    : null;
+
 /** Theo dõi user đăng nhập (client-side). loading=true cho tới khi biết trạng thái. */
 export function useUser(): { user: User | null; loading: boolean } {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(DEV_FAKE_USER);
+  const [loading, setLoading] = useState(!DEV_FAKE_USER);
 
   useEffect(() => {
+    if (DEV_FAKE_USER) return;
     const sb = getSupabase();
     if (!sb) {
       setLoading(false);

@@ -26,34 +26,37 @@
   /* Accent = chấm logo "SM." + điểm nhấn (vàng/gold) */
   --color-accent: #f5b301;
 
-  /* Nền / bề mặt / chữ / viền */
-  --color-background: #fafafa;
-  --color-surface: #ffffff;
+  /* Nền / bề mặt / chữ / viền — TIP-081: khớp Figma "Tiến độ học"/"Từ vựng" (page bg trắng, card #fcfcfc) */
+  --color-background: #ffffff;
+  --color-surface: #fcfcfc;
   --color-surface-muted: #f3f4f6;
-  --color-border: #e5e7eb;
-  --color-foreground: #111827;
+  --color-border: #e6e6e6;
+  --color-foreground: #1f1f1f;
   --color-muted-foreground: #6b7280;
 
   /* Semantic (badge / nút info-success-danger) */
-  --color-info: #dbeafe;
-  --color-info-foreground: #2563eb;
-  --color-success: #dcfce7;
-  --color-success-foreground: #16a34a;
-  --color-danger: #fee2e2;
-  --color-danger-foreground: #dc2626;
+  /* TIP-081 — khớp nút "Thêm từ vựng"/"Học các từ đã chọn" trong Figma */
+  --color-info: #c0e1ff;
+  --color-info-foreground: #1f1f1f;
+  /* TIP-081 — khớp badge "Đã học"/"Từ mới" trong Figma (rgba gốc đè lên nền trắng) */
+  --color-success: #dcebcc;
+  --color-success-foreground: #4f9d00;
+  --color-danger: #f9d8d8;
+  --color-danger-foreground: #e03b3b;
 
   /* Vòng tròn tiến độ Level (tím) + biểu đồ */
   --color-level-ring: #7c3aed;
-  --color-chart-bar: #60a5fa;
-  --color-chart-base: #e5e7eb;
+  /* TIP-081 — khớp biểu đồ "Từ vựng đã học theo ngày" trong Figma: cột xám, hover xanh nhạt */
+  --color-chart-bar: #c0e1ff;
+  --color-chart-base: #e6e6e6;
 
   /* Typography — Inter (next/font, hỗ trợ tiếng Việt) + fallback system */
   --font-heading: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-body: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 
   /* Bo góc */
-  --radius-btn: 10px;
-  --radius-card: 16px;
+  --radius-btn: 5px;
+  --radius-card: 20px;
   --radius-pill: 9999px;
 
   /* Đổ bóng card */

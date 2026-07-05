@@ -1,7 +1,5 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
 import {
   fetchWeeklyPlan,
   addWeeklyPlan,
@@ -11,27 +9,71 @@ import {
   type PlanInput,
 } from "@/lib/weeklyPlan";
 import { toast, confirmDialog } from "@/components/ui/feedback";
+import { PencilIcon, DeleteIcon, CheckboxIcon } from "@/components/ui/icons";
 
 const EMPTY: PlanInput = { plan_date: "", video_link: "", committed_time: "" };
 const inputCls = "w-full rounded-btn border border-border px-2 py-1 text-sm";
+
+// TIP-081 — hiển thị ngày dạng dd/mm/yyyy (Figma), không dùng dấu "-" của ISO (yyyy-mm-dd) lưu ở DB.
+function fmtPlanDate(s: string): string {
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : s;
+}
+
+// TIP-081 — nút Lưu/Huỷ dạng pill nhỏ (xanh/hồng nhạt theo Figma) dùng cho dòng Thêm mới + dòng đang Sửa.
+function SaveCancelButtons({
+  saving,
+  onSave,
+  onCancel,
+}: {
+  saving?: boolean;
+  onSave: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <button
+        type="button"
+        disabled={saving}
+        onClick={onSave}
+        className="w-full rounded-pill bg-success px-3 py-0.5 text-xs font-medium text-success-foreground disabled:opacity-50"
+      >
+        {saving ? "…" : "Lưu"}
+      </button>
+      <button
+        type="button"
+        onClick={onCancel}
+        className="w-full rounded-pill bg-danger px-3 py-0.5 text-xs font-medium text-danger-foreground"
+      >
+        Huỷ
+      </button>
+    </div>
+  );
+}
 
 /* ============================================================
    GIẢI THÍCH CHO KHÁCH — File: components/WeeklyPlan.tsx
    ------------------------------------------------------------
    Bảng "Kế hoạch tuần này" — nơi người dùng tự lên lịch học:
-   - Mỗi dòng gồm: Ngày, Link video, Thời gian cam kết, ô tích Hoàn thành.
-   - Thêm dòng mới ở khu vực bên dưới (bấm Lưu mới ghi, không tự lưu).
-   - Sửa từng dòng tại chỗ (✏️ để sửa, 💾 lưu, ✖️ huỷ).
-   - Xoá dòng (🗑️) sẽ hỏi xác nhận trước để tránh bấm nhầm.
+   - LUÔN hiện 7 dòng (ứng với 7 ngày trong tuần). Dòng chưa có kế hoạch
+     chỉ hiện 2 icon Sửa/Xóa, các cột còn lại để trống — không có khu
+     "Thêm dòng" riêng nữa.
+   - Bấm icon bút chì (Sửa) ở dòng nào → dòng đó hiện ô nhập để điền
+     Ngày/Link video/Thời gian, bấm Lưu mới ghi (dòng trống → tạo mới,
+     dòng đã có dữ liệu → cập nhật).
+   - Xoá dòng (icon thùng rác) sẽ hỏi xác nhận trước; dòng trở lại trống,
+     tổng số dòng vẫn giữ 7.
    Mọi thay đổi được lưu lên máy chủ; mỗi người chỉ thấy kế hoạch của mình.
    ============================================================ */
-// TIP-017 — Bảng "Kế hoạch tuần này": mọi ô input text, link clickable, tick hoàn thành,
-// thêm dòng (Lưu/Huỷ), sửa (✏️) inline, xóa (🗑️). CRUD qua backend /api/weekly-plan (RLS).
+// TIP-017/TIP-081 — Bảng "Kế hoạch tuần này": luôn đúng 7 "ô ngày" (item thật + đệm rỗng cho đủ 7).
+// Sửa tại chỗ dùng chung cho cả ô rỗng (tạo mới - addWeeklyPlan) lẫn ô đã có dữ liệu (cập nhật -
+// updateWeeklyPlan). CRUD qua backend (RLS).
+const DAY_COUNT = 7;
+const emptyEditKey = (idx: number): string => `__empty_${idx}`;
+
 export function WeeklyPlanTable() {
   const [items, setItems] = useState<WeeklyPlan[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [form, setForm] = useState<PlanInput>(EMPTY);
-  const [adding, setAdding] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<PlanInput>(EMPTY);
@@ -44,20 +86,6 @@ export function WeeklyPlanTable() {
 
   const fail = (e: unknown) => toast("Lỗi: " + (e instanceof Error ? e.message : String(e)), "error");
 
-  const onAdd = async () => {
-    if (!form.plan_date.trim() && !form.video_link.trim() && !form.committed_time.trim()) return;
-    setAdding(true);
-    try {
-      const it = await addWeeklyPlan(form);
-      setItems((c) => [...(c ?? []), it]);
-      setForm(EMPTY);
-    } catch (e) {
-      fail(e);
-    } finally {
-      setAdding(false);
-    }
-  };
-
   const startEdit = (it: WeeklyPlan) => {
     setEditId(it.id);
     setEditForm({
@@ -67,11 +95,34 @@ export function WeeklyPlanTable() {
     });
   };
 
+  const startEditEmpty = (idx: number) => {
+    setEditId(emptyEditKey(idx));
+    setEditForm(EMPTY);
+  };
+
   const saveEdit = async (id: string) => {
     setBusy(id);
     try {
       const up = await updateWeeklyPlan(id, editForm);
       setItems((c) => (c ?? []).map((x) => (x.id === id ? up : x)));
+      setEditId(null);
+    } catch (e) {
+      fail(e);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const saveNewFromEmpty = async (idx: number) => {
+    if (!editForm.plan_date.trim() && !editForm.video_link.trim() && !editForm.committed_time.trim()) {
+      setEditId(null);
+      return;
+    }
+    const key = emptyEditKey(idx);
+    setBusy(key);
+    try {
+      const it = await addWeeklyPlan(editForm);
+      setItems((c) => [...(c ?? []), it]);
       setEditId(null);
     } catch (e) {
       fail(e);
@@ -105,90 +156,145 @@ export function WeeklyPlanTable() {
     }
   };
 
+  // TIP-081 — kích thước 659x448 theo Figma, cột header theo đúng px (colgroup cố định).
+  // min-h thay vì h cố định: số dòng kế hoạch có thể nhiều hơn mock Figma, không ép cắt nội dung.
   return (
-    <Card>
-      <h2 className="mb-3 font-medium">Kế hoạch tuần này</h2>
+    <div className="h-[448px] w-[659px] overflow-y-auto rounded-card border border-border bg-surface pt-[13px]">
+      <h2 className="font-heading text-center text-lg font-normal text-foreground">Kế hoạch tuần này</h2>
 
       {error ? (
-        <p className="text-sm text-danger-foreground">Không tải được kế hoạch: {error}</p>
+        <p className="px-6 pt-3 text-sm text-danger-foreground">Không tải được kế hoạch: {error}</p>
       ) : !items ? (
-        <p className="text-sm text-muted-foreground">Đang tải…</p>
+        <p className="px-6 pt-3 text-sm text-muted-foreground">Đang tải…</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
+        <div className="mt-3 overflow-x-auto">
+          <table className="w-[659px] table-fixed border-collapse text-sm">
+            <colgroup>
+              <col style={{ width: 82 }} />
+              <col style={{ width: 123 }} />
+              <col style={{ width: 185 }} />
+              <col style={{ width: 179 }} />
+              <col style={{ width: 90 }} />
+            </colgroup>
             <thead>
-              <tr className="border-b border-border text-left text-muted-foreground">
-                <th className="w-16 py-2 pr-2"></th>
-                <th className="py-2 pr-2">Ngày</th>
-                <th className="py-2 pr-2">Link video</th>
-                <th className="py-2 pr-2">Thời gian cam kết</th>
-                <th className="py-2 pr-2 text-center">Hoàn thành?</th>
+              <tr className="border-b border-border text-left text-[#cccccc]">
+                <th className="pb-[14px] pt-2"></th>
+                <th className="pb-[14px] pt-2 pr-2 text-sm font-normal tracking-[-0.03em]">Ngày</th>
+                <th className="pb-[14px] pt-2 pr-2 text-sm font-normal tracking-[-0.03em]">Link video (dự định học)</th>
+                <th className="pb-[14px] pt-2 pr-2 text-center text-sm font-normal tracking-[-0.03em]">Thời gian cam kết</th>
+                <th className="pb-[14px] pt-2 pr-2 text-center text-sm font-normal tracking-[-0.03em]">Hoàn thành?</th>
               </tr>
             </thead>
             <tbody>
-              {items.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="py-6 text-center text-muted-foreground">
-                    Chưa có kế hoạch. Thêm dòng bên dưới.
-                  </td>
-                </tr>
-              ) : (
-                items.map((it) =>
-                  editId === it.id ? (
-                    <tr key={it.id} className="border-b border-border">
-                      <td className="py-2 pr-2">
-                        <div className="flex gap-1">
-                          <button title="Lưu" disabled={busy === it.id} onClick={() => saveEdit(it.id)}>
-                            💾
+              {(() => {
+                // TIP-081 — luôn đủ DAY_COUNT (7) dòng: item thật trước, đệm ô rỗng (null) cho đủ 7.
+                const slots: (WeeklyPlan | null)[] = [...items];
+                while (slots.length < DAY_COUNT) slots.push(null);
+
+                return slots.map((it, idx) => {
+                  const key = it ? it.id : emptyEditKey(idx);
+                  const editingThis = editId === key;
+
+                  if (editingThis) {
+                    return (
+                      <tr key={key} className="border-b border-border">
+                        <td className="py-2 pr-2"></td>
+                        <td className="py-2 pr-2">
+                          <input
+                            className={inputCls}
+                            placeholder="dd/mm/yyyy"
+                            value={editForm.plan_date}
+                            onChange={(e) => setEditForm({ ...editForm, plan_date: e.target.value })}
+                          />
+                        </td>
+                        <td className="py-2 pr-2">
+                          <input
+                            className={inputCls}
+                            placeholder="Link video (dự kiến học)"
+                            value={editForm.video_link}
+                            onChange={(e) => setEditForm({ ...editForm, video_link: e.target.value })}
+                          />
+                        </td>
+                        <td className="py-2 pr-2 text-center">
+                          {/* TIP-081 — hộp input căn giữa cột (thẳng theo header "Thời gian cam kết" đang center),
+                              nhưng CHỮ bên trong input căn trái (mặc định input) như bạn yêu cầu. */}
+                          <input
+                            className="relative left-[-7px] mx-auto block w-24 rounded-btn border border-border px-2 py-1 text-left text-sm"
+                            placeholder="hhmm"
+                            value={editForm.committed_time}
+                            onChange={(e) => setEditForm({ ...editForm, committed_time: e.target.value })}
+                          />
+                        </td>
+                        <td className="py-2 pr-2">
+                          <SaveCancelButtons
+                            saving={busy === key}
+                            onSave={() => (it ? saveEdit(it.id) : saveNewFromEmpty(idx))}
+                            onCancel={() => setEditId(null)}
+                          />
+                        </td>
+                      </tr>
+                    );
+                  }
+
+                  // Ô trống (chưa có kế hoạch) — chỉ hiện icon Sửa/Xóa, các cột còn lại để trống.
+                  if (!it) {
+                    return (
+                      <tr key={key} className="border-b border-border">
+                        <td className="py-0 pr-2">
+                          <div className="flex items-center gap-[2px] pb-[12px] pl-[10px] pt-[10px]">
+                            <button title="Xóa" disabled className="text-[#cccccc] opacity-30">
+                              <DeleteIcon />
+                            </button>
+                            <button
+                              title="Sửa"
+                              onClick={() => startEditEmpty(idx)}
+                              className="text-[#cccccc] transition-colors hover:text-[#1f1f1f]"
+                            >
+                              <PencilIcon />
+                            </button>
+                          </div>
+                        </td>
+                        <td className="pr-2"></td>
+                        <td className="pr-2"></td>
+                        <td className="pr-2"></td>
+                        <td className="pr-2"></td>
+                      </tr>
+                    );
+                  }
+
+                  return (
+                    <tr key={key} className={`border-b border-border align-middle ${it.done ? "opacity-60" : ""}`}>
+                      <td className="py-0 pr-2">
+                        {/* TIP-081 — 10px lề trái, 10px trên (dưới line header/hàng trước), 2px giữa 2 icon,
+                            12px dưới (trên line kế tiếp) → td không padding, height do khối icon quyết định,
+                            các ô khác căn giữa theo (vertical-align:middle mặc định của <td>). */}
+                        <div className="flex items-center gap-[2px] pb-[12px] pl-[10px] pt-[10px]">
+                          <button
+                            title="Xóa"
+                            disabled={busy === it.id}
+                            onClick={() => remove(it)}
+                            className="text-[#cccccc] transition-colors hover:text-[#1f1f1f] disabled:opacity-50"
+                          >
+                            <DeleteIcon />
                           </button>
-                          <button title="Huỷ" onClick={() => setEditId(null)}>
-                            ✖️
+                          <button
+                            title="Sửa"
+                            disabled={busy === it.id}
+                            onClick={() => startEdit(it)}
+                            className="text-[#cccccc] transition-colors hover:text-[#1f1f1f] disabled:opacity-50"
+                          >
+                            <PencilIcon />
                           </button>
                         </div>
                       </td>
-                      <td className="py-2 pr-2">
-                        <input
-                          className={inputCls}
-                          value={editForm.plan_date}
-                          onChange={(e) => setEditForm({ ...editForm, plan_date: e.target.value })}
-                        />
-                      </td>
-                      <td className="py-2 pr-2">
-                        <input
-                          className={inputCls}
-                          value={editForm.video_link}
-                          onChange={(e) => setEditForm({ ...editForm, video_link: e.target.value })}
-                        />
-                      </td>
-                      <td className="py-2 pr-2">
-                        <input
-                          className={inputCls}
-                          value={editForm.committed_time}
-                          onChange={(e) => setEditForm({ ...editForm, committed_time: e.target.value })}
-                        />
-                      </td>
-                      <td className="py-2 pr-2 text-center">—</td>
-                    </tr>
-                  ) : (
-                    <tr key={it.id} className={`border-b border-border ${it.done ? "opacity-60" : ""}`}>
-                      <td className="py-2 pr-2">
-                        <div className="flex gap-1">
-                          <button title="Sửa" disabled={busy === it.id} onClick={() => startEdit(it)}>
-                            ✏️
-                          </button>
-                          <button title="Xóa" disabled={busy === it.id} onClick={() => remove(it)}>
-                            🗑️
-                          </button>
-                        </div>
-                      </td>
-                      <td className="py-2 pr-2">{it.plan_date || "—"}</td>
-                      <td className="py-2 pr-2">
+                      <td className="pr-2">{it.plan_date ? fmtPlanDate(it.plan_date) : "—"}</td>
+                      <td className="pr-2">
                         {it.video_link ? (
                           <a
                             href={it.video_link}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-primary underline break-all"
+                            className="block truncate text-[#005fb9] underline"
                           >
                             {it.video_link}
                           </a>
@@ -196,60 +302,30 @@ export function WeeklyPlanTable() {
                           "—"
                         )}
                       </td>
-                      <td className="py-2 pr-2">{it.committed_time || "—"}</td>
-                      <td className="py-2 pr-2 text-center">
-                        <input
-                          type="checkbox"
-                          checked={it.done}
+                      <td className="pr-2 text-center">{it.committed_time || "—"}</td>
+                      <td className="pr-2 text-center">
+                        <button
+                          type="button"
+                          aria-label={it.done ? "Bỏ đánh dấu hoàn thành" : "Đánh dấu hoàn thành"}
                           disabled={busy === it.id}
-                          onChange={() => toggleDone(it)}
-                        />
+                          onClick={() => toggleDone(it)}
+                          className="inline-flex disabled:opacity-50"
+                        >
+                          <CheckboxIcon checked={it.done} />
+                        </button>
                       </td>
                     </tr>
-                  )
-                )
-              )}
+                  );
+                });
+              })()}
             </tbody>
           </table>
           {/* TIP-033 — quote động viên (theo Figma) */}
-          <p className="mt-3 text-center text-xs italic text-muted-foreground">
-            “Bạn sẽ thành công thôi, bởi vì hầu hết mọi người đều rất lười.” — Shahir Zag
+          <p className="mt-[16px] pl-[18px] text-left text-[12px] italic text-foreground">
+            “Bạn sẽ thành công thôi, bởi vì hầu hết mọi người đều rất lười”. - Shahir Zag.
           </p>
         </div>
       )}
-
-      {/* Form thêm dòng (Lưu / Huỷ) — không auto-save */}
-      <div className="mt-4 border-t border-border pt-3">
-        <p className="mb-2 text-sm text-muted-foreground">Thêm dòng</p>
-        <div className="grid gap-2 sm:grid-cols-3">
-          <input
-            className={inputCls}
-            placeholder="Ngày (dd/mm/yyyy)"
-            value={form.plan_date}
-            onChange={(e) => setForm({ ...form, plan_date: e.target.value })}
-          />
-          <input
-            className={inputCls}
-            placeholder="Link video"
-            value={form.video_link}
-            onChange={(e) => setForm({ ...form, video_link: e.target.value })}
-          />
-          <input
-            className={inputCls}
-            placeholder="Thời gian cam kết (vd 02h30m)"
-            value={form.committed_time}
-            onChange={(e) => setForm({ ...form, committed_time: e.target.value })}
-          />
-        </div>
-        <div className="mt-2 flex gap-2">
-          <Button onClick={onAdd} disabled={adding}>
-            {adding ? "Đang lưu…" : "Lưu"}
-          </Button>
-          <Button variant="ghost" onClick={() => setForm(EMPTY)} disabled={adding}>
-            Huỷ
-          </Button>
-        </div>
-      </div>
-    </Card>
+    </div>
   );
 }

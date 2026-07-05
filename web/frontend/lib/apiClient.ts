@@ -15,8 +15,13 @@
    ============================================================ */
 // TIP-003 — Gọi backend (NEXT_PUBLIC_BACKEND_URL) kèm Bearer token từ session Supabase.
 import { getSupabase } from "./supabaseClient";
+import { resolveDevMock } from "./devMocks";
 
 const BASE = process.env.NEXT_PUBLIC_BACKEND_URL ?? "";
+// DEV-ONLY: khi bật, apiFetch trả dữ liệu giả (devMocks.ts) thay vì gọi backend thật.
+// Không commit/push lên main.
+const DEV_MOCK_API =
+  process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_DEV_FAKE_LOGIN === "1";
 
 // Lỗi API mang theo status + code (body.error) để UI map sang thông báo thân thiện.
 export class ApiError extends Error {
@@ -31,6 +36,10 @@ export class ApiError extends Error {
 }
 
 export async function apiFetch<T = unknown>(path: string, init: RequestInit = {}): Promise<T> {
+  if (DEV_MOCK_API) {
+    const mock = resolveDevMock(path, init.method ?? "GET", init.body as string | undefined);
+    if (mock !== undefined) return mock as T;
+  }
   const headers = new Headers(init.headers);
   const sb = getSupabase();
   if (sb) {

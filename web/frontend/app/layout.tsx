@@ -31,9 +31,10 @@ export const metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="vi" className={inter.variable}>
-      <body className="flex min-h-screen flex-col">
+      <body className="flex min-h-screen flex-col" suppressHydrationWarning>
         <Header />
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+        {/* TIP-081 — khung layout khớp frame Figma 1280px (không phải 1024px/max-w-5xl cũ) */}
+        <main className="mx-auto w-full max-w-[1280px] flex-1 px-4 py-8">
           <AccessGuard>{children}</AccessGuard>
         </main>
         <Toaster />

@@ -22,6 +22,18 @@
 
 ## Session log
 
+### Session 37 — TIP-081: pixel-perfect polish 5 trang web theo Figma + fix bug mock CRUD (2026-07-05)
+- **Bối cảnh:** tiếp nối reskin TIP-033 — khách chỉnh tay từng chi tiết nhỏ (px/màu/font/vị trí) qua rất nhiều lượt phản hồi trực tiếp, đo bằng Playwright thay vì đoán, cho 5 trang: Dashboard, Từ vựng, Học từ vựng (flashcard), Kiểm tra Anh-Việt/Việt-Anh (`QuizGame.tsx` dùng chung).
+- **Việc đã làm (tóm tắt, chi tiết ở evidence `feature_list.json` id `WEB-TIP081`):**
+  - Dashboard: CircleStat "Tổng thời gian đã học" (đồng bộ số liệu với tooltip Level card, format thập phân VN 1 số sau phẩy, tooltip width tự co `w-max`); WeeklyPlan luôn 7 dòng sửa tại chỗ; LeaderboardCard tag "(bạn)" tách khỏi span truncate (bug: tên dài đẩy tag bị cắt mất theo "…").
+  - Từ vựng: bảng dùng `colgroup` khớp header overlay, 2 filter (ngày/trạng thái) dạng popup overlay đúng pixel dòng đầu, phân trang neo giữa card cố định bất kể độ dài nút cạnh bên, PAGE_SIZE 10→6, card tự co theo số dòng thật (bỏ `min-h` cứng).
+  - Học từ vựng: flashcard 300×412 đúng toạ độ Figma (chữ/icon loa/phiên âm), card-stack 3 lớp hiện ĐÚNG nội dung thẻ kế tiếp thật (trước là placeholder trống), sửa hiệu ứng swipe bị "bay vào" sai khi đổi thẻ (do transition không được tắt đúng 1 frame), viết lại tutorial overlay từ đầu theo mô tả animation cursor+circle 3 pha lặp vô hạn.
+  - Kiểm tra Anh-Việt/Việt-Anh: adapt style card+burger từ Học từ vựng, thêm phiên âm + auto-play audio (chiều Anh→Việt) + sound đúng/sai, sửa border trạng thái "đang chọn" (bug: dùng nhầm token `info-foreground` — vốn để tô CHỮ, không phải viền — ra màu gần đen; đổi `#005FB9`).
+  - **Bug fix mock (`lib/devMocks.ts`):** `mark-learned` trước chỉ trả `{updated:1}` giả mà KHÔNG set `learned_at` thật → từ học xong không chuyển "Đã học". Đã sửa đọc `ids` từ body và cập nhật đúng mảng. Thêm bảng tra IPA tạm (32 từ) cho từ thêm mới qua UI.
+  - Popup `ConfirmDialog` (`components/ui/feedback.tsx`): title `font-medium`, nút xoá `bg-red-700` (bớt chói), `rounded-[10px]`.
+- **Verification:** `npm run lint` + `npm run typecheck` + `npm run build` ở `web/frontend` — cả 3 PASS (lint có 1 lỗi eslint-disable-comment thừa tham chiếu rule không tồn tại trong config project này — đã xoá). Không đổi backend/schema/RPC.
+- **Resume:** UI web coi như xong đợt này theo khách. Tiếp theo dự kiến chuyển qua sửa UI **extension** — session sau nên đọc lại `CLAUDE.md` mục 7 (Session Lifecycle) + phần extension trong Blueprint trước khi bắt đầu TIP mới. Chưa push lên `main` (chờ khách xác nhận).
+
 ### Session 36 — TIP-033: redesign web app khớp Figma (5 màn, calibrate) (2026-07-01)
 - **Yêu cầu khách:** redesign UI web app "giống hệt file Figma". Nguồn = 20 ảnh PNG (Figma\Webapp), KHÔNG có Dev Mode → so bằng mắt (~95%). Cách làm: calibrate từng màn, Homeowner duyệt từng cái. Khách chê "tổng thể + layout/khoảng cách". Tokens (globals.css @theme) đã gần Figma → chủ yếu sửa LAYOUT từng trang.
 - **5 màn đã calibrate + Homeowner DUYỆT (2026-07-01):**

@@ -93,11 +93,11 @@ export function ConfirmHost() {
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 p-4" onClick={() => close(false)}>
       <div
-        className="w-full max-w-sm rounded-card border border-border bg-surface p-5 shadow-lg"
+        className="w-full max-w-sm rounded-[10px] border border-border bg-surface p-5 shadow-lg"
         onClick={(e) => e.stopPropagation()}
         role="alertdialog"
       >
-        <h3 className="font-heading text-lg font-bold">{opts.title}</h3>
+        <h3 className="font-heading text-lg font-medium">{opts.title}</h3>
         {opts.message ? <p className="mt-1 text-sm text-muted-foreground">{opts.message}</p> : null}
         <div className="mt-4 flex justify-end gap-2">
           <button
@@ -109,7 +109,7 @@ export function ConfirmHost() {
           <button
             onClick={() => close(true)}
             className={`rounded-btn px-4 py-2 text-sm font-medium text-white ${
-              opts.danger ? "bg-red-600 hover:bg-red-700" : "bg-primary hover:bg-primary-hover"
+              opts.danger ? "bg-red-700 hover:bg-red-800" : "bg-primary hover:bg-primary-hover"
             }`}
           >
             {opts.confirmText ?? "Xác nhận"}

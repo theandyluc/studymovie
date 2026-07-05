@@ -75,6 +75,8 @@ export type QuizDirection = "en2vi" | "vi2en";
 export interface QuizQuestion {
   id: string;
   prompt: string;
+  // TIP-081 — phiên âm của prompt (chỉ có khi prompt là từ tiếng Anh, chiều en2vi); vi2en → null.
+  ipa: string | null;
   options: string[];
   answerIndex: number;
 }
@@ -123,6 +125,12 @@ export function buildQuiz(items: VocabItem[], dir: QuizDirection, askItems?: Voc
         if (distractors.length === 3) break;
       }
       const options = shuffle([correct, ...distractors]);
-      return { id: it.id, prompt: promptOf(it), options, answerIndex: options.indexOf(correct) };
+      return {
+        id: it.id,
+        prompt: promptOf(it),
+        ipa: dir === "en2vi" ? it.ipa : null,
+        options,
+        answerIndex: options.indexOf(correct),
+      };
     });
 }
