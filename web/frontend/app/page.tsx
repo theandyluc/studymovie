@@ -44,7 +44,7 @@ export default function LoginPage() {
     <div className="flex min-h-[70vh] items-center justify-center">
       <Card className="w-full max-w-sm text-center">
         <h1 className="font-heading text-2xl font-bold">StudyMovie</h1>
-        <p className="mt-3 text-sm text-muted-foreground">
+        <p className="mt-3 text-sm font-normal tracking-[-0.03em] text-[#1f1f1f]/50">
           Vui lòng đăng nhập bằng tiện ích StudyMovie trên trình duyệt để sử dụng.
         </p>
         <Link
