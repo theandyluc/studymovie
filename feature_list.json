@@ -685,6 +685,40 @@
       ],
       "acceptance": "Popup (màn đăng nhập/đăng ký, màn chính sau đăng nhập, màn loading) khớp size/màu/spacing/letter-spacing theo Figma; icon SVG thật thay toàn bộ emoji; phụ đề YouTube dùng font Inter + letter-spacing -3%; lint+typecheck+build (dev & prod) đều sạch.",
       "evidence": "TỰ TEST 2026-07-05/06: npm run lint/typecheck/build/build:prod (extension) đều PASS sau nhiều vòng chỉnh sửa. Phạm vi: (1) Màn đăng nhập/đăng ký — tab Đăng nhập/Đăng ký 144x24 bo góc riêng từng bên, icon SVG (bỏ emoji, tránh lỗi cờ 🇬🇧 không hiện trên Windows), input 184px→223px (scale +15%+5%), nút submit 'auth-submit' riêng (không đụng .btn dùng chung), toggle link 'Đăng nhập/Đăng ký' tách khỏi text tĩnh, toàn bộ letter-spacing -3%, màu đen chuẩn hoá #1f1f1f. (2) Màn chính — card Thời gian học 194x135 + card Chế độ phụ đề 242x204 cố định kích thước (trước đó co giãn theo trạng thái gây lệch hàng), icon SVG cho nút play/pause/stop + footer (đăng xuất/hỗ trợ/tắt), hover/active đồng bộ opacity 50%→100% cho icon lẫn viền, chấm đổi màu nền luôn hiện (không phụ thuộc toggle), stepper +/- bỏ số hiển thị giữa. (3) Màn loading mới — logo 'film-open-star' (đồng bộ web app, thay text 'SM.' cũ) + text StudyMovie căn giữa, vòng tròn xoay bao quanh (CSS animation). (4) Phụ đề YouTube (youtube.ts) — thêm font-family Inter + letter-spacing -3%, giữ nguyên bold(EN)/normal(VI). (5) settings.ts — đổi default fontSizePx 20→24, bgOpacity 20→80, lineGapPx 2→0 (GAP_MIN 2→0); FIX BUG THẬT: normalize() dùng `Number(x) || default` khiến lineGapPx=0 (giá trị hợp lệ) bị ghi đè ngược về default vì 0 là falsy trong JS — đổi sang `??` để phân biệt đúng 'chưa có giá trị' với 'giá trị là 0'. (6) Thêm `npm run dev` (esbuild --watch) trong extension để iterate nhanh hơn khi build local. KHÔNG đổi backend/schema. Đã push commit 66012bb, 8312c92, 6b343ad lên main — CHƯA build:prod + nộp Chrome Web Store (cần Homeowner tự làm)."
+    },
+    {
+      "id": "WEB-ADMIN-ACCOUNTS",
+      "title": "Trang /admin: tạo/xoá tài khoản thủ công + biểu đồ Tổng user 7 ngày",
+      "area": "backend+frontend",
+      "tip": "TIP-096/097",
+      "status": "verified",
+      "depends_on": [
+        "WEB-ADMIN"
+      ],
+      "acceptance": "Admin tạo được tài khoản mới (email+mật khẩu, tự xác nhận email) và xoá được tài khoản thật (cascade xoá profile/subscription/vocab) ngay trên UI /admin, gate bằng RPC is_caller_admin() có sẵn (không phải admin không gọi được dù có JWT hợp lệ). Card 'Tổng user' đổi thành biểu đồ cột 7 ngày (style LearnedChart /tu-vung) + thêm CircleStat tổng số user cạnh biểu đồ.",
+      "evidence": "TỰ TEST 2026-07-06: lint/typecheck/test (backend) + lint/typecheck/build (frontend) PASS. Backend: POST /api/admin/create-user + DELETE /api/admin/users/:id dùng Supabase Admin Auth API (service_role, chỉ backend), gate bằng RPC is_caller_admin() trước khi chạy service_role. Migration 20260706000016 thêm daily_new_users (7 ngày, giờ VN) vào admin_get_stats() — verify trực tiếp bằng supabase db query trên production, data khớp thực tế. Đã push + Vercel deploy Ready + curl production 200 OK (commit 8041a57)."
+    },
+    {
+      "id": "WEB-LEADERBOARD-ADMIN-EXCLUDE",
+      "title": "Bảng xếp hạng: loại acc admin khỏi mọi kỳ (Tuần/Tháng/Toàn thời gian)",
+      "area": "backend",
+      "tip": "TIP-099",
+      "status": "verified",
+      "depends_on": [
+        "EXT-LEADERBOARD"
+      ],
+      "acceptance": "RPC get_leaderboard(): acc admin (profiles.is_admin=true) không bao giờ xuất hiện trong top hay được ghim/xếp hạng riêng, kể cả khi chính admin đang xem trang — vì admin chỉ dùng để quản trị/test, không phải người dùng thật.",
+      "evidence": "TỰ TEST 2026-07-06: migration 20260706000017 verify trực tiếp bằng supabase db query trên production — join profiles loại is_admin=true khỏi CTE ranked; nhánh caller trả null nếu chính người xem là admin. Phát hiện phụ: user đã dùng tính năng xoá tài khoản mới build để dọn 2 acc trùng tên 'Trường Lục Nam' gây rối trước đó (xem TIP-084 ở EXT/WEB-LEADERBOARD-NEXT-RANK) — bảng xếp hạng tạm trống mọi kỳ vì người duy nhất từng học chính là acc admin, nay bị loại (đúng thiết kế mới)."
+    },
+    {
+      "id": "WEB-FAVICON",
+      "title": "Favicon web app (icon film-open-star, viền tròn) + text polish nhiều trang",
+      "area": "frontend",
+      "tip": "TIP-085→099 (đuôi)",
+      "status": "verified",
+      "depends_on": [],
+      "acceptance": "app.studymovie.com có favicon riêng (không dùng default browser icon), hình tròn nền trắng chứa icon 'film-open-star' (đồng bộ logo web, KHÁC icon extension bo góc vuông theo chủ đích — icon extension giữ quy ước Chrome squircle). Nhiều text rải rác (Đang tải, empty-state, mô tả /thanh-toan, /cam-on, trang chủ, /tu-vung) đồng bộ font Inter regular/light + #1f1f1f + letter-spacing -3% theo yêu cầu khách.",
+      "evidence": "TỰ TEST 2026-07-06: web/frontend/app/icon.png (512x512, alpha PNG render qua Playwright headless từ đúng SVG logo Header.tsx, border-radius 50%) — Next.js App Router tự nhận diện convention, curl production /icon.png 200 OK. Các polish text: PageLoading, /tien-do-hoc, LeaderboardCard, WeeklyPlan, /thanh-toan (2 màn hết hạn trial + đã Pro), /cam-on, trang chủ (/), /tu-vung empty-state — đều lint/typecheck/build PASS, đã push + Vercel Ready (commit 1c274af, 80dc12e, 9eb22af, 1e3519c, 684488b)."
     }
   ]
 }
