@@ -53,7 +53,7 @@ function LevelPicker({
           </option>
         ))}
       </select>
-      <Button onClick={() => onSave(sel)} disabled={saving}>
+      <Button onClick={() => onSave(sel)} disabled={saving} style={{ background: "rgba(31, 31, 31, 0.9)" }}>
         {saving ? "Đang lưu…" : "Lưu"}
       </Button>
       {onCancel ? (
