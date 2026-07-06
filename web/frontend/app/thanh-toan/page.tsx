@@ -148,11 +148,11 @@ function UpgradeInner() {
         <Card className="text-center">
           <div className="text-4xl">⭐</div>
           <h1 className="mt-2 font-heading text-xl font-bold">Bạn đã là Pro</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mt-2 text-sm font-light tracking-[-0.03em] text-[#1f1f1f]">
             {until ? `Gói Pro của bạn có hạn đến ${until}.` : "Tài khoản của bạn đang là Pro."}
           </p>
           <a href="/tien-do-hoc" className="mt-4 inline-block">
-            <Button>Vào học</Button>
+            <Button style={{ background: "rgba(31, 31, 31, 0.9)" }}>Vào học</Button>
           </a>
         </Card>
       </div>
@@ -163,19 +163,26 @@ function UpgradeInner() {
   if (!order) {
     return (
       <div className="mx-auto max-w-md text-center">
-        <h1 className="font-heading text-2xl font-bold">Hết hạn dùng thử</h1>
-        <p className="mt-[5px] text-sm text-muted-foreground">
-          Tài khoản của bạn đã hết hạn dùng thử,
-          <br />
-          vui lòng nâng cấp để tiếp tục sử dụng.
-        </p>
-        <Card className="mt-4 space-y-4 text-center">
-          <p className="text-sm text-muted-foreground">Mở khoá toàn bộ tính năng StudyMovie với gói Pro.</p>
+        <Card className="space-y-4 text-center">
+          <div>
+            <div className="text-4xl">⏳</div>
+            <h1 className="mt-2 font-heading text-2xl font-bold">Hết hạn dùng thử</h1>
+            <p className="mt-[5px] text-sm font-normal tracking-[-0.03em] text-[#1f1f1f]">
+              Tài khoản của bạn đã hết hạn dùng thử,
+              <br />
+              vui lòng nâng cấp để tiếp tục sử dụng.
+            </p>
+          </div>
           <p className="font-heading text-3xl font-bold">
             {VND(price)}
-            <span className="text-base font-normal text-muted-foreground"> / năm</span>
+            <span className="text-base font-normal tracking-[-0.03em] text-[#1f1f1f]"> / năm</span>
           </p>
-          <Button onClick={onCreate} disabled={creating} className="w-full">
+          <Button
+            onClick={onCreate}
+            disabled={creating}
+            className="w-full"
+            style={{ background: "rgba(31, 31, 31, 0.9)" }}
+          >
             {creating ? "Đang tạo đơn…" : "Nâng cấp ngay"}
           </Button>
           {err ? <p className="text-sm text-danger-foreground">{err}</p> : null}

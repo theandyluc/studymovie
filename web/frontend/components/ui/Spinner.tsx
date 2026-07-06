@@ -15,9 +15,9 @@ export function Spinner({ size = 24 }: { size?: number }) {
 
 export function PageLoading({ label = "Đang tải" }: { label?: string }) {
   return (
-    <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 text-muted-foreground">
+    <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3">
       <Spinner size={32} />
-      {label ? <p className="text-sm">{label}</p> : null}
+      {label ? <p className="text-sm font-normal tracking-[-0.03em] text-foreground">{label}</p> : null}
     </div>
   );
 }

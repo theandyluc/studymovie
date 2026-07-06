@@ -165,7 +165,7 @@ export function LeaderboardCard() {
         {error ? (
           <p className="text-sm text-danger-foreground">Không tải được: {error}</p>
         ) : !data ? (
-          <p className="text-sm text-muted-foreground">Đang tải…</p>
+          <p className="text-sm font-normal tracking-[-0.03em] text-foreground">Đang tải…</p>
         ) : top5.length === 0 ? (
           <p className="py-6 text-center text-sm font-normal text-foreground">{EMPTY_TEXT[period]}</p>
         ) : (

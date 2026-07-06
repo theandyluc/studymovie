@@ -121,7 +121,7 @@ function LevelCard() {
   // thước, còn lại tự co giãn theo nội dung (p-6, không khai h/w) → lệch hàng với card stat.
   const cardCls = "flex h-[174px] w-[374px] items-center justify-center rounded-card border border-border bg-surface p-6 text-center";
   if (err) return <div className={cardCls}><p className="text-sm text-danger-foreground">Không tải được level: {err}</p></div>;
-  if (!lv) return <div className={cardCls}><p className="text-sm text-muted-foreground">Đang tải</p></div>;
+  if (!lv) return <div className={cardCls}><p className="text-sm font-normal tracking-[-0.03em] text-foreground">Đang tải</p></div>;
 
   // Chưa nhập level → card cho chọn. pt-[18px] để "Level hiện tại" cùng y với headline CircleStat
   // (card "đã chọn" bên dưới: cụm CircleStat bắt đầu từ pt-[18px] tính từ viền trên card).

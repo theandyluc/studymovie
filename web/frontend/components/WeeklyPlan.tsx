@@ -165,7 +165,7 @@ export function WeeklyPlanTable() {
       {error ? (
         <p className="px-6 pt-3 text-sm text-danger-foreground">Không tải được kế hoạch: {error}</p>
       ) : !items ? (
-        <p className="px-6 pt-3 text-sm text-muted-foreground">Đang tải…</p>
+        <p className="px-6 pt-3 text-sm font-normal tracking-[-0.03em] text-foreground">Đang tải…</p>
       ) : (
         <div className="mt-3 overflow-x-auto">
           <table className="w-[659px] table-fixed border-collapse text-sm">
