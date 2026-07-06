@@ -491,7 +491,7 @@ function VocabList() {
         <div className="w-[880px] rounded-card border border-border bg-surface pb-[7.5px] pt-[6px]">
         {/* Bảng */}
         {items.length === 0 ? (
-          <p className="mx-6 mt-4 text-muted-foreground">
+          <p className="mx-6 mt-4 text-[14px] font-normal tracking-[-0.03em] text-[#1f1f1f]">
             Chưa có từ nào. Thêm ở trên, hoặc lưu từ khi xem video bằng extension StudyMovie.
           </p>
         ) : (
