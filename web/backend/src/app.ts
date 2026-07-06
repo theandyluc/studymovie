@@ -21,6 +21,8 @@ import {
   postAdminPrice,
   postAdminGrantPro,
   postAdminSetAdmin,
+  postAdminCreateUser,
+  deleteAdminUser,
 } from "./api/admin.js";
 import {
   getWeeklyPlan,
@@ -79,6 +81,8 @@ app.get("/api/admin/users", requireAuth, getAdminUsers); // WEB-ADMIN TIP-020
 app.post("/api/admin/price", requireAuth, postAdminPrice); // WEB-ADMIN TIP-020
 app.post("/api/admin/grant-pro", requireAuth, postAdminGrantPro); // WEB-ADMIN TIP-020
 app.post("/api/admin/set-admin", requireAuth, postAdminSetAdmin); // WEB-ADMIN TIP-020
+app.post("/api/admin/create-user", requireAuth, postAdminCreateUser); // WEB-ADMIN TIP-096
+app.delete("/api/admin/users/:id", requireAuth, deleteAdminUser); // WEB-ADMIN TIP-096
 app.get("/api/weekly-plan", requireAuth, getWeeklyPlan); // WEB-PLAN TIP-017
 app.post("/api/weekly-plan", requireAuth, postWeeklyPlan); // WEB-PLAN TIP-017
 app.patch("/api/weekly-plan/:id", requireAuth, patchWeeklyPlan); // WEB-PLAN TIP-017

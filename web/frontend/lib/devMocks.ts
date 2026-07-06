@@ -319,7 +319,15 @@ export function resolveDevMock(path: string, method: string, body?: string): unk
     mockWeeklyPlanItems = mockWeeklyPlanItems.filter((x) => x.id !== id);
     return { deleted: true };
   }
-  if (p === "/api/admin/stats") return { total_users: 6, pro_users: 1, revenue: mockProPrice };
+  if (p === "/api/admin/stats") {
+    const today = new Date();
+    const daily_new_users = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(today);
+      d.setDate(d.getDate() - (6 - i));
+      return { date: d.toISOString().slice(0, 10), count: [1, 0, 2, 1, 0, 1, 1][i] };
+    });
+    return { total_users: 6, pro_users: 1, revenue: mockProPrice, daily_new_users };
+  }
   if (p === "/api/admin/users") {
     return [
       {

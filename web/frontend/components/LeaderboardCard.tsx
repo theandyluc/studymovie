@@ -167,7 +167,7 @@ export function LeaderboardCard() {
         ) : !data ? (
           <p className="text-sm text-muted-foreground">Đang tải…</p>
         ) : top5.length === 0 ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">{EMPTY_TEXT[period]}</p>
+          <p className="py-6 text-center text-sm font-normal text-foreground">{EMPTY_TEXT[period]}</p>
         ) : (
           <>
             {top5.map((r) => (

@@ -19,6 +19,7 @@ export interface AdminStats {
   total_users: number;
   pro_users: number;
   revenue: number;
+  daily_new_users: { date: string; count: number }[]; // TIP-097 — 7 ngày gần nhất
 }
 
 export interface AdminUser {
@@ -41,3 +42,10 @@ export const grantPro = (user_id: string, days: number): Promise<{ ok: boolean }
 
 export const setUserAdmin = (user_id: string, is_admin: boolean): Promise<{ ok: boolean }> =>
   apiFetch("/api/admin/set-admin", { method: "POST", body: JSON.stringify({ user_id, is_admin }) });
+
+// TIP-096 — tạo/xoá tài khoản thủ công (Admin Auth API qua backend, service_role chỉ ở server).
+export const createAccount = (email: string, password: string): Promise<{ ok: boolean; user_id?: string }> =>
+  apiFetch("/api/admin/create-user", { method: "POST", body: JSON.stringify({ email, password }) });
+
+export const deleteAccount = (user_id: string): Promise<{ ok: boolean }> =>
+  apiFetch(`/api/admin/users/${encodeURIComponent(user_id)}`, { method: "DELETE" });
