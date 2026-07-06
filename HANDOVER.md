@@ -215,7 +215,7 @@ cd extension    && npm run lint && npm run build
 |---|---|
 | `storage` | Lưu cài đặt phụ đề (chế độ/màu/cỡ chữ) và phiên đăng nhập cục bộ. |
 | `tabs` | Mở web app (app.studymovie.com) từ popup. |
-| `scripting` + host `*://*.youtube.com/*` | Chèn lớp phụ đề song ngữ vào trình phát YouTube. |
+| host `*://*.youtube.com/*` | Chèn lớp phụ đề song ngữ vào trình phát YouTube (content script khai TĨNH trong manifest — KHÔNG cần quyền `scripting`, quyền đó chỉ cần khi gọi `chrome.scripting.*` lúc runtime; đã bị Chrome Web Store từ chối lần đầu vì khai thừa quyền không dùng tới, đã gỡ). |
 | `alarms` | Ghi nhận/flush thời gian học định kỳ. |
 | host `https://app.studymovie.com/*` | Đọc phiên đăng nhập của web app để đồng bộ tài khoản. |
 
