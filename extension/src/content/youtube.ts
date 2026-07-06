@@ -364,16 +364,24 @@ function meaningSummary(result: LookupResult | null): string {
     .join("; ");
 }
 
-function mkBtn(label: string, onClick: () => void, ghost = false): HTMLButtonElement {
+// TIP-095 — icon loa 18x18, y hệt page hoc-tu-vung (SpeakerIcon), thay nút text "🔊 Phát âm".
+const SPEAKER_ICON_SVG =
+  '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.125 2.81251C10.125 2.70187 10.0924 2.5937 10.0312 2.50152C9.97 2.40934 9.883 2.33724 9.78105 2.29426C9.67911 2.25127 9.56676 2.2393 9.45805 2.25984C9.34934 2.28039 9.2491 2.33253 9.16987 2.40976L5.877 5.61601H3.9375C3.48995 5.61601 3.06072 5.7938 2.74426 6.11026C2.42779 6.42673 2.25 6.85595 2.25 7.30351V10.6673C2.25 11.1148 2.42779 11.544 2.74426 11.8605C3.06072 12.177 3.48995 12.3548 3.9375 12.3548H5.87587L9.16875 15.5891C9.24785 15.6667 9.34809 15.7191 9.45688 15.7399C9.56568 15.7607 9.67819 15.7489 9.78032 15.706C9.88244 15.6631 9.96963 15.5911 10.0309 15.4988C10.0923 15.4066 10.125 15.2983 10.125 15.1875V2.81251ZM11.3749 5.83763C11.4209 5.77975 11.4778 5.73151 11.5425 5.69566C11.6071 5.65981 11.6782 5.63705 11.7517 5.6287C11.8251 5.62034 11.8995 5.62654 11.9705 5.64695C12.0416 5.66735 12.1079 5.70157 12.1657 5.74763L12.168 5.74876L12.1702 5.75101L12.1759 5.75551L12.1927 5.77013L12.2445 5.81513C12.2857 5.85263 12.339 5.90588 12.4042 5.97488C12.5314 6.11326 12.6967 6.31463 12.8599 6.58238C13.1872 7.12238 13.5045 7.92451 13.5045 8.99888C13.5045 10.0721 13.1872 10.8754 12.8599 11.4154C12.7286 11.6329 12.576 11.8368 12.4042 12.024C12.332 12.101 12.2562 12.1746 12.177 12.2445L12.168 12.2524H12.1669C12.1669 12.2524 11.664 12.5258 11.376 12.1646C11.2834 12.0488 11.2403 11.901 11.2561 11.7535C11.2719 11.606 11.3453 11.4708 11.4604 11.3771L11.4626 11.3749L11.4829 11.3569C11.5039 11.3381 11.5357 11.3063 11.5785 11.2613C11.699 11.1289 11.806 10.985 11.898 10.8315C12.1342 10.4434 12.3795 9.83926 12.3795 8.99776C12.3795 8.15626 12.1342 7.55438 11.898 7.16738C11.7822 6.97656 11.6431 6.80085 11.484 6.64426L11.4637 6.62626C11.3477 6.53326 11.2732 6.39808 11.2565 6.25029C11.2399 6.1025 11.2824 5.95413 11.3749 5.83763ZM13.2896 3.49763C13.232 3.44997 13.1655 3.41427 13.094 3.39261C13.0224 3.37095 12.9473 3.36377 12.8729 3.37148C12.7986 3.37919 12.7265 3.40165 12.661 3.43753C12.5954 3.47342 12.5376 3.52201 12.491 3.58048C12.4445 3.63894 12.41 3.70611 12.3897 3.77804C12.3694 3.84997 12.3636 3.92524 12.3727 3.99943C12.3818 4.07363 12.4056 4.14527 12.4427 4.21016C12.4798 4.27505 12.5294 4.3319 12.5887 4.37738L12.6011 4.38863L12.6596 4.43926C12.7136 4.48651 12.789 4.55963 12.8857 4.65863C13.077 4.85776 13.3357 5.15701 13.5945 5.55188C14.112 6.34051 14.6295 7.50151 14.6295 9.00451C14.6339 10.2311 14.2736 11.4312 13.5945 12.4526C13.3357 12.8464 13.077 13.1434 12.8857 13.3414C12.7952 13.4355 12.7006 13.5255 12.6022 13.6114L12.5899 13.6226H12.5887C12.4752 13.7166 12.4031 13.8514 12.3879 13.9979C12.3727 14.1445 12.4156 14.2912 12.5074 14.4065C12.5993 14.5217 12.7327 14.5964 12.8789 14.6143C13.0252 14.6322 13.1727 14.592 13.2896 14.5024L13.3267 14.472L13.4111 14.3989C13.482 14.3348 13.5799 14.2436 13.6957 14.1233C14.0078 13.7992 14.2888 13.4467 14.535 13.0703C15.3342 11.8653 15.7581 10.4504 15.7534 9.00451C15.7563 7.55746 15.3325 6.14167 14.535 4.93426C14.2887 4.55746 14.0081 4.20421 13.6969 3.87901C13.5792 3.75688 13.4561 3.64013 13.3279 3.52913L13.302 3.50776L13.2941 3.50101L13.2919 3.49876L13.2896 3.49763Z" fill="#1F1F1F"/></svg>';
+
+// TIP-095 — nút Lưu (nền xanh, khớp badge "Đã học" /tu-vung) / Đóng (nền đỏ, khớp badge "Từ mới").
+function mkBtn(label: string, onClick: () => void, variant: "save" | "close"): HTMLButtonElement {
   const b = document.createElement("button");
   b.textContent = label;
+  const colors =
+    variant === "save" ? { bg: "#dcebcc", fg: "#4f9d00" } : { bg: "#f9d8d8", fg: "#e03b3b" };
   Object.assign(b.style, {
-    border: ghost ? "1px solid #e4e4e7" : "0",
-    background: ghost ? "transparent" : "#4f46e5",
-    color: ghost ? "#18181b" : "#ffffff",
+    border: "0",
+    background: colors.bg,
+    color: colors.fg,
     borderRadius: "6px",
     padding: "6px 12px",
     fontSize: "13px",
+    fontWeight: "500",
     cursor: "pointer",
     marginTop: "6px",
   } as Partial<CSSStyleDeclaration>);
@@ -453,23 +461,66 @@ function onWordClick(word: string, surface: string, sentence: string): void {
   // Guard: popup còn mở & đúng element (bỏ qua cập nhật nếu user đã đóng trước khi request về).
   const alive = (): boolean => popupOpen && document.getElementById("studymovie-word") === pop;
 
-  const head = document.createElement("div");
-  head.style.fontWeight = "700";
+  // TIP-095 — hàng từ + icon loa (căn baseline), font/màu đồng bộ page hoc-tu-vung.
+  const headRow = document.createElement("div");
+  Object.assign(headRow.style, {
+    display: "flex",
+    alignItems: "baseline",
+    gap: "6px",
+  } as Partial<CSSStyleDeclaration>);
+  const head = document.createElement("span");
+  Object.assign(head.style, {
+    fontSize: "28px",
+    fontWeight: "700",
+    lineHeight: "1",
+    letterSpacing: "-0.03em",
+    color: "#1f1f1f",
+  } as Partial<CSSStyleDeclaration>);
   head.textContent = surface.trim() || word; // hiện NGAY, không cần request
-  pop.appendChild(head);
+  const speakerBtn = document.createElement("button");
+  speakerBtn.type = "button";
+  Object.assign(speakerBtn.style, {
+    border: "0",
+    background: "none",
+    padding: "0",
+    margin: "0",
+    cursor: "pointer",
+    display: "inline-flex",
+    opacity: "0.5",
+    transition: "opacity 0.15s",
+  } as Partial<CSSStyleDeclaration>);
+  speakerBtn.innerHTML = SPEAKER_ICON_SVG;
+  speakerBtn.addEventListener("mouseenter", () => (speakerBtn.style.opacity = "1"));
+  speakerBtn.addEventListener("mouseleave", () => (speakerBtn.style.opacity = "0.5"));
+  speakerBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    playPronunciation(currentResult?.audio_url ?? null, currentResult?.lemma || word);
+  });
+  headRow.appendChild(head);
+  headRow.appendChild(speakerBtn);
+  pop.appendChild(headRow);
 
   const sub = document.createElement("div"); // lemma + IPA (điền khi dict xong)
-  sub.style.color = "#71717a";
-  sub.style.fontSize = "12px";
-  sub.style.display = "none";
+  Object.assign(sub.style, {
+    marginTop: "5px",
+    fontSize: "14px",
+    letterSpacing: "-0.03em",
+    color: "#6b7280",
+    display: "none",
+  } as Partial<CSSStyleDeclaration>);
   pop.appendChild(sub);
 
   const meaningBox = document.createElement("div");
-  meaningBox.style.margin = "8px 0";
+  Object.assign(meaningBox.style, {
+    margin: "8px 0",
+    fontSize: "16px",
+    letterSpacing: "-0.03em",
+    color: "#1f1f1f",
+  } as Partial<CSSStyleDeclaration>);
   meaningBox.textContent = "Đang tra nghĩa…";
   pop.appendChild(meaningBox);
 
-  const actions = document.createElement("div"); // hàng nút: [Phát âm] Lưu Đóng
+  const actions = document.createElement("div"); // hàng nút: Lưu / Đóng
   pop.appendChild(actions);
 
   // Trạng thái điền dần (đọc lúc bấm Lưu).
@@ -536,10 +587,10 @@ function onWordClick(word: string, surface: string, sentence: string): void {
       saveBtn.textContent = `Lỗi: ${e instanceof Error ? e.message : "không lưu được"}`;
       saveBtn.disabled = false;
     }
-  });
+  }, "save");
   saveBtn.style.marginRight = "6px";
   actions.appendChild(saveBtn);
-  actions.appendChild(mkBtn("Đóng", () => closeWordPopup(true), true));
+  actions.appendChild(mkBtn("Đóng", () => closeWordPopup(true), "close"));
 
   // Fire SONG SONG, KHÔNG await chung.
   void callApi<LookupResponse>("GET", `/api/lookup?word=${encodeURIComponent(word)}`)
@@ -549,15 +600,11 @@ function onWordClick(word: string, surface: string, sentence: string): void {
       currentResult = res.result;
       if (!alive()) return;
       const r = res.result;
-      if (r && (r.lemma || r.ipa)) {
-        const ipa1 = firstIpa(r.ipa); // TIP-039: chỉ 1 phiên âm
-        sub.textContent = `${r.lemma ?? word}${ipa1 ? `  /${ipa1}/` : ""}`;
+      const ipa1 = firstIpa(r?.ipa ?? null); // TIP-039/095: chỉ 1 phiên âm, KHÔNG hiện kèm lemma
+      if (ipa1) {
+        sub.textContent = `/${ipa1}/`;
         sub.style.display = "";
       }
-      // TIP-070 — luôn có nút Phát âm; dùng audio từ điển nếu có, else speechSynthesis.
-      const speakText = r?.lemma || word;
-      const audioBtn = mkBtn("🔊 Phát âm", () => playPronunciation(r?.audio_url ?? null, speakText));
-      actions.insertBefore(audioBtn, saveBtn); // đứng trước "Lưu"
       renderMeaning();
     })
     .catch((e: unknown) => {
