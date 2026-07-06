@@ -19,7 +19,7 @@ export const metadata = {
   description: "StudyMovie thu thập và sử dụng dữ liệu như thế nào.",
 };
 
-const CONTACT_EMAIL = "dkhiem2k4@gmail.com";
+const CONTACT_EMAIL = "personalenglishcoachingvn@gmail.com";
 const UPDATED = "01/07/2026";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
