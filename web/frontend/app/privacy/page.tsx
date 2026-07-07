@@ -116,8 +116,7 @@ export default function PrivacyPage() {
           <p>Tiện ích yêu cầu các quyền tối thiểu để hoạt động:</p>
           <ul className="list-disc space-y-1 pl-5">
             <li><strong>storage:</strong> lưu cài đặt phụ đề và phiên đăng nhập cục bộ.</li>
-            <li><strong>tabs:</strong> mở trang web app khi bạn thao tác từ popup.</li>
-            <li><strong>scripting</strong> + quyền trên youtube.com: chèn lớp phụ đề song ngữ vào trình phát.</li>
+            <li><strong>quyền trên youtube.com:</strong> chèn lớp phụ đề song ngữ vào trình phát.</li>
             <li><strong>alarms:</strong> ghi nhận thời gian học định kỳ.</li>
             <li><strong>quyền trên app.studymovie.com:</strong> đọc phiên đăng nhập để đồng bộ tài khoản.</li>
           </ul>
