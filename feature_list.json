@@ -719,6 +719,26 @@
       "depends_on": [],
       "acceptance": "app.studymovie.com có favicon riêng (không dùng default browser icon), hình tròn nền trắng chứa icon 'film-open-star' (đồng bộ logo web, KHÁC icon extension bo góc vuông theo chủ đích — icon extension giữ quy ước Chrome squircle). Nhiều text rải rác (Đang tải, empty-state, mô tả /thanh-toan, /cam-on, trang chủ, /tu-vung) đồng bộ font Inter regular/light + #1f1f1f + letter-spacing -3% theo yêu cầu khách.",
       "evidence": "TỰ TEST 2026-07-06: web/frontend/app/icon.png (512x512, alpha PNG render qua Playwright headless từ đúng SVG logo Header.tsx, border-radius 50%) — Next.js App Router tự nhận diện convention, curl production /icon.png 200 OK. Các polish text: PageLoading, /tien-do-hoc, LeaderboardCard, WeeklyPlan, /thanh-toan (2 màn hết hạn trial + đã Pro), /cam-on, trang chủ (/), /tu-vung empty-state — đều lint/typecheck/build PASS, đã push + Vercel Ready (commit 1c274af, 80dc12e, 9eb22af, 1e3519c, 684488b)."
+    },
+    {
+      "id": "EXT-STORE-SUBMIT",
+      "title": "Nộp Chrome Web Store: gỡ quyền thừa (scripting, tabs) sau 2 lần bị từ chối + đồng bộ trang /privacy",
+      "area": "extension+frontend",
+      "tip": "TIP-098/098b",
+      "status": "verified",
+      "depends_on": ["EXT-POPUP-PIXEL2"],
+      "acceptance": "manifest.json chỉ khai quyền thực sự dùng (không bị Chrome Web Store review tự động từ chối vì 'unused permission'); trang /privacy (public) mô tả đúng danh sách quyền hiện tại, không còn nhắc quyền đã gỡ.",
+      "evidence": "TỰ TEST 2026-07-07: Rejection #1 (violation 'Purple Potassium', quyền scripting) — grep xác nhận không có chrome.scripting.* nào trong extension/src (content script khai TĨNH qua content_scripts, không cần quyền scripting) → gỡ khỏi manifest, build:prod PASS, commit 32e6b67. Rejection #2 (quyền tabs) — grep xác nhận chrome.tabs.create/query/sendMessage không đọc thuộc tính nhạy cảm (chỉ .id, url truyền vào chứ không đọc ra) → gỡ khỏi manifest, build:prod PASS, commit c8c4441. Audit phòng ngừa thêm: rà toàn bộ API nhạy cảm khác (cookies/webRequest/history/bookmarks/downloads/geolocation/notifications/identity) — 0 kết quả, không có nguy cơ khác từ góc quyền API. host_permissions (youtube.com/app.studymovie.com) CHƯA đụng vào — về lý thuyết content_scripts.matches có thể tự đủ, nhưng rủi ro gỡ nhầm làm hỏng tính năng phụ đề lớn hơn lợi ích; để theo dõi nếu bị từ chối lần 3. Phát hiện phụ: trang /privacy còn mô tả quyền tabs/scripting đã gỡ — sửa đồng bộ, lint/typecheck/build PASS, push + Vercel Ready + curl production xác nhận nội dung mới (commit 81fce2f)."
+    },
+    {
+      "id": "WEB-ADMIN-PASSWORD",
+      "title": "Mật khẩu phụ khi mở trang /admin (ngoài is_admin)",
+      "area": "backend+frontend",
+      "tip": "TIP-100",
+      "status": "verified",
+      "depends_on": ["WEB-ADMIN"],
+      "acceptance": "Mở /admin ở tab/trình duyệt mới phải nhập đúng mật khẩu mới xem được nội dung quản trị, dù đã đăng nhập bằng tài khoản admin. Mật khẩu so khớp ở backend (biến môi trường ADMIN_PAGE_PASSWORD), không nằm trong bundle frontend. Vẫn giữ nguyên gate is_admin có sẵn (endpoint mật khẩu tự 403 nếu người gọi không phải admin).",
+      "evidence": "TỰ TEST 2026-07-07: backend endpoint POST /api/admin/verify-page-password (gate requireCallerAdmin trước, so khớp ADMIN_PAGE_PASSWORD sau) — lint/typecheck/test PASS. Frontend AdminPasswordGate.tsx bọc AdminInner (trong AuthGuard), khoá theo sessionStorage (đóng tab/trình duyệt phải nhập lại) — lint/typecheck/build PASS. Mật khẩu thật lưu ở Vercel project backend (production, sensitive env), KHÔNG commit. Verify production: curl /api/admin/verify-page-password không kèm Bearer token → 401; deployment frontend+backend commit 693bbb5 đều Ready."
     }
   ]
 }
