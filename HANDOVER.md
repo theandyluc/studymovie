@@ -214,10 +214,11 @@ cd extension    && npm run lint && npm run build
 | Quyền | Lý do |
 |---|---|
 | `storage` | Lưu cài đặt phụ đề (chế độ/màu/cỡ chữ) và phiên đăng nhập cục bộ. |
-| `tabs` | Mở web app (app.studymovie.com) từ popup. |
-| host `*://*.youtube.com/*` | Chèn lớp phụ đề song ngữ vào trình phát YouTube (content script khai TĨNH trong manifest — KHÔNG cần quyền `scripting`, quyền đó chỉ cần khi gọi `chrome.scripting.*` lúc runtime; đã bị Chrome Web Store từ chối lần đầu vì khai thừa quyền không dùng tới, đã gỡ). |
+| host `*://*.youtube.com/*` | Chèn lớp phụ đề song ngữ vào trình phát YouTube (content script khai TĨNH trong manifest — KHÔNG cần quyền `scripting`, quyền đó chỉ cần khi gọi `chrome.scripting.*` lúc runtime; đã bị Chrome Web Store từ chối lần 1 vì khai thừa quyền không dùng tới, đã gỡ). |
 | `alarms` | Ghi nhận/flush thời gian học định kỳ. |
 | host `https://app.studymovie.com/*` | Đọc phiên đăng nhập của web app để đồng bộ tài khoản. |
+
+**Ghi chú (bị Chrome Web Store từ chối lần 2):** quyền `tabs` cũng bị gỡ — `chrome.tabs.create({url})` (mở web app từ popup), `chrome.tabs.query({})` (chỉ đọc `.id`, không đọc `.url`/`.title`) và `chrome.tabs.sendMessage()` đều **không cần** quyền `tabs` (quyền đó chỉ cần khi đọc thuộc tính nhạy cảm như url/title/favIcon của tab, hoặc lọc `tabs.query()` theo url). Các API này vẫn hoạt động bình thường không cần khai quyền.
 
 **Các bước submit:**
 1. Đăng ký Chrome Web Store Developer (phí một lần **$5**).

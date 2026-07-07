@@ -3,7 +3,7 @@
   "name": "StudyMovie",
   "version": "1.0.0",
   "description": "Học tiếng Anh qua YouTube với phụ đề song ngữ + ôn từ vựng.",
-  "permissions": ["storage", "tabs", "alarms"],
+  "permissions": ["storage", "alarms"],
   "host_permissions": ["*://*.youtube.com/*", "http://localhost:3000/*", "https://app.studymovie.com/*"],
   "icons": {
     "16": "icons/icon-16.png",
