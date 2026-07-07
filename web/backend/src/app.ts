@@ -23,6 +23,7 @@ import {
   postAdminSetAdmin,
   postAdminCreateUser,
   deleteAdminUser,
+  postAdminVerifyPagePassword,
 } from "./api/admin.js";
 import {
   getWeeklyPlan,
@@ -83,6 +84,7 @@ app.post("/api/admin/grant-pro", requireAuth, postAdminGrantPro); // WEB-ADMIN T
 app.post("/api/admin/set-admin", requireAuth, postAdminSetAdmin); // WEB-ADMIN TIP-020
 app.post("/api/admin/create-user", requireAuth, postAdminCreateUser); // WEB-ADMIN TIP-096
 app.delete("/api/admin/users/:id", requireAuth, deleteAdminUser); // WEB-ADMIN TIP-096
+app.post("/api/admin/verify-page-password", requireAuth, postAdminVerifyPagePassword); // WEB-ADMIN TIP-100
 app.get("/api/weekly-plan", requireAuth, getWeeklyPlan); // WEB-PLAN TIP-017
 app.post("/api/weekly-plan", requireAuth, postWeeklyPlan); // WEB-PLAN TIP-017
 app.patch("/api/weekly-plan/:id", requireAuth, patchWeeklyPlan); // WEB-PLAN TIP-017

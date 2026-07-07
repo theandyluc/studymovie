@@ -2,6 +2,7 @@
 // Ở đây chỉ proxy RPC qua getUserClient (auth.uid). RPC raise 'forbidden' → trả 403.
 import type { Context } from "hono";
 import { getUserClient, getServiceClient } from "../lib/supabase.js";
+import { ADMIN_PAGE_PASSWORD } from "../env.js";
 
 // Gọi RPC; lỗi 'forbidden' → 403, lỗi khác → 500.
 async function callRpc(c: Context, fn: string, args?: Record<string, unknown>) {
@@ -93,4 +94,19 @@ export async function deleteAdminUser(c: Context) {
   const { error } = await getServiceClient().auth.admin.deleteUser(userId);
   if (error) return c.json({ error: error.message }, 500);
   return c.json({ ok: true });
+}
+
+// TIP-100 — mật khẩu phụ cho trang /admin. Vẫn gate is_admin TRƯỚC (không lộ endpoint cho non-admin);
+// so khớp chỉ ở backend, mật khẩu không bao giờ nằm trong bundle frontend.
+export async function postAdminVerifyPagePassword(c: Context) {
+  if (!(await requireCallerAdmin(c))) return c.json({ error: "forbidden" }, 403);
+  let body: { password?: unknown };
+  try {
+    body = (await c.req.json()) as { password?: unknown };
+  } catch {
+    return c.json({ error: "invalid json" }, 400);
+  }
+  const password = typeof body.password === "string" ? body.password : "";
+  const ok = ADMIN_PAGE_PASSWORD.length > 0 && password === ADMIN_PAGE_PASSWORD;
+  return c.json({ ok });
 }

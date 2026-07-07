@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AuthGuard } from "@/components/AuthGuard";
+import { AdminPasswordGate } from "@/components/AdminPasswordGate";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { CircleStat } from "@/components/ui/CircleStat";
@@ -375,7 +376,9 @@ function AdminInner() {
 export default function AdminPage() {
   return (
     <AuthGuard>
-      <AdminInner />
+      <AdminPasswordGate>
+        <AdminInner />
+      </AdminPasswordGate>
     </AuthGuard>
   );
 }

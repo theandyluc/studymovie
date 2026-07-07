@@ -42,3 +42,6 @@ export const PRO_DURATION_DAYS = Number(process.env.PRO_DURATION_DAYS ?? 365);
 export const OPENAI_API_KEY = process.env.OPENAI_API_KEY ?? "";
 // TIP-071 — đổi model qua ENV (vd "gpt-5-nano", "gpt-5-mini"). Mặc định gpt-4o-mini.
 export const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
+
+// TIP-100 — mật khẩu phụ cho trang /admin (lớp chặn thêm ngoài is_admin). CHỈ backend biết giá trị.
+export const ADMIN_PAGE_PASSWORD = process.env.ADMIN_PAGE_PASSWORD ?? "";

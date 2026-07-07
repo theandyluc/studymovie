@@ -49,3 +49,7 @@ export const createAccount = (email: string, password: string): Promise<{ ok: bo
 
 export const deleteAccount = (user_id: string): Promise<{ ok: boolean }> =>
   apiFetch(`/api/admin/users/${encodeURIComponent(user_id)}`, { method: "DELETE" });
+
+// TIP-100 — mật khẩu phụ vào trang /admin (so khớp ở backend, không lộ giá trị thật ở client).
+export const verifyAdminPagePassword = (password: string): Promise<{ ok: boolean }> =>
+  apiFetch("/api/admin/verify-page-password", { method: "POST", body: JSON.stringify({ password }) });
