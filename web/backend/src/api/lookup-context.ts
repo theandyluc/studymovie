@@ -4,6 +4,7 @@
 // Fallback an toàn: thiếu key / thiếu câu / lỗi / timeout → { source: "fallback" }
 //   (client tự dùng nghĩa từ điển của /api/lookup — KHÔNG vỡ UX). IPA/audio do /api/lookup lo.
 import type { Context } from "hono";
+import { waitUntil } from "@vercel/functions";
 import { getServiceClient } from "../lib/supabase.js";
 import { OPENAI_API_KEY, OPENAI_MODEL } from "../env.js";
 
@@ -78,11 +79,18 @@ export async function postLookupContext(c: Context) {
   const meaning = await askOpenAI(word, sentence);
   if (!meaning) return c.json({ source: "fallback" });
 
-  // 3) Upsert cache (lỗi cache không chặn trả kết quả)
-  const { error } = await sb
-    .from("ai_context_meaning")
-    .upsert({ word: lw, sentence, meaning_vi: meaning }, { onConflict: "word,sentence" });
-  if (error) console.warn("[lookup-context] cache lỗi:", error.message);
+  // 3) Upsert cache — KHÔNG chặn response: trả kết quả cho người dùng ngay, ghi cache chạy nền
+  // sau khi response đã gửi. waitUntil (Vercel) đảm bảo hàm không bị đóng băng giữa chừng trước
+  // khi ghi xong (khác với "void promise" thường — không có gì đảm bảo chạy hết trên serverless).
+  waitUntil(
+    Promise.resolve(
+      sb
+        .from("ai_context_meaning")
+        .upsert({ word: lw, sentence, meaning_vi: meaning }, { onConflict: "word,sentence" })
+    ).then(({ error }) => {
+      if (error) console.warn("[lookup-context] cache lỗi:", error.message);
+    })
+  );
 
   return c.json({ word, meaning_vi: meaning, source: "ai" });
 }

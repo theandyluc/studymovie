@@ -744,11 +744,11 @@
       "id": "BE-LOOKUP-CONTEXT-SPEED",
       "title": "Fix tốc độ /api/lookup-context (cache-miss chậm)",
       "area": "backend",
-      "tip": "TIP-101a (dự kiến)",
-      "status": "todo",
+      "tip": "TIP-101a",
+      "status": "verified",
       "depends_on": [],
       "acceptance": "Lượt tra nghĩa từ MỚI (cache-miss) trả kết quả nhanh hơn rõ rệt: (1) bước upsert cache KHÔNG còn chặn response (fire-and-forget, lỗi ghi cache chỉ log, không ảnh hưởng UX), (2) hàm Vercel chạy gần Supabase Singapore hơn (regions: [\"sin1\"] trong web/backend/vercel.json) để giảm round-trip.",
-      "evidence": ""
+      "evidence": "TỰ TEST 2026-07-08: lookup-context.ts — upsert cache chuyển sang waitUntil() (gói @vercel/functions, KHÔNG dùng 'void promise' thường vì không đảm bảo chạy hết trên serverless một khi response đã gửi) thay vì await trước response — response trả về ngay sau khi có nghĩa từ OpenAI. vercel.json thêm regions:[\"sin1\"] (gần Supabase Singapore). lint/typecheck/test (backend) đều PASS."
     },
     {
       "id": "SUBTITLE-AI-TRANSLATE",
