@@ -472,7 +472,7 @@ Mỗi TIP khi tạo sẽ có đủ: Gherkin acceptance criteria, priority P0/P1/
 ## ✋ CHECKPOINT — BLUEPRINT → TASK GRAPH
 
 Đã chốt:
-- [x] **D-1** Phụ đề VI = YouTube `tlang=vi`
+- [x] **D-1** Phụ đề VI = YouTube `tlang=vi` — **ĐẢO CÓ KIỂM SOÁT 2026-07-07 (khách duyệt, TIP-101 dự kiến):** chuyển sang tự dịch bằng GPT-4o-mini (ghép cụm ASR rời rạc thành câu hoàn chỉnh → dịch câu đó → cache theo video, tái dùng model/key đã có ở TIP-038) cho MỌI video (không chỉ video trong lộ trình soạn sẵn), để giải quyết 2 vấn đề: (a) video bị YouTube "hạn chế dịch" (do creator tắt hoặc không đủ điều kiện ASR — nằm ngoài kiểm soát sản phẩm), (b) dịch theo cụm ASR rời rạc thay vì theo câu thoại thật gây khó hiểu. Video trong lộ trình học soạn sẵn (roadmap) nên dịch trước (pre-warm cache) để học viên không phải chờ ở lượt xem đầu; video ngoài lộ trình dịch tại lúc xem (cache-miss thật). **CHƯA triển khai** — xem `claude-progress.md` Session 41 để biết chi tiết + lý do (bao gồm thảo luận rủi ro bản quyền khi chọn video cho lộ trình — xem ghi chú riêng, không liên quan kỹ thuật dịch).
 - [x] **D-2** Nghĩa từ = từ điển EN-VI nhúng (tra cứu từng từ) — **ĐẢO CÓ KIỂM SOÁT 2026-07-02 (khách duyệt, TIP-038):** NGHĨA dùng AI GPT-4o-mini theo ngữ cảnh (`/api/lookup-context`, cache + fallback từ điển); IPA/audio giữ từ từ điển. Từ điển = fallback.
 - [x] **Streak** = chuẩn Duolingo, timezone UTC+7 (mục 3)
 

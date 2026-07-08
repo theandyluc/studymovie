@@ -739,6 +739,26 @@
       "depends_on": ["WEB-ADMIN"],
       "acceptance": "Mở /admin ở tab/trình duyệt mới phải nhập đúng mật khẩu mới xem được nội dung quản trị, dù đã đăng nhập bằng tài khoản admin. Mật khẩu so khớp ở backend (biến môi trường ADMIN_PAGE_PASSWORD), không nằm trong bundle frontend. Vẫn giữ nguyên gate is_admin có sẵn (endpoint mật khẩu tự 403 nếu người gọi không phải admin).",
       "evidence": "TỰ TEST 2026-07-07: backend endpoint POST /api/admin/verify-page-password (gate requireCallerAdmin trước, so khớp ADMIN_PAGE_PASSWORD sau) — lint/typecheck/test PASS. Frontend AdminPasswordGate.tsx bọc AdminInner (trong AuthGuard), khoá theo sessionStorage (đóng tab/trình duyệt phải nhập lại) — lint/typecheck/build PASS. Mật khẩu thật lưu ở Vercel project backend (production, sensitive env), KHÔNG commit. Verify production: curl /api/admin/verify-page-password không kèm Bearer token → 401; deployment frontend+backend commit 693bbb5 đều Ready."
+    },
+    {
+      "id": "BE-LOOKUP-CONTEXT-SPEED",
+      "title": "Fix tốc độ /api/lookup-context (cache-miss chậm)",
+      "area": "backend",
+      "tip": "TIP-101a (dự kiến)",
+      "status": "todo",
+      "depends_on": [],
+      "acceptance": "Lượt tra nghĩa từ MỚI (cache-miss) trả kết quả nhanh hơn rõ rệt: (1) bước upsert cache KHÔNG còn chặn response (fire-and-forget, lỗi ghi cache chỉ log, không ảnh hưởng UX), (2) hàm Vercel chạy gần Supabase Singapore hơn (regions: [\"sin1\"] trong web/backend/vercel.json) để giảm round-trip.",
+      "evidence": ""
+    },
+    {
+      "id": "SUBTITLE-AI-TRANSLATE",
+      "title": "Đảo D-1: dịch phụ đề song ngữ bằng GPT-4o-mini thay vì YouTube tlang (mọi video)",
+      "area": "backend+extension",
+      "tip": "TIP-101 (dự kiến, cần viết TIP chi tiết trước khi code)",
+      "status": "todo",
+      "depends_on": ["EXT-SUBTITLE"],
+      "acceptance": "Phụ đề tiếng Việt hiển thị đúng theo TỪNG CÂU thoại thật (không theo cụm ASR rời rạc), và KHÔNG còn bị YouTube báo 'phụ đề bị hạn chế' cho bất kỳ video nào (roadmap hay ngoài roadmap) — extension không còn phụ thuộc `tlang=vi` của YouTube. Video trong lộ trình soạn sẵn được dịch trước (pre-warm cache) khi admin thêm vào lộ trình; video ngoài lộ trình dịch tại lúc học viên xem (cache-miss). Cache theo video, dùng chung giữa mọi học viên (không dịch lại cho cùng 1 video).",
+      "evidence": ""
     }
   ]
 }
