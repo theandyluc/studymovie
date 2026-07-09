@@ -106,6 +106,17 @@ function cleanWordDisplay(raw: string): string {
   return raw.replace(WORD_EDGE_PUNCT, "");
 }
 
+// TIP-101c — bản dịch VI thường DÀI HƠN câu EN gốc (đã ghép ngắn sẵn ở backend, 60 ký tự/5s —
+// xem sentence-group.ts) do đặc điểm ngôn ngữ, khiến dòng phụ đề Việt vẫn choán nhiều màn hình.
+// Chỉ CẮT LÚC HIỂN THỊ (không đổi dữ liệu dịch/cache) — giống phụ đề phim thật, ngắn gọn 1 dòng.
+const VI_DISPLAY_MAX_CHARS = 90;
+function truncateForDisplay(text: string, maxChars: number): string {
+  if (text.length <= maxChars) return text;
+  const cut = text.slice(0, maxChars);
+  const lastSpace = cut.lastIndexOf(" ");
+  return (lastSpace > maxChars * 0.4 ? cut.slice(0, lastSpace) : cut).trimEnd() + "…";
+}
+
 // ---- Overlay ----
 function removeOverlay(): void {
   document.getElementById(ID)?.remove();
@@ -237,7 +248,7 @@ function renderCue(idx: number): void {
   if (showVi) {
     const vi = document.createElement("div");
     styleLine(vi, true);
-    vi.textContent = cue.vi;
+    vi.textContent = truncateForDisplay(cue.vi, VI_DISPLAY_MAX_CHARS);
     // Khoảng cách dọc EN↔VI chỉ áp khi hiện cả hai (mode='both').
     if (showEn) vi.style.marginTop = `${settings.lineGapPx}px`;
     bubble.appendChild(vi);
