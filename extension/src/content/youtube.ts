@@ -245,22 +245,25 @@ function renderCue(idx: number): void {
   box.appendChild(bubble);
 }
 
-function syncTick(): void {
-  if (!settings.enabled || !hasAccess) return; // TIP-028 tắt / TIP-062 hết hạn → không xử lý phụ đề
-  const video = getVideo();
-  if (!video || !document.getElementById(ID)) return;
-  updateOverlayPosition(); // TIP-023: né control YouTube (ẩn/hiện + full screen), poll 250ms
-  if (popupOpen) return; // giữ phụ đề đứng yên khi popup mở
-  const t = video.currentTime;
-  // Chọn cue MỚI NHẤT đã bắt đầu: start lớn nhất thỏa start <= t < start+dur.
-  // (Bỏ break + so start lớn nhất → xử lý đúng cue GỐI nhau; không cue nào chứa t → -1 → ẩn.)
-  // EN & VI cùng nằm trong cues[idx] nên hiển thị khớp nhau theo cùng logic.
+// Cue MỚI NHẤT đã bắt đầu tại thời điểm t: start lớn nhất thỏa start <= t < start+dur.
+// (So start lớn nhất thay vì break đầu tiên → xử lý đúng cue GỐI nhau; không cue nào chứa t → -1.)
+function findActiveCueIndex(t: number): number {
   let idx = -1;
   for (let i = 0; i < cues.length; i++) {
     if (t >= cues[i].start && t < cues[i].start + cues[i].dur) {
       if (idx === -1 || cues[i].start > cues[idx].start) idx = i;
     }
   }
+  return idx;
+}
+
+function syncTick(): void {
+  if (!settings.enabled || !hasAccess) return; // TIP-028 tắt / TIP-062 hết hạn → không xử lý phụ đề
+  const video = getVideo();
+  if (!video || !document.getElementById(ID)) return;
+  updateOverlayPosition(); // TIP-023: né control YouTube (ẩn/hiện + full screen), poll 250ms
+  if (popupOpen) return; // giữ phụ đề đứng yên khi popup mở (video đã pause nên idx không đổi)
+  const idx = findActiveCueIndex(video.currentTime);
   if (idx !== activeIndex) {
     activeIndex = idx;
     renderCue(idx);
@@ -718,12 +721,22 @@ function onMessage(e: MessageEvent): void {
   dbg("nhận cue", d.cues.length, "video=", d.videoId, "viState=", d.viState);
   cues = d.cues;
   currentVid = d.videoId ?? locVideoId();
-  activeIndex = -1;
   ensureHideNativeStyle();
-  removeOverlay(); // dựng lại để gắn vào #movie_player hiện tại (YouTube có thể thay DOM player)
+  // SM_CUES tới NHIỀU LẦN cho cùng 1 video (buffering nền điền dần bản dịch phía trước, kể cả
+  // khi popup tra từ đang mở — TIP-101). Trước đây remove+build lại KHÔNG ĐIỀU KIỆN mỗi lần,
+  // khiến khung phụ đề bị xoá trắng rồi chỉ được vẽ lại ở syncTick() — mà syncTick bỏ qua khi
+  // popupOpen → phụ đề "biến mất" cho tới khi đóng popup. Giờ chỉ dựng lại khi box chưa có
+  // hoặc bị lệch khỏi #movie_player hiện tại (YouTube thay DOM player); còn lại giữ nguyên box,
+  // chỉ cập nhật nội dung.
+  const player = getPlayer();
+  const existingBox = document.getElementById(ID);
+  if (!existingBox || existingBox.parentElement !== player) {
+    removeOverlay();
+    activeIndex = -1;
+  }
   if (settings.enabled && hasAccess && cues.length) {
     // TIP-028: Tắt StudyMovie → vẫn lưu cues (để bật lại dựng ngay) nhưng KHÔNG build overlay.
-    buildOverlay();
+    buildOverlay(); // no-op nếu box đã đúng chỗ (buildOverlay tự return sớm khi ID đã tồn tại)
     setAccessNote(false);
     // Nhãn khi không có VI: phân biệt đang dịch / lỗi dịch / video thật sự không có VI.
     const hasVi = cues.some((c) => c.vi);
@@ -733,6 +746,16 @@ function onMessage(e: MessageEvent): void {
     else if (!hasVi && (d.viState === "failed" || d.viState === "ok")) setViNote("⚠️ Không dịch được phụ đề Việt lúc này");
     else if (!hasVi && d.viState === "empty") setViNote("Video này không có phụ đề Việt");
     else setViNote(null);
+    // Vẽ lại cue hiện tại NGAY LẬP TỨC (không đợi/không bị chặn bởi syncTick+popupOpen) — dữ
+    // liệu vừa cập nhật (vd câu đang xem vừa có bản dịch) cần hiện ngay dù popup đang mở.
+    const video = getVideo();
+    if (video) {
+      const idx = findActiveCueIndex(video.currentTime);
+      if (idx !== -1) {
+        activeIndex = idx;
+        renderCue(idx);
+      }
+    }
   } else if (!hasAccess && cues.length) {
     setAccessNote(true); // TIP-062: hết hạn nhưng video có phụ đề → nhắc nâng cấp
   }

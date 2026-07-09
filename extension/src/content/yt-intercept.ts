@@ -46,9 +46,11 @@ const RELAY_TIMEOUT_TRANSLATE_MS = 28000;
 const CHUNK_COUNT = 4;
 // TIP-101b — backend dịch SONG SONG từng câu (Promise.all) nên độ trễ 1 lô = câu CHẬM NHẤT
 // trong lô, không phải tổng. Câu ĐANG XEM NGAY (gapIdx === startIdx: mở video mới / vừa tua tới
-// đúng chỗ chưa dịch) cần trả nhanh nhất có thể → xin ÍT câu hơn hẳn CHUNK_COUNT (chỉ 2, ít khả
-// năng dính câu chậm). Phần đệm PHÍA TRƯỚC (chưa cần ngay) vẫn xin CHUNK_COUNT để đỡ tốn round-trip.
-const URGENT_CHUNK_COUNT = 2;
+// đúng chỗ chưa dịch) cần trả nhanh nhất có thể → chỉ xin ĐÚNG 1 câu (không dính câu nào khác
+// làm chậm theo). Câu kế tiếp sẽ tới ngay sau đó qua lượt ensureBufferAhead() liền kề (thường
+// vẫn kịp trước khi học viên đọc xong câu 1). Phần đệm PHÍA TRƯỚC (chưa cần ngay) vẫn xin
+// CHUNK_COUNT để đỡ tốn round-trip — ưu tiên khác nhau cho 2 mục đích khác nhau.
+const URGENT_CHUNK_COUNT = 1;
 
 let lastBase = "";
 let curVid = "";
