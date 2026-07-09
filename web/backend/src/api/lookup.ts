@@ -93,6 +93,35 @@ async function freeDictLookup(word: string): Promise<FdResult> {
 const ttsUrl = (w: string): string =>
   `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=${encodeURIComponent(w)}`;
 
+// TIP-101h — từ phủ định rút gọn ("doesn't", "couldn't"...) HẦU HẾT không có mục riêng ở cả FVDP
+// lẫn Free Dictionary API (đã kiểm tra thật: chỉ "don't"/"isn't" có sẵn, còn lại 404) → không có
+// IPA/nghĩa từ điển, dù /api/lookup-context (AI) vẫn dịch đúng "không" (không phụ thuộc từ điển).
+// Cho các từ này thử thêm ứng viên = ĐỘNG TỪ GỐC (does, could...) để ít nhất có phiên âm hiển
+// thị — chấp nhận không phản ánh đúng 100% cách phát âm "-n't" thêm vào, còn hơn trống trơn.
+// Bảng tường minh (không dùng regex cắt đuôi) vì bất quy tắc: "can't"→"can" (chỉ thêm "'t", KHÔNG
+// phải "n't" dù "can" đã có sẵn chữ n), "won't"→"will" (bất quy tắc hoàn toàn, không liên quan
+// mặt chữ).
+const NEGATION_CONTRACTION_BASE: Record<string, string> = {
+  "don't": "do",
+  "doesn't": "does",
+  "didn't": "did",
+  "isn't": "is",
+  "aren't": "are",
+  "wasn't": "was",
+  "weren't": "were",
+  "can't": "can",
+  "couldn't": "could",
+  "won't": "will",
+  "wouldn't": "would",
+  "shan't": "shall",
+  "shouldn't": "should",
+  "mustn't": "must",
+  "needn't": "need",
+  "haven't": "have",
+  "hasn't": "has",
+  "hadn't": "had",
+};
+
 // TIP-068 — sinh ứng viên dạng gốc (heuristic EN): raw TRƯỚC, rồi các dạng gốc để lấy IPA.
 // Mỗi nhóm đuôi dùng else-if (loại nhánh chồng chéo, vd "studies" vừa khớp "ies" vừa khớp
 // "es"/"s" → tránh sinh ứng viên rác như "studi"/"studie"). Trong nhóm "-ing", ưu tiên dạng
@@ -104,6 +133,8 @@ export function lemmaCandidates(w: string): string[] {
   const add = (x: string): void => {
     if (x && !c.includes(x)) c.push(x);
   };
+
+  if (NEGATION_CONTRACTION_BASE[w]) add(NEGATION_CONTRACTION_BASE[w]);
 
   if (w.length > 4 && w.endsWith("ies")) {
     add(w.slice(0, -3) + "y"); // studies→study

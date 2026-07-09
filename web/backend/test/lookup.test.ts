@@ -20,6 +20,19 @@ describe("lemmaCandidates", () => {
     expect(cands).toEqual(["studies", "study"]);
   });
 
+  it("từ phủ định rút gọn thử thêm động từ gốc (doesn't -> does)", () => {
+    const cands = lemmaCandidates("doesn't");
+    expect(cands).toEqual(["doesn't", "does"]);
+  });
+
+  it("can't -> can (bất quy tắc, không phải cắt đuôi n't)", () => {
+    expect(lemmaCandidates("can't")).toContain("can");
+  });
+
+  it("won't -> will (bất quy tắc hoàn toàn)", () => {
+    expect(lemmaCandidates("won't")).toContain("will");
+  });
+
   it("walked -> walk và fake đều có mặt", () => {
     const cands = lemmaCandidates("walked");
     expect(cands).toContain("walk");
