@@ -89,6 +89,21 @@ export async function postCaptionsTranslate(c: Context) {
       );
       return c.json({ en: [], vi: [] });
     }
+    // Ghi dòng nền tảng NGAY (await, KHÔNG waitUntil) — nếu không, các lượt gọi kế tiếp
+    // (ensureBufferAhead, không kèm `en`) có thể tới TRƯỚC khi dòng này kịp lưu → 400
+    // "missing en" oan. Đua nhau insert → bên thua đọc lại dòng bên thắng vừa ghi.
+    const { error: insertErr } = await sb
+      .from("vi_caption_cache")
+      .insert({ video_id: videoId, en: grouped, vi, cue_count: grouped.length });
+    if (insertErr) {
+      const { data: reread } = await sb.from("vi_caption_cache").select("en, vi").eq("video_id", videoId).maybeSingle();
+      if (reread) {
+        grouped = reread.en as RawCue[];
+        vi = reread.vi as string[];
+      } else {
+        console.warn("[captions-translate] insert baseline lỗi:", insertErr.message);
+      }
+    }
   }
 
   const fromIndex = Math.min(fromIndexRaw, grouped.length);

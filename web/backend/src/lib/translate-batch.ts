@@ -1,8 +1,11 @@
-// TIP-101 — Dịch 1 lô câu tiếng Anh sang tiếng Việt bằng OpenAI (structured JSON output).
+// TIP-101 — Dịch 1 lô câu tiếng Anh sang tiếng Việt bằng OpenAI.
 // Mẫu request giống lookup-context.ts (fetch + AbortController + timeout an toàn).
+// LƯU Ý: dùng response_format "json_object" (JSON mode nhẹ, đã ổn định lâu) thay vì
+// "json_schema"+strict — thử strict mode trước nhưng bị chậm bất thường (hay vượt timeout,
+// xem log Vercel "This operation was aborted") + đôi lúc lệch số lượng phần tử trả về.
 import { OPENAI_API_KEY, OPENAI_MODEL } from "../env.js";
 
-const TIMEOUT_MS = 20_000;
+const TIMEOUT_MS = 22_000;
 
 export interface TranslateContext {
   en: string;
@@ -36,30 +39,20 @@ export async function translateBatch(sentences: string[], context: TranslateCont
           content:
             "Bạn là dịch giả Anh-Việt chuyên phụ đề phim/video. Dịch các câu tiếng Anh sau sang tiếng " +
             "Việt tự nhiên, đúng văn phong HỘI THOẠI đời thường (không dịch máy móc/quá trang trọng). " +
-            "QUY TẮC BẮT BUỘC: 1) Trả về ĐÚNG số lượng bản dịch bằng số câu đầu vào (mảng translations), " +
-            "THEO ĐÚNG THỨ TỰ. 2) Mỗi phần tử translations[i] là bản dịch của sentences[i] tương ứng, " +
-            "KHÔNG gộp/tách câu. 3) Giữ ý nghĩa, ngữ cảnh, mức độ trang trọng/thô tục sát với câu gốc " +
-            "(đây là phụ đề video thật). 4) KHÔNG thêm chú thích, KHÔNG thêm số thứ tự, KHÔNG thêm dấu " +
-            "ngoặc giải thích.",
+            "QUY TẮC BẮT BUỘC: 1) Trả lời DUY NHẤT bằng JSON hợp lệ, dạng " +
+            '{"translations": ["...", "...", ...]}. 2) Mảng translations phải có ĐÚNG số phần tử ' +
+            "bằng số câu đầu vào, THEO ĐÚNG THỨ TỰ — đây là điều QUAN TRỌNG NHẤT, đếm lại số câu đầu " +
+            "vào trước khi trả lời. 3) translations[i] là bản dịch của sentences[i] tương ứng, KHÔNG " +
+            "gộp/tách câu. 4) Giữ ý nghĩa, ngữ cảnh, mức độ trang trọng/thô tục sát với câu gốc (đây " +
+            "là phụ đề video thật). 5) KHÔNG thêm chú thích, KHÔNG thêm số thứ tự, KHÔNG thêm dấu " +
+            "ngoặc giải thích trong mỗi bản dịch.",
         },
         {
           role: "user",
-          content: `${contextBlock}Câu cần dịch:\n${JSON.stringify({ sentences })}`,
+          content: `${contextBlock}Câu cần dịch (JSON, ${sentences.length} câu):\n${JSON.stringify({ sentences })}`,
         },
       ],
-      response_format: {
-        type: "json_schema",
-        json_schema: {
-          name: "vi_translations",
-          strict: true,
-          schema: {
-            type: "object",
-            properties: { translations: { type: "array", items: { type: "string" } } },
-            required: ["translations"],
-            additionalProperties: false,
-          },
-        },
-      },
+      response_format: { type: "json_object" },
     };
     if (isGpt5) reqBody.reasoning_effort = "minimal";
     else reqBody.temperature = 0;
