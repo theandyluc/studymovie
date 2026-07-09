@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { firstIpa, isLikelyTruncatedIpa, lemmaCandidates } from "../src/api/lookup.js";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { firstIpa, freeDictLookup, isLikelyTruncatedIpa, lemmaCandidates } from "../src/api/lookup.js";
 
 describe("lemmaCandidates", () => {
   it("thử từ gốc trước tiên", () => {
@@ -68,5 +68,34 @@ describe("isLikelyTruncatedIpa — phát hiện IPA bị cắt cụt (bug FVDP '
 
   it("null IPA -> không gắn cờ (not_found xử lý ở nơi khác)", () => {
     expect(isLikelyTruncatedIpa(null, "communication")).toBe(false);
+  });
+});
+
+describe("freeDictLookup — bug: entry đầu chỉ có audio (không text) làm mất IPA thật ở entry sau", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("bỏ qua entry[0] không có text IPA, lấy đúng IPA ở entry[1] (case 'does' thật)", async () => {
+    const fakeResponse = [
+      {
+        word: "does",
+        phonetics: [{ audio: "https://x/does-1-us.mp3" }], // KHÔNG có text
+        meanings: [{ partOfSpeech: "verb", definitions: [{ definition: "auxiliary marker" }] }],
+      },
+      {
+        word: "does",
+        phonetic: "/dəʊz/",
+        phonetics: [{ text: "/dəʊz/", audio: "" }, { text: "/doʊz/", audio: "https://x/does-2-us.mp3" }],
+        meanings: [{ partOfSpeech: "verb", definitions: [{ definition: "to perform" }] }],
+      },
+    ];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => fakeResponse })
+    );
+    const res = await freeDictLookup("does");
+    expect(res.ok).toBe(true);
+    if (res.ok) expect(res.ipa).toBe("dəʊz");
   });
 });

@@ -36,7 +36,7 @@ export function firstIpa(ipa: string | null): string | null {
   return first || null;
 }
 
-async function freeDictLookup(word: string): Promise<FdResult> {
+export async function freeDictLookup(word: string): Promise<FdResult> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 3000); // TIP-069: fail-fast, tránh kéo dài chuỗi ứng viên
   try {
@@ -71,7 +71,12 @@ async function freeDictLookup(word: string): Promise<FdResult> {
     // khác nhau. Gộp phonetics từ mọi entry lại rồi lấy "cái đầu tiên" (cách cũ) có thể lấy
     // nhầm phiên âm của một entry/nghĩa khác. dictionaryapi.dev xếp entry theo độ phổ biến →
     // chỉ lấy phonetics của ENTRY ĐẦU TIÊN có dữ liệu, không trộn với các entry sau.
-    const primaryEntry = arr.find((e) => (e.phonetics && e.phonetics.length > 0) || e.phonetic) ?? arr[0];
+    // LƯU Ý (bug đã sửa): entry đầu có thể có `phonetics` KHÔNG RỖNG nhưng TOÀN audio, không có
+    // `text` nào cả (vd "does" — entry[0] chỉ có audio, entry[1] mới có text "/dəʊz/") — nếu chỉ
+    // check "length > 0" sẽ chọn nhầm entry[0] làm chính rồi bỏ lỡ IPA text ở entry sau. Phải đòi
+    // hỏi entry có ÍT NHẤT 1 phonetic CÓ TEXT (hoặc field `phonetic` phẳng) mới coi là "chính".
+    const primaryEntry =
+      arr.find((e) => e.phonetics?.some((p) => p.text) || e.phonetic) ?? arr[0];
     const phonetics = primaryEntry.phonetics ?? [];
     const plainPhonetic = primaryEntry.phonetic ?? null;
 
@@ -204,9 +209,10 @@ export async function getLookup(c: Context) {
     let found: { result: LookupResult; source: string } | null = null;
     if (data && (data as { meanings?: unknown }).meanings) {
       const r = data as LookupResult;
-      if (isLikelyTruncatedIpa(r.ipa, cand)) {
-        // IPA FVDP nghi bị cắt cụt → thử vá bằng Free Dictionary (giữ nguyên nghĩa VI của FVDP,
-        // chỉ thay ipa/audio nếu bản vá trông hợp lệ hơn) rồi ghi đè lại cache cho lần sau.
+      if (!r.ipa || isLikelyTruncatedIpa(r.ipa, cand)) {
+        // IPA FVDP THIẾU HẲN (null/rỗng — nhiều mục FVDP không có IPA, vd "does") hoặc NGHI bị
+        // cắt cụt → thử vá bằng Free Dictionary (giữ nguyên nghĩa VI của FVDP, chỉ thay ipa/audio
+        // nếu bản vá trông hợp lệ hơn) rồi ghi đè lại cache cho lần sau.
         const fb = await freeDictLookup(cand);
         if (fb.ok && fb.ipa && !isLikelyTruncatedIpa(fb.ipa, cand)) {
           const fixed: LookupResult = { ...r, ipa: fb.ipa, audio_url: r.audio_url || fb.audio_url };
