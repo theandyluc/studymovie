@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "StudyMovie",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Học tiếng Anh qua YouTube với phụ đề song ngữ + ôn từ vựng.",
   "permissions": ["storage", "alarms"],
   "host_permissions": ["*://*.youtube.com/*", "http://localhost:3000/*", "https://app.studymovie.com/*"],
