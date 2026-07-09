@@ -22,6 +22,14 @@
 
 ## Session log
 
+### Session 44 — fix #8 sau TIP-101-BUGFIXES: popup tra từ hiện nhiều nghĩa cùng lúc (2026-07-09)
+- **Bối cảnh:** phiên hội thoại MỚI (không có ngữ cảnh Session 43 sẵn trong bộ nhớ) — khách báo tra "absolutely" hiện tới 4 nghĩa cùng lúc. Trước khi sửa, phát hiện `git log` có cả 1 Session 43 đã xảy ra (13 fix runtime khác, xem entry dưới) mà phiên này không biết — **bài học: luôn đọc `claude-progress.md` + `git log` TRƯỚC khi bắt tay sửa**, suýt sửa mù không biết state đã tiến xa tới đâu.
+- **Debug đúng bài học Session 43 để lại (tra dữ liệu thật, không đoán):** `supabase db query --linked` vào bảng `public.dictionary` xác nhận "absolutely" có THẬT 5 nghĩa trong từ điển FVDP (không phải lỗi data). Đọc code `youtube.ts` (`renderMeaning`/`meaningSummary`) xác nhận: khi AI (`/api/lookup-context`, đáng lẽ trả 1 nghĩa theo ngữ cảnh) không kịp/lỗi, code rơi về hiện **tới 4 nghĩa từ điển cùng lúc** làm dự phòng — đây là lỗi hiển thị, không phải lỗi data hay lỗi AI.
+- **Đã sửa:** `meaningSummary()` + nhánh dự phòng trong `renderMeaning()` — chỉ lấy nghĩa ĐẦU TIÊN (`meanings.find(m=>m.sense)`) dù rơi vào nhánh AI hay dự phòng, luôn hiện đúng 1 nghĩa. Nới timeout gọi AI trong `lookup-context.ts` (5s→10s) để giảm tần suất phải rơi về dự phòng.
+- **Verification:** backend lint/typecheck/test (44 test, không đổi số lượng) PASS. Extension lint/typecheck/build:prod PASS. Build lại + đóng gói ĐÈ lên `studymovie-extension-v1.1.2-20260709.zip` trên Desktop (giữ nguyên version 1.1.2 vì Session 43 xác nhận bản đó CHƯA nộp Chrome Web Store — không cần bump thêm).
+- **Còn dở:** (1) khách CHƯA runtime-test lại fix này; (2) TIP-101-BUGFIXES vẫn `in_progress` — CÒN CẢ fix cache quảng cáo (mục 7, Session 43) khách cũng chưa xác nhận test lại. Cả 2 việc dồn vào cùng 1 bản zip 1.1.2 chưa nộp, nên khách chỉ cần test 1 lần rồi nộp 1 lần là đủ cho cả 2.
+- **Cách resume:** hỏi khách đã test lại chưa (cả bug quảng cáo mục 7 lẫn "chỉ 1 nghĩa" mục 8) → cả 2 OK thì chuyển `TIP-101-BUGFIXES` sang `verified` trong `feature_list.json`. Nếu có lỗi mới, **tra `supabase db query --linked`/`vercel logs --json` TRƯỚC khi đoán** (bài học lặp lại từ Session 43).
+
 ### Session 43 — TIP-101j: 13 fix runtime sau TIP-101 (tra từ, phiên âm, phụ đề dịch — kể cả bug cache quảng cáo) (2026-07-09)
 - **Bối cảnh:** tiếp nối Session 42 ngay trong ngày — khách runtime-test TIP-101 trên YouTube thật, báo lỗi liên tục qua nhiều vòng hỏi-đáp. Toàn bộ session này là **fix bug qua feedback thật**, không phải TIP mới soạn trước.
 - **Danh sách fix (thứ tự phát hiện):**
