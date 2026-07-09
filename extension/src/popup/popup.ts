@@ -665,7 +665,7 @@ function renderUser(me: Me): void {
   a.href = "#";
   a.addEventListener("click", (e) => {
     e.preventDefault();
-    openTab("https://studymovie.com/gia");
+    openTab(`${SITE_URL}/thanh-toan`); // đồng bộ về đúng màn nâng cấp app.studymovie.com
   });
   p.appendChild(a);
   p.append(" để tiếp tục sử dụng.");
