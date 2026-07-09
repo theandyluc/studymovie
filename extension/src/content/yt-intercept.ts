@@ -44,16 +44,13 @@ const RELAY_TIMEOUT_TRANSLATE_MS = 28000;
 // không ổn định) — có thể do gọi quá thường xuyên gây tranh chấp/quá tải. QUAY LẠI mức đo được
 // tốt nhất: 4 câu/lần, kiểm tra mỗi 4s. KHÔNG giảm thêm nữa trừ khi có dữ liệu đo rõ ràng hơn.
 const CHUNK_COUNT = 4;
-// TIP-101b — backend dịch SONG SONG từng câu (Promise.all) nên độ trễ 1 lô = câu CHẬM NHẤT
-// trong lô, không phải tổng. Câu ĐANG XEM NGAY (gapIdx === startIdx: mở video mới / vừa tua tới
-// đúng chỗ chưa dịch) cần trả nhanh nhất có thể → xin ÍT câu hơn CHUNK_COUNT. Phần đệm PHÍA
-// TRƯỚC (chưa cần ngay) vẫn xin CHUNK_COUNT để đỡ tốn round-trip — 2 mục đích khác nhau, không
-// đổi CHECK_INTERVAL_MS (giữ nguyên 4s đã đo tốt nhất ở TIP-101 mục 7). LƯU Ý: session TIP-101
-// từng thử 4->2 kèm ĐỔI LUÔN chu kỳ 4s->2s và đo chậm hơn — nhưng đó là đổi 2 biến cùng lúc, KHÔNG
-// tách biệt được do count hay do interval. Ở đây CHỈ đổi count của riêng lô "urgent" (lô đệm nền
-// vẫn 4 câu/4s y hệt session trước) nên không lặp lại đúng tổ hợp đã đo là chậm hơn — vẫn nên
-// đo lại thực tế trước khi giảm thêm, KHÔNG đoán mò.
-const URGENT_CHUNK_COUNT = 2;
+// TIP-101f — đã thử tách riêng 1 mức "urgent" (2 câu) cho đúng lúc mở video/vừa tua tới, khác
+// CHUNK_COUNT (4) cho đệm nền — Ý TƯỞNG là câu cần ngay về nhanh hơn. NHƯNG chưa đo thực tế đã
+// đổi, và có đánh đổi ngược: xin ÍT câu hơn ngay lúc tua nghĩa là PHỦ ĐƯỢC ÍT câu hơn trong lần
+// gọi đầu, dễ hụt đúng vài câu kế tiếp trong lúc chờ lô đệm nền kế tiếp (4s sau) — có thể là
+// nguyên nhân gây "thỉnh thoảng không dịch kịp" lúc tua. QUAY VỀ ĐÚNG cấu hình đã đo/verify ở
+// TIP-101: LUÔN dùng CHUNK_COUNT=4 cho MỌI lần gọi (không tách urgent riêng). Muốn thử lại mức
+// khác PHẢI đo thực tế trước, không đoán mò (bài học đã ghi rõ ở claude-progress.md Session 42).
 
 let lastBase = "";
 let curVid = "";
@@ -133,10 +130,7 @@ async function ensureBufferAhead(): Promise<void> {
   if (gapIdx === -1) return; // đủ đệm rồi
   if (pendingRange && gapIdx >= pendingRange.from && gapIdx < pendingRange.to) return; // đang chờ đúng đoạn này
 
-  // Câu đang phát NGAY (gapIdx === startIdx) mà chưa có bản dịch → ưu tiên tốc độ (lô nhỏ).
-  // Gap ở đâu đó phía trước (đệm trước, chưa cần ngay) → ưu tiên gộp lô cho đỡ tốn round-trip.
-  const isUrgent = gapIdx === startIdx;
-  const count = Math.min(isUrgent ? URGENT_CHUNK_COUNT : CHUNK_COUNT, groupedEn.length - gapIdx);
+  const count = Math.min(CHUNK_COUNT, groupedEn.length - gapIdx);
   pendingRange = { from: gapIdx, to: gapIdx + count };
   const result = await askBackendTranslate(vid, gapIdx, count);
   if (currentVideoId() !== vid) return; // đã đổi video giữa chừng — bỏ kết quả trễ
@@ -212,9 +206,7 @@ async function handleTimedtext(rawUrl: string, playerBody?: string): Promise<voi
     // đủ cả 2 vòng đi-về). Endpoint dịch đã tự kiểm tra cache trước khi gọi AI, nên gọi thẳng
     // 1 lần là đủ: có cache → trả ngay (không tốn AI); chưa có → dịch lô đầu luôn. Kèm EN thô để
     // backend ghép câu nếu đây là lần đầu video này có người xem (bỏ qua nếu đã có cache).
-    // Lô đầu = URGENT_CHUNK_COUNT (nhỏ hơn CHUNK_COUNT): đây là câu SẮP PHÁT NGAY, ưu tiên tốc
-    // độ trả về hơn là gộp nhiều câu — startBuffering() bên dưới sẽ tự lấy tiếp phần còn lại.
-    const first = vid ? await askBackendTranslate(vid, 0, URGENT_CHUNK_COUNT, en) : null;
+    const first = vid ? await askBackendTranslate(vid, 0, CHUNK_COUNT, en) : null;
     if (currentVideoId() !== vid) return;
     if (first) {
       groupedEn = first.en;
