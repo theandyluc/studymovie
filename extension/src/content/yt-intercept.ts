@@ -34,7 +34,6 @@ type ViState = "ok" | "empty" | "translating" | "failed";
 
 const LOOKAHEAD_SEC = 90; // khoảng đệm phía trước vị trí đang xem
 const CHECK_INTERVAL_MS = 4000; // chu kỳ kiểm tra "đủ đệm chưa"
-const RELAY_TIMEOUT_CACHE_MS = 3000; // hỏi cache (nhanh)
 // gọi dịch (có AI) — PHẢI lớn hơn timeout nội bộ backend (translate-batch.ts, 20s) + biên an
 // toàn cho relay/network, nếu không 2 timeout gần bằng nhau dễ đua nhau: extension bỏ cuộc
 // đúng lúc backend sắp trả lời xong.
@@ -68,27 +67,6 @@ function postCues(vid: string, viState: ViState): void {
 
 // TIP-101 — MAIN world không có chrome.runtime → nhờ content script ISOLATED (youtube.ts)
 // relay qua window.postMessage (ISOLATED có chrome.runtime, gọi backend qua SM_API proxy).
-let askReqSeq = 0;
-function askBackendViCache(videoId: string): Promise<{ en: RawCue[]; vi: string[] } | null> {
-  return new Promise((resolve) => {
-    const reqId = `${videoId}-${++askReqSeq}`;
-    const timer = setTimeout(() => {
-      window.removeEventListener("message", onReply);
-      resolve(null);
-    }, RELAY_TIMEOUT_CACHE_MS);
-    function onReply(e: MessageEvent): void {
-      if (e.source !== window) return;
-      const d = e.data as { __sm?: string; reqId?: string; en?: RawCue[]; vi?: string[] } | undefined;
-      if (d?.__sm !== "SM_VI_CACHE_RESULT" || d.reqId !== reqId) return;
-      clearTimeout(timer);
-      window.removeEventListener("message", onReply);
-      resolve(d.en && d.vi ? { en: d.en, vi: d.vi } : null);
-    }
-    window.addEventListener("message", onReply);
-    window.postMessage({ __sm: "SM_ASK_VI_CACHE", videoId, reqId }, "*");
-  });
-}
-
 let translateReqSeq = 0;
 function askBackendTranslate(
   videoId: string,
@@ -206,23 +184,11 @@ async function handleTimedtext(rawUrl: string, playerBody?: string): Promise<voi
     viArr = new Array(en.length).fill("") as string[];
     postCues(vid, "translating");
 
-    const cached = vid ? await askBackendViCache(vid) : null;
-    if (currentVideoId() !== vid) return;
-
-    if (cached) {
-      groupedEn = cached.en;
-      viArr = cached.vi;
-      postCues(vid, groupedEn.length === 0 ? "empty" : "ok");
-      if (groupedEn.length > 0) startBuffering();
-      return;
-    }
-
-    // Video hoàn toàn mới (chưa ai xem) — gọi dịch lô đầu, kèm EN thô để backend ghép câu
-    // (chỉ cần gửi 1 lần duy nhất/video, các lần sau backend đã có sẵn).
-    // CHỈ xin 1 lô NHỎ CỐ ĐỊNH cho có gì hiện ra nhanh — KHÔNG cố dịch hết cả cửa sổ 90s trong
-    // 1 lần gọi (lô lớn khiến AI trả lời chậm, dễ vượt timeout). Phần còn lại của 90s được lấp
-    // dần bằng các lượt `ensureBufferAhead` kế tiếp (startBuffering gọi ngay sau đây) — nhiều lô
-    // nhỏ nối tiếp nhanh hơn hẳn 1 lô to duy nhất, vẫn giữ nguyên độ an toàn của cửa sổ 90s.
+    // TIP-101 — GỘP "hỏi cache" + "dịch nếu thiếu" thành 1 lần gọi mạng thay vì 2 lần nối tiếp
+    // (trước: GET hỏi cache, cache miss mới POST dịch — với video hoàn toàn mới luôn phải chờ
+    // đủ cả 2 vòng đi-về). Endpoint dịch đã tự kiểm tra cache trước khi gọi AI, nên gọi thẳng
+    // 1 lần là đủ: có cache → trả ngay (không tốn AI); chưa có → dịch lô đầu luôn. Kèm EN thô để
+    // backend ghép câu nếu đây là lần đầu video này có người xem (bỏ qua nếu đã có cache).
     const first = vid ? await askBackendTranslate(vid, 0, CHUNK_COUNT, en) : null;
     if (currentVideoId() !== vid) return;
     if (first) {

@@ -31,7 +31,7 @@ import {
   patchWeeklyPlan,
   deleteWeeklyPlan,
 } from "./api/weekly-plan.js";
-import { getViCaption, postCaptionsTranslate } from "./api/captions.js";
+import { postCaptionsTranslate } from "./api/captions.js";
 
 /**
  * Backend API service — DÙNG CHUNG cho web frontend + extension.
@@ -100,7 +100,6 @@ app.delete("/api/playlist/:id", requireAuth, deletePlaylist); // WEB-06
 app.get("/api/payment/price", requireAuth, getPrice); // BE-05 TIP-020: giá hiện tại cho màn giới thiệu
 app.post("/api/payment/create-order", requireAuth, postCreateOrder); // BE-05 TIP-013
 app.get("/api/payment/order/:code", requireAuth, getOrder); // BE-05 TIP-013
-app.get("/api/captions-vi/:videoId", requireAuth, requireActive, getViCaption); // TIP-078
 app.post("/api/captions-translate/:videoId", requireAuth, requireActive, postCaptionsTranslate); // TIP-101
 
 export default app;

@@ -29,20 +29,6 @@ function isValidRawCueArray(v: unknown): v is RawCue[] {
   );
 }
 
-export async function getViCaption(c: Context) {
-  const videoId = c.req.param("videoId");
-  if (!isValidVideoId(videoId)) return c.json({ error: "invalid videoId" }, 400);
-
-  const { data, error } = await getServiceClient()
-    .from("vi_caption_cache")
-    .select("en, vi")
-    .eq("video_id", videoId)
-    .maybeSingle();
-  if (error) return c.json({ error: error.message }, 500);
-  if (!data) return c.json({ found: false }, 404);
-  return c.json({ found: true, en: data.en, vi: data.vi });
-}
-
 export async function postCaptionsTranslate(c: Context) {
   const videoId = c.req.param("videoId");
   if (!isValidVideoId(videoId)) return c.json({ error: "invalid videoId" }, 400);
@@ -89,21 +75,18 @@ export async function postCaptionsTranslate(c: Context) {
       );
       return c.json({ en: [], vi: [] });
     }
-    // Ghi dòng nền tảng NGAY (await, KHÔNG waitUntil) — nếu không, các lượt gọi kế tiếp
-    // (ensureBufferAhead, không kèm `en`) có thể tới TRƯỚC khi dòng này kịp lưu → 400
-    // "missing en" oan. Đua nhau insert → bên thua đọc lại dòng bên thắng vừa ghi.
-    const { error: insertErr } = await sb
-      .from("vi_caption_cache")
-      .insert({ video_id: videoId, en: grouped, vi, cue_count: grouped.length });
-    if (insertErr) {
-      const { data: reread } = await sb.from("vi_caption_cache").select("en, vi").eq("video_id", videoId).maybeSingle();
-      if (reread) {
-        grouped = reread.en as RawCue[];
-        vi = reread.vi as string[];
-      } else {
-        console.warn("[captions-translate] insert baseline lỗi:", insertErr.message);
-      }
-    }
+    // Ghi dòng nền tảng CHẠY NỀN (waitUntil, không await) — trước đây chờ đồng bộ để tránh
+    // lượt gọi kế tiếp (ensureBufferAhead, không kèm `en`) tới sớm bị 400 "missing en". Rủi ro
+    // đó giờ THẤP hơn nhiều vì extension chỉ bắt đầu gọi tiếp (startBuffering) SAU KHI lượt gọi
+    // NÀY hoàn tất hẳn (đã gộp bớt 1 vòng gọi mạng riêng để hỏi cache trước đó) — chỉ còn rủi ro
+    // hiếm (2 tab/user khác nhau cùng mở video hoàn toàn mới gần như đồng thời), chấp nhận được.
+    waitUntil(
+      Promise.resolve(
+        sb.from("vi_caption_cache").insert({ video_id: videoId, en: grouped, vi, cue_count: grouped.length })
+      ).then(({ error }) => {
+        if (error) console.warn("[captions-translate] insert baseline lỗi:", error.message);
+      })
+    );
   }
 
   const fromIndex = Math.min(fromIndexRaw, grouped.length);

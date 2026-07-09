@@ -653,25 +653,14 @@ function applySettings(): void {
   if (activeIndex >= 0) renderCue(activeIndex);
 }
 
-// TIP-101 — Cache + dịch phụ đề Việt DÙNG CHUNG giữa mọi user (qua backend), bám tiến độ
-// xem (không dịch trước cả video). MAIN world (yt-intercept.ts) không có chrome.runtime
-// → nhờ content script ISOLATED (ở đây) relay: hỏi cache, gọi dịch đoạn cần.
+// TIP-101 — Dịch phụ đề Việt DÙNG CHUNG giữa mọi user (qua backend), bám tiến độ xem (không
+// dịch trước cả video). MAIN world (yt-intercept.ts) không có chrome.runtime → nhờ content
+// script ISOLATED (ở đây) relay gọi backend qua SM_API proxy. Endpoint dịch tự kiểm tra cache
+// trước khi gọi AI, nên chỉ cần 1 loại yêu cầu (SM_ASK_TRANSLATE) — không cần hỏi cache riêng.
 interface RawCueLike {
   start: number;
   dur: number;
   text: string;
-}
-function handleAskViCache(videoId: string, reqId: string): void {
-  callApi<{ found: boolean; en?: RawCueLike[]; vi?: string[] }>("GET", `/api/captions-vi/${videoId}`)
-    .then((r) => {
-      window.postMessage(
-        { __sm: "SM_VI_CACHE_RESULT", reqId, en: r.found ? r.en : null, vi: r.found ? r.vi : null },
-        "*"
-      );
-    })
-    .catch(() => {
-      window.postMessage({ __sm: "SM_VI_CACHE_RESULT", reqId, en: null, vi: null }, "*"); // lỗi mạng/chưa login → coi như miss
-    });
 }
 function handleAskTranslate(
   videoId: string,
@@ -704,10 +693,6 @@ function onMessage(e: MessageEvent): void {
         en?: RawCueLike[];
       }
     | null;
-  if (raw?.__sm === "SM_ASK_VI_CACHE" && raw.videoId && raw.reqId) {
-    handleAskViCache(raw.videoId, raw.reqId);
-    return;
-  }
   if (
     raw?.__sm === "SM_ASK_TRANSLATE" &&
     raw.videoId &&
