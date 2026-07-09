@@ -12,7 +12,10 @@ const MAX_SENTENCE = 500; // cắt câu để làm khoá cache (tránh vượt g
 
 async function askOpenAI(word: string, sentence: string): Promise<string | null> {
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 5000);
+  // TIP-101 — nới 5s -> 10s: đo thực tế hôm nay OpenAI đôi lúc có độ trễ vài giây, 5s hơi ngắn
+  // khiến hay rơi về fallback từ điển (trước đây hiện NHIỀU nghĩa — nay dù fallback cũng chỉ
+  // hiện 1 nghĩa, nhưng vẫn ưu tiên để AI có đủ thời gian trả lời trước khi fallback).
+  const timer = setTimeout(() => ctrl.abort(), 10000);
   try {
     // TIP-071 — dựng body theo model: GPT-5 (nano/mini) không nhận temperature/max_tokens;
     // dùng max_completion_tokens + reasoning_effort. gpt-4o-mini giữ temperature 0.

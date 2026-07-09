@@ -393,13 +393,11 @@ function closeWordPopup(resume: boolean): void {
   pausedByPopup = false;
 }
 
+// CHỈ lấy 1 nghĩa (nghĩa đầu tiên/phổ biến nhất trong từ điển) — học viên chỉ cần 1 nghĩa rõ
+// ràng để lưu, không phải liệt kê hết các nghĩa có thể có của từ (từ điển thật có thể có 5+
+// nghĩa cho 1 từ như "absolutely", liệt kê hết gây rối chứ không giúp ích).
 function meaningSummary(result: LookupResult | null): string {
-  if (!result?.meanings?.length) return "";
-  return result.meanings
-    .map((m) => m.sense)
-    .filter((s): s is string => !!s)
-    .slice(0, 3)
-    .join("; ");
+  return result?.meanings?.find((m) => m.sense)?.sense ?? "";
 }
 
 // TIP-095 — icon loa 18x18, y hệt page hoc-tu-vung (SpeakerIcon), thay nút text "🔊 Phát âm".
@@ -583,20 +581,20 @@ function onWordClick(word: string, surface: string, sentence: string): void {
       meaningBox.textContent = "Đang tra nghĩa…"; // chờ AI trước khi rơi về từ điển
       return;
     }
-    // AI đã settle, không có nghĩa AI → dùng nghĩa từ điển.
-    if (currentResult?.meanings?.length) {
-      if (currentResult.source === "free_dict") {
+    // AI đã settle, không có nghĩa AI → dùng nghĩa từ điển — CHỈ 1 nghĩa (đầu tiên/phổ biến
+    // nhất), không liệt kê hết mọi nghĩa có thể có của từ (gây rối, học viên chỉ cần 1 nghĩa).
+    const firstSense = currentResult?.meanings?.find((m) => m.sense);
+    if (firstSense) {
+      if (currentResult?.source === "free_dict") {
         const tag = document.createElement("div");
         tag.textContent = "📖 định nghĩa tiếng Anh";
         tag.style.cssText = "font-size:11px;color:#4f46e5;margin-bottom:2px;";
         meaningBox.appendChild(tag);
       }
-      for (const s of currentResult.meanings.slice(0, 4)) {
-        const line = document.createElement("div");
-        line.textContent = `• ${s.pos ? `(${s.pos}) ` : ""}${s.sense ?? ""}`;
-        meaningBox.appendChild(line);
-      }
-      currentMeaning = meaningSummary(currentResult);
+      const line = document.createElement("div");
+      line.textContent = `${firstSense.pos ? `(${firstSense.pos}) ` : ""}${firstSense.sense ?? ""}`;
+      meaningBox.appendChild(line);
+      currentMeaning = firstSense.sense ?? "";
       return;
     }
     if (!dictSettled) {
