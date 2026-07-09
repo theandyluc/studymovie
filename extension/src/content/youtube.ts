@@ -217,8 +217,12 @@ function renderCue(idx: number): void {
   if (!cue) return;
 
   const showEn = (settings.mode === "en" || settings.mode === "both") && !!cue.en;
-  const showVi = (settings.mode === "vi" || settings.mode === "both") && !!cue.vi;
-  if (!showEn && !showVi) return;
+  // TIP-101e — trước đây showVi đòi hỏi cue.vi CÓ SẴN, nên câu chưa dịch kịp (buffering nền
+  // chưa xong, độ trễ AI thật — không phải bug) khiến dòng VI biến mất hoàn toàn, trông như lỗi.
+  // Giờ hiện dòng VI bất cứ khi nào mode có bật VI (kể cả trống) — trống thì hiện placeholder
+  // "Đang dịch…" thay vì im lặng biến mất, để phân biệt "đang chờ" với "mất phụ đề".
+  const wantVi = settings.mode === "vi" || settings.mode === "both";
+  if (!showEn && !wantVi) return;
 
   const bubble = document.createElement("div");
   styleBubble(bubble);
@@ -245,10 +249,15 @@ function renderCue(idx: number): void {
     }
     bubble.appendChild(en);
   }
-  if (showVi) {
+  if (wantVi) {
     const vi = document.createElement("div");
     styleLine(vi, true);
-    vi.textContent = truncateForDisplay(cue.vi, VI_DISPLAY_MAX_CHARS);
+    if (cue.vi) {
+      vi.textContent = truncateForDisplay(cue.vi, VI_DISPLAY_MAX_CHARS);
+    } else {
+      vi.textContent = "Đang dịch…";
+      vi.style.opacity = "0.6"; // phân biệt rõ với bản dịch thật đã có
+    }
     // Khoảng cách dọc EN↔VI chỉ áp khi hiện cả hai (mode='both').
     if (showEn) vi.style.marginTop = `${settings.lineGapPx}px`;
     bubble.appendChild(vi);
