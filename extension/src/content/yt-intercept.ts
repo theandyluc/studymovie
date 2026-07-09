@@ -142,8 +142,18 @@ async function ensureBufferAhead(): Promise<void> {
   if (currentVideoId() !== vid) return; // đã đổi video giữa chừng — bỏ kết quả trễ
   pendingRange = null;
   if (result) {
+    // TIP-101d — tua liên tục (kéo timeline) bắn nhiều `seeked` dồn dập → nhiều lượt
+    // ensureBufferAhead() chạy CHỒNG LẤN (pendingRange chỉ khoá đúng 1 đoạn, đoạn khác vẫn lọt
+    // qua). Mỗi response phản ánh snapshot cache TẠI LÚC backend bắt đầu đọc, không biết các
+    // request song song khác vừa dịch xong câu nào. Trước đây GHI ĐÈ TOÀN BỘ viArr — response
+    // nào tới SAU (dù dựa trên snapshot CŨ hơn) xoá mất câu mà request khác vừa dịch xong dù đã
+    // hiện ra rồi (đúng hiện tượng "hiện rồi mất" lặp lại lúc tua). Giờ MERGE: chỉ số nào ĐÃ có
+    // bản dịch (local hoặc response) thì giữ, không bao giờ ghi đè một câu đã dịch về rỗng.
+    // Bỏ qua merge cho đúng lần gọi ĐẦU TIÊN của video (viArr cũ là mảng thô trước khi ghép câu,
+    // độ dài khác — lúc đó thay thế toàn bộ là đúng, response đó mới là cấu trúc chuẩn của video).
+    const canMerge = viArr.length === result.vi.length;
     groupedEn = result.en;
-    viArr = result.vi;
+    viArr = canMerge ? viArr.map((v, i) => v || result.vi[i] || "") : result.vi;
     postCues(vid, "ok");
   }
 }
