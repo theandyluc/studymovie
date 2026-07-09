@@ -126,7 +126,10 @@ function buildOverlay(): void {
     bottom: "20px",
     textAlign: "center",
     pointerEvents: "none",
-    zIndex: "60",
+    // TIP-XXX — YouTube tự hiện lớp gợi ý/paused overlay (z-index cao) khi video pause + chuột
+    // rời khỏi player (xảy ra khi popup tra từ đang mở, video bị pause) → lớp đó đè lên khiến
+    // phụ đề "biến mất". Đẩy z-index cực cao để LUÔN nổi trên mọi overlay gốc của YouTube.
+    zIndex: "2147483000",
     transition: "bottom 0.2s ease", // TIP-023: dời mượt khi control ẩn/hiện
   } as Partial<CSSStyleDeclaration>);
   player.appendChild(box);
@@ -283,7 +286,7 @@ function setViNote(text: string | null): void {
       right: "0",
       bottom: "118px",
       textAlign: "center",
-      zIndex: "61",
+      zIndex: "2147483001",
       pointerEvents: "none",
       color: "#fbbf24",
       fontSize: "12px",
@@ -315,7 +318,7 @@ function setAccessNote(show: boolean): void {
       right: "0",
       bottom: "40px",
       textAlign: "center",
-      zIndex: "61",
+      zIndex: "2147483001",
       pointerEvents: "none",
       color: "#fbbf24",
       fontSize: "13px",
@@ -455,7 +458,7 @@ function onWordClick(word: string, surface: string, sentence: string): void {
     borderRadius: "10px",
     padding: "12px 14px",
     boxShadow: "0 8px 24px rgba(0,0,0,0.35)",
-    zIndex: "80",
+    zIndex: "2147483002",
     fontFamily: "Arial, sans-serif",
     fontSize: "14px",
     textAlign: "left",
