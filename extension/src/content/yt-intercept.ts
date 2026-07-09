@@ -40,6 +40,9 @@ const RELAY_TIMEOUT_CACHE_MS = 3000; // hỏi cache (nhanh)
 // đúng lúc backend sắp trả lời xong.
 const RELAY_TIMEOUT_TRANSLATE_MS = 28000;
 const TRANSLATE_COUNT = 50; // số câu tối đa / lần gọi dịch (khớp TRANSLATE_BATCH_SIZE backend)
+// Lô dịch NGAY LÚC MỞ VIDEO MỚI — cố tình NHỎ (không dùng TRANSLATE_COUNT/độ dài cửa sổ 90s)
+// để có phụ đề Việt hiện ra nhanh; phần còn lại của cửa sổ 90s tự lấp dần qua các lượt sau.
+const BOOTSTRAP_COUNT = 15;
 
 let lastBase = "";
 let curVid = "";
@@ -214,12 +217,11 @@ async function handleTimedtext(rawUrl: string, playerBody?: string): Promise<voi
 
     // Video hoàn toàn mới (chưa ai xem) — gọi dịch lô đầu, kèm EN thô để backend ghép câu
     // (chỉ cần gửi 1 lần duy nhất/video, các lần sau backend đã có sẵn).
-    // CHỈ xin đúng số câu cần cho khoảng đệm ~90s đầu (không xin cả TRANSLATE_COUNT=50 luôn —
-    // lô quá lớn khiến AI trả lời chậm, dễ vượt timeout mà không cần thiết vì lúc này còn chưa
-    // biết chính xác sẽ ghép ra bao nhiêu câu, chỉ cần ước lượng đủ dùng qua số cụm ASR thô rơi
-    // trong cửa sổ 90s — luôn ≥ số câu ghép ra thật (ghép chỉ GIẢM số lượng, không tăng).
-    const bootstrapCount = Math.min(TRANSLATE_COUNT, Math.max(5, en.filter((c) => c.start <= LOOKAHEAD_SEC).length));
-    const first = vid ? await askBackendTranslate(vid, 0, bootstrapCount, en) : null;
+    // CHỈ xin 1 lô NHỎ CỐ ĐỊNH cho có gì hiện ra nhanh — KHÔNG cố dịch hết cả cửa sổ 90s trong
+    // 1 lần gọi (lô lớn khiến AI trả lời chậm, dễ vượt timeout). Phần còn lại của 90s được lấp
+    // dần bằng các lượt `ensureBufferAhead` kế tiếp (startBuffering gọi ngay sau đây) — nhiều lô
+    // nhỏ nối tiếp nhanh hơn hẳn 1 lô to duy nhất, vẫn giữ nguyên độ an toàn của cửa sổ 90s.
+    const first = vid ? await askBackendTranslate(vid, 0, BOOTSTRAP_COUNT, en) : null;
     if (currentVideoId() !== vid) return;
     if (first) {
       groupedEn = first.en;
