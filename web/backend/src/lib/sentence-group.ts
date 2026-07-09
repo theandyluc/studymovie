@@ -13,13 +13,12 @@ export interface GroupConfig {
   maxGroupChars: number; // trần số ký tự 1 câu ghép
 }
 
-// TIP-101 — hạ trần so với thử nghiệm ban đầu (12s/200 ký tự): hội thoại ASR ít dấu câu hay
-// gộp sát trần cũ, ra câu quá dài khó đọc trên phụ đề. Chuẩn phụ đề thông thường ~1-7s hiển thị,
-// ~80-100 ký tự/dòng — hạ về mức này.
+// TIP-101 — hạ trần lần 2 (100 ký tự/7s vẫn bị khách phản hồi "còn dài"). Về sát khung phụ đề
+// phim thật (1 dòng ngắn, ~5s đọc kịp): 60 ký tự, 5 giây.
 export const DEFAULT_GROUP_CONFIG: GroupConfig = {
   gapBreakSec: 0.9,
-  maxGroupDurSec: 7,
-  maxGroupChars: 100,
+  maxGroupDurSec: 5,
+  maxGroupChars: 60,
 };
 
 // TIP-101 — số câu tối đa dịch trong 1 lần gọi. Trần AN TOÀN cuối cùng phía backend (extension
