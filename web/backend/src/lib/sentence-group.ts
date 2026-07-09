@@ -28,7 +28,40 @@ export const TRANSLATE_BATCH_SIZE = 20;
 
 const SENTENCE_END = /[.!?]["')\]]?$/;
 
+// TIP-101c — thuật toán bên dưới CHỈ GHÉP cụm ASR lại (làm dài hơn) chứ không bao giờ tách
+// nhỏ — nên nếu 1 cụm GỐC (YouTube auto-caption trả về) tự nó đã dài hơn maxGroupChars, trần
+// không có tác dụng (câu vẫn hiện dài nguyên, kéo bản dịch VI dài theo). Tách trước ở đây theo
+// ranh giới từ, chia thời lượng gốc theo tỉ lệ số ký tự mỗi phần (ASR không cho mốc thời gian
+// giữa câu nên đây là ước lượng hợp lý, không lệch nhiều với tốc độ nói đều).
+function splitOverlongCue(cue: RawCue, maxChars: number): RawCue[] {
+  if (cue.text.length <= maxChars) return [cue];
+  const words = cue.text.split(/\s+/);
+  const parts: string[] = [];
+  let curr = "";
+  for (const w of words) {
+    const next = curr ? `${curr} ${w}` : w;
+    if (curr && next.length > maxChars) {
+      parts.push(curr);
+      curr = w;
+    } else {
+      curr = next;
+    }
+  }
+  if (curr) parts.push(curr);
+
+  const totalChars = parts.reduce((s, p) => s + p.length, 0) || 1;
+  const out: RawCue[] = [];
+  let t = cue.start;
+  for (const p of parts) {
+    const dur = (p.length / totalChars) * cue.dur;
+    out.push({ start: t, dur, text: p });
+    t += dur;
+  }
+  return out;
+}
+
 export function groupIntoSentences(cues: RawCue[], cfg: GroupConfig = DEFAULT_GROUP_CONFIG): RawCue[] {
+  const expanded = cues.flatMap((c) => splitOverlongCue(c, cfg.maxGroupChars));
   const out: RawCue[] = [];
   let bucket: RawCue[] = [];
 
@@ -44,7 +77,7 @@ export function groupIntoSentences(cues: RawCue[], cfg: GroupConfig = DEFAULT_GR
     bucket = [];
   };
 
-  for (const cue of cues) {
+  for (const cue of expanded) {
     if (bucket.length === 0) {
       bucket.push(cue);
       continue;

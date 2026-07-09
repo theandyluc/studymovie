@@ -43,4 +43,23 @@ describe("groupIntoSentences", () => {
   it("mảng rỗng trả về mảng rỗng", () => {
     expect(groupIntoSentences([])).toEqual([]);
   });
+
+  it("tách cụm GỐC đã dài hơn maxGroupChars (bug: trước đây thuật toán chỉ ghép, không tách)", () => {
+    const longText = "This is one single very long ASR chunk that already exceeds the cap by itself";
+    const cues = [{ start: 0, dur: 10, text: longText }];
+    const out = groupIntoSentences(cues, { gapBreakSec: 0.9, maxGroupDurSec: 100, maxGroupChars: 20 });
+    expect(out.length).toBeGreaterThan(1);
+    for (const g of out) expect(g.text.length).toBeLessThanOrEqual(20);
+    // Ghép lại đúng nội dung gốc (không mất/lặp từ) và mốc thời gian còn trong khoảng cue gốc.
+    expect(out.map((g) => g.text).join(" ")).toBe(longText);
+    expect(out[0].start).toBe(0);
+    expect(out[out.length - 1].start + out[out.length - 1].dur).toBeCloseTo(10, 5);
+  });
+
+  it("cụm gốc ngắn hơn/bằng trần thì không bị tách", () => {
+    const cues = [{ start: 0, dur: 1, text: "short" }];
+    const out = groupIntoSentences(cues, { gapBreakSec: 0.9, maxGroupDurSec: 100, maxGroupChars: 60 });
+    expect(out).toHaveLength(1);
+    expect(out[0].text).toBe("short");
+  });
 });
