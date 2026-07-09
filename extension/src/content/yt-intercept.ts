@@ -33,20 +33,18 @@ const currentVideoId = (): string => new URLSearchParams(location.search).get("v
 type ViState = "ok" | "empty" | "translating" | "failed";
 
 const LOOKAHEAD_SEC = 90; // khoảng đệm phía trước vị trí đang xem
-const CHECK_INTERVAL_MS = 2000; // chu kỳ kiểm tra "đủ đệm chưa" (giảm từ 4s để bù CHUNK_COUNT nhỏ)
+const CHECK_INTERVAL_MS = 4000; // chu kỳ kiểm tra "đủ đệm chưa"
 const RELAY_TIMEOUT_CACHE_MS = 3000; // hỏi cache (nhanh)
 // gọi dịch (có AI) — PHẢI lớn hơn timeout nội bộ backend (translate-batch.ts, 20s) + biên an
 // toàn cho relay/network, nếu không 2 timeout gần bằng nhau dễ đua nhau: extension bỏ cuộc
 // đúng lúc backend sắp trả lời xong.
 const RELAY_TIMEOUT_TRANSLATE_MS = 28000;
 // Số câu tối đa MỖI LẦN GỌI dịch — backend giờ dịch TỪNG CÂU SONG SONG (Promise.all), nên thời
-// gian chờ = câu CHẬM NHẤT trong lô, không phải tổng cả lô. Lô càng nhiều câu, xác suất "trúng"
-// phải 1 câu bị chậm bất thường càng cao (OpenAI đôi lúc có độ trễ ngẫu nhiên 1 request lẻ).
-// Đã thử 15 -> 6 -> 4 (giảm rõ rệt mỗi lần), giờ thử tiếp 4 -> 2 — RỦI RO: lô nhỏ hơn cần NHIỀU
-// lượt gọi hơn để lấp đầy cửa sổ đệm 90s, có thể không theo kịp tốc độ xem (gây hụt phụ đề Việt
-// ngay cả khi xem BÌNH THƯỜNG, không chỉ lúc mở/tua). Bù lại bằng cách kiểm tra lấp đệm thường
-// xuyên hơn (CHECK_INTERVAL_MS 4s -> 2s) để giữ tốc độ lấp đầy tương đương trước.
-const CHUNK_COUNT = 2;
+// gian chờ = câu CHẬM NHẤT trong lô, không phải tổng cả lô. Đã đo thực tế: 15->6->4 cải thiện
+// rõ rệt mỗi lần; thử tiếp 4->2 (kèm CHECK_INTERVAL_MS 2s) lại CHẬM HƠN (10s mở video, 2-4s tua
+// không ổn định) — có thể do gọi quá thường xuyên gây tranh chấp/quá tải. QUAY LẠI mức đo được
+// tốt nhất: 4 câu/lần, kiểm tra mỗi 4s. KHÔNG giảm thêm nữa trừ khi có dữ liệu đo rõ ràng hơn.
+const CHUNK_COUNT = 4;
 
 let lastBase = "";
 let curVid = "";
