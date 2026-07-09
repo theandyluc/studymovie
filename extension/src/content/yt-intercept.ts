@@ -41,10 +41,11 @@ const RELAY_TIMEOUT_CACHE_MS = 3000; // hỏi cache (nhanh)
 const RELAY_TIMEOUT_TRANSLATE_MS = 28000;
 // Số câu tối đa MỖI LẦN GỌI dịch — backend giờ dịch TỪNG CÂU SONG SONG (Promise.all), nên thời
 // gian chờ = câu CHẬM NHẤT trong lô, không phải tổng cả lô. Lô càng nhiều câu, xác suất "trúng"
-// phải 1 câu bị chậm bất thường càng cao (OpenAI đôi lúc có độ trễ ngẫu nhiên 1 request lẻ) →
-// cố tình để NHỎ (6 câu, đủ dùng cho khoảng ~15-25s) để giảm rủi ro dính câu chậm, thay vì 15
-// câu như trước. Phần còn lại của cửa sổ 90s vẫn tự lấp dần qua các lượt ensureBufferAhead sau.
-const CHUNK_COUNT = 6;
+// phải 1 câu bị chậm bất thường càng cao (OpenAI đôi lúc có độ trễ ngẫu nhiên 1 request lẻ).
+// Đã thử 15 -> 6 (giảm rõ rệt), giờ thử tiếp 6 -> 4 — càng nhỏ càng ít rủi ro dính câu chậm,
+// đánh đổi là cần nhiều lượt gọi hơn để lấp đầy cửa sổ đệm 90s (không sao vì các lượt sau chạy
+// nền, không chặn hiển thị — chỉ lượt ĐẦU TIÊN của mỗi đoạn mới học viên phải chờ).
+const CHUNK_COUNT = 4;
 
 let lastBase = "";
 let curVid = "";
