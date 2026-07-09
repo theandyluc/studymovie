@@ -13,8 +13,24 @@ export interface TranslateContext {
 }
 
 // Trả về null khi lỗi/timeout — gọi nơi khác coi là "chưa dịch được", không vỡ luồng chính.
+// TIP-101 — lô lớn thất bại (lệch số lượng/parse lỗi) → tự chia đôi, dịch riêng từng nửa
+// (đệ quy) thay vì bỏ trắng CẢ lô — tránh 1 đoạn khó dịch chặn đứng cả cửa sổ đệm phía sau.
 export async function translateBatch(sentences: string[], context: TranslateContext[] = []): Promise<string[] | null> {
   if (sentences.length === 0) return [];
+  const direct = await callOpenAI(sentences, context);
+  if (direct) return direct;
+  if (sentences.length <= 3) return null; // đã đủ nhỏ, hết cách chia tiếp
+
+  const mid = Math.ceil(sentences.length / 2);
+  const [r1, r2] = await Promise.all([
+    translateBatch(sentences.slice(0, mid), context),
+    translateBatch(sentences.slice(mid), context),
+  ]);
+  if (!r1 && !r2) return null;
+  return [...(r1 ?? sentences.slice(0, mid).map(() => "")), ...(r2 ?? sentences.slice(mid).map(() => ""))];
+}
+
+async function callOpenAI(sentences: string[], context: TranslateContext[]): Promise<string[] | null> {
   if (!OPENAI_API_KEY) {
     console.warn("[translate-batch] thiếu OPENAI_API_KEY");
     return null;
@@ -86,7 +102,9 @@ export async function translateBatch(sentences: string[], context: TranslateCont
         "[translate-batch] số lượng lệch: input",
         sentences.length,
         "output",
-        Array.isArray(parsed.translations) ? parsed.translations.length : typeof parsed.translations
+        Array.isArray(parsed.translations) ? parsed.translations.length : typeof parsed.translations,
+        "raw:",
+        raw.slice(0, 800)
       );
       return null;
     }
