@@ -30,6 +30,24 @@ const isTT = (u: unknown): u is string => typeof u === "string" && u.includes(TT
 const isEnglishLang = (u: string): boolean => /[?&]lang=en(?:-[a-zA-Z]+)?(?:&|$)/.test(u);
 const currentVideoId = (): string => new URLSearchParams(location.search).get("v") ?? "";
 
+// TIP-101i — BUG NGHIÊM TRỌNG tìm được qua debug thật (tra cache Supabase): quảng cáo pre-roll
+// PHÁT TRƯỚC video chính cũng có timedtext riêng, đi qua CÙNG endpoint /api/timedtext mà URL
+// trang vẫn giữ nguyên ?v=<video chính> (quảng cáo không đổi URL) → interceptor bắt nhầm caption
+// QUẢNG CÁO tưởng là của video chính, cache CỨNG mãi mãi (chỉ ~30s, đúng độ dài quảng cáo) →
+// mọi người xem sau chỉ có phụ đề vài chục giây đầu rồi mất hẳn, permanent (baseline cache
+// KHÔNG BAO GIỜ tạo lại 1 khi đã có). Video thật: youtube.com/watch?v=P5sKKnWCvzk — cache chỉ
+// phủ 0-34.84s dù video dài hơn nhiều, nội dung là script quảng cáo ("this game is for you...").
+// Chặn bằng 2 lớp: (1) URL timedtext của quảng cáo query đúng video ID CỦA QUẢNG CÁO (khác hẳn
+// video chính) ở param `v`; (2) YouTube gắn class `ad-showing` lên #movie_player khi đang phát
+// quảng cáo — kiểm tra cả 2 để chắc chắn không lọt (chỉ cần 1 trong 2 khớp là đủ để chặn).
+function getUrlParam(url: string, key: string): string | null {
+  const m = url.match(new RegExp(`[?&]${key}=([^&]*)`));
+  return m ? decodeURIComponent(m[1]) : null;
+}
+function isAdShowing(): boolean {
+  return !!document.querySelector("#movie_player.ad-showing, .ad-showing");
+}
+
 type ViState = "ok" | "empty" | "translating" | "failed";
 
 const LOOKAHEAD_SEC = 90; // khoảng đệm phía trước vị trí đang xem
@@ -176,6 +194,14 @@ function startBuffering(): void {
 }
 
 async function handleTimedtext(rawUrl: string, playerBody?: string): Promise<void> {
+  // TIP-101i — chặn caption QUẢNG CÁO bị bắt nhầm thành của video chính (xem bug note ở trên).
+  const urlVid = getUrlParam(rawUrl, "v");
+  const pageVid = currentVideoId();
+  if ((urlVid && pageVid && urlVid !== pageVid) || isAdShowing()) {
+    dbg("bỏ qua timedtext của quảng cáo/video khác trang hiện tại", { urlVid, pageVid });
+    return;
+  }
+
   const enUrl = withParam(withParam(rawUrl, "lang", "en"), "fmt", "json3");
   if (enUrl === lastBase) return; // tránh xử lý lặp cùng 1 track
   lastBase = enUrl;
