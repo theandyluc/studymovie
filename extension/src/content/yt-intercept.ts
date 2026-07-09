@@ -39,11 +39,12 @@ const RELAY_TIMEOUT_CACHE_MS = 3000; // hỏi cache (nhanh)
 // toàn cho relay/network, nếu không 2 timeout gần bằng nhau dễ đua nhau: extension bỏ cuộc
 // đúng lúc backend sắp trả lời xong.
 const RELAY_TIMEOUT_TRANSLATE_MS = 28000;
-// Số câu tối đa MỖI LẦN GỌI dịch — cố tình NHỎ (không phải cả cửa sổ 90s trong 1 lần gọi).
-// Lô lớn (thử 50) khiến AI trả lời chậm, hay vượt timeout (đo thực tế qua log: lô ~30-50 câu
-// nhiều lần bị "aborted"). Lô nhỏ → nhiều lượt gọi nối tiếp nhanh, đáng tin cậy hơn hẳn — áp
-// dụng ĐỀU cho cả lô mở màn (video mới) lẫn lô lấp đệm khi tua nhảy/xem tiếp (ensureBufferAhead).
-const CHUNK_COUNT = 15;
+// Số câu tối đa MỖI LẦN GỌI dịch — backend giờ dịch TỪNG CÂU SONG SONG (Promise.all), nên thời
+// gian chờ = câu CHẬM NHẤT trong lô, không phải tổng cả lô. Lô càng nhiều câu, xác suất "trúng"
+// phải 1 câu bị chậm bất thường càng cao (OpenAI đôi lúc có độ trễ ngẫu nhiên 1 request lẻ) →
+// cố tình để NHỎ (6 câu, đủ dùng cho khoảng ~15-25s) để giảm rủi ro dính câu chậm, thay vì 15
+// câu như trước. Phần còn lại của cửa sổ 90s vẫn tự lấp dần qua các lượt ensureBufferAhead sau.
+const CHUNK_COUNT = 6;
 
 let lastBase = "";
 let curVid = "";
