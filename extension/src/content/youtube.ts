@@ -758,12 +758,12 @@ function onMessage(e: MessageEvent): void {
     // TIP-028: Tắt StudyMovie → vẫn lưu cues (để bật lại dựng ngay) nhưng KHÔNG build overlay.
     buildOverlay(); // no-op nếu box đã đúng chỗ (buildOverlay tự return sớm khi ID đã tồn tại)
     setAccessNote(false);
-    // Nhãn khi không có VI: phân biệt đang dịch / lỗi dịch / video thật sự không có VI.
+    // Nhãn khi không có VI: chỉ báo LỖI/KHÔNG CÓ (đang dịch thì đã có placeholder "Đang dịch…"
+    // NGAY TRÊN dòng phụ đề Việt — TIP-101e — khỏi cần thêm dòng vàng riêng nữa, tránh trùng lặp).
     const hasVi = cues.some((c) => c.vi);
     // TIP-101 — "ok" nhưng vẫn KHÔNG có câu nào dịch được (AI lỗi âm thầm, response vẫn 200)
     // → coi như "failed" để báo rõ, tránh im lặng khiến học viên tưởng đang chờ mãi không lỗi gì.
-    if (!hasVi && d.viState === "translating") setViNote("Đang dịch phụ đề Việt…");
-    else if (!hasVi && (d.viState === "failed" || d.viState === "ok")) setViNote("⚠️ Không dịch được phụ đề Việt lúc này");
+    if (!hasVi && (d.viState === "failed" || d.viState === "ok")) setViNote("⚠️ Không dịch được phụ đề Việt lúc này");
     else if (!hasVi && d.viState === "empty") setViNote("Video này không có phụ đề Việt");
     else setViNote(null);
     // Vẽ lại cue hiện tại NGAY LẬP TỨC (không đợi/không bị chặn bởi syncTick+popupOpen) — dữ
