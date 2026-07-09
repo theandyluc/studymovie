@@ -12,7 +12,10 @@ export interface TranslateContext {
 // Trả về null khi lỗi/timeout — gọi nơi khác coi là "chưa dịch được", không vỡ luồng chính.
 export async function translateBatch(sentences: string[], context: TranslateContext[] = []): Promise<string[] | null> {
   if (sentences.length === 0) return [];
-  if (!OPENAI_API_KEY) return null;
+  if (!OPENAI_API_KEY) {
+    console.warn("[translate-batch] thiếu OPENAI_API_KEY");
+    return null;
+  }
 
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
@@ -67,14 +70,36 @@ export async function translateBatch(sentences: string[], context: TranslateCont
       body: JSON.stringify(reqBody),
       signal: ctrl.signal,
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      console.warn("[translate-batch] OpenAI lỗi", res.status, body.slice(0, 500));
+      return null;
+    }
     const j = (await res.json()) as { choices?: { message?: { content?: string } }[] };
     const raw = j.choices?.[0]?.message?.content;
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as { translations?: unknown };
-    if (!Array.isArray(parsed.translations) || parsed.translations.length !== sentences.length) return null;
+    if (!raw) {
+      console.warn("[translate-batch] response rỗng", JSON.stringify(j).slice(0, 500));
+      return null;
+    }
+    let parsed: { translations?: unknown };
+    try {
+      parsed = JSON.parse(raw) as { translations?: unknown };
+    } catch (e) {
+      console.warn("[translate-batch] JSON.parse lỗi:", (e as Error).message, "raw:", raw.slice(0, 500));
+      return null;
+    }
+    if (!Array.isArray(parsed.translations) || parsed.translations.length !== sentences.length) {
+      console.warn(
+        "[translate-batch] số lượng lệch: input",
+        sentences.length,
+        "output",
+        Array.isArray(parsed.translations) ? parsed.translations.length : typeof parsed.translations
+      );
+      return null;
+    }
     return parsed.translations.map((t) => (typeof t === "string" ? t.trim() : ""));
-  } catch {
+  } catch (e) {
+    console.warn("[translate-batch] exception:", (e as Error).message);
     return null;
   } finally {
     clearTimeout(timer);

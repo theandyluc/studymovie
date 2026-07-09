@@ -732,8 +732,10 @@ function onMessage(e: MessageEvent): void {
     setAccessNote(false);
     // Nhãn khi không có VI: phân biệt đang dịch / lỗi dịch / video thật sự không có VI.
     const hasVi = cues.some((c) => c.vi);
+    // TIP-101 — "ok" nhưng vẫn KHÔNG có câu nào dịch được (AI lỗi âm thầm, response vẫn 200)
+    // → coi như "failed" để báo rõ, tránh im lặng khiến học viên tưởng đang chờ mãi không lỗi gì.
     if (!hasVi && d.viState === "translating") setViNote("Đang dịch phụ đề Việt…");
-    else if (!hasVi && d.viState === "failed") setViNote("⚠️ Không dịch được phụ đề Việt lúc này");
+    else if (!hasVi && (d.viState === "failed" || d.viState === "ok")) setViNote("⚠️ Không dịch được phụ đề Việt lúc này");
     else if (!hasVi && d.viState === "empty") setViNote("Video này không có phụ đề Việt");
     else setViNote(null);
   } else if (!hasAccess && cues.length) {
