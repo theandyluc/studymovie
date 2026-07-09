@@ -28,11 +28,7 @@ async function askOpenAI(word: string, sentence: string): Promise<string | null>
             "nghĩa tiếng Việt NGẮN GỌN (1–3 từ) của từ đó, ĐÚNG ngữ cảnh câu. QUY TẮC BẮT BUỘC: chỉ MỘT " +
             "nghĩa (không đưa lựa chọn thay thế), KHÔNG dùng dấu '/', KHÔNG liệt kê, KHÔNG giải thích, " +
             "KHÔNG dấu ngoặc/tiền tố, KHÔNG viết hoa (trừ danh từ riêng). Nếu từ đa nghĩa, chọn nghĩa " +
-            "phù hợp nhất ngữ cảnh. NẾU TỪ LÀ DẠNG RÚT GỌN có dấu ' (it's, that's, there's, he's, " +
-            "she's, what's, I'm, we're, you're, don't, can't, won't, didn't...), PHẢI dịch ĐỦ Ý rút " +
-            "gọn đó theo đúng nghĩa trong câu (vd it's→'nó là' hoặc 'nó có' tuỳ ngữ cảnh, I'm→'tôi là', " +
-            "don't→'không'), TUYỆT ĐỐI KHÔNG chỉ dịch mỗi phần đại từ/chủ ngữ rồi bỏ qua phần rút gọn. " +
-            "Chỉ trả nghĩa.",
+            "phù hợp nhất ngữ cảnh. Chỉ trả nghĩa.",
         },
         {
           role: "user",

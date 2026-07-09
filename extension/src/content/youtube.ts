@@ -98,8 +98,13 @@ function ensureHideNativeStyle(): void {
 // \p{L} = mọi chữ cái Unicode (bắt cả dấu câu lạ trong caption tự động: ’ – — … v.v.,
 // không chỉ ASCII). Giữ ' và - vì nằm giữa từ (well-known, don't).
 const WORD_EDGE_PUNCT = /^[^\p{L}'-]+|[^\p{L}'-]+$/gu;
+// TIP-101g — click "it's"/"he's" thì tra hẳn "it"/"he" (cả IPA lẫn nghĩa), không tra nguyên dạng
+// rút gọn. CHỈ bóc 's/'S ở cuối (contraction is/has HOẶC possessive — cả 2 trường hợp đều muốn
+// về từ gốc). KHÔNG bóc 'm/'re/'ve/'ll/'d hay 't (don't/can't...) — chưa được yêu cầu, và "n't"
+// đổi hẳn nghĩa (phủ định) nên tuyệt đối không được bóc.
+const TRAILING_S_CONTRACTION = /'s$/i;
 function cleanWord(raw: string): string {
-  return raw.replace(WORD_EDGE_PUNCT, "").toLowerCase();
+  return raw.replace(WORD_EDGE_PUNCT, "").replace(TRAILING_S_CONTRACTION, "").toLowerCase();
 }
 // Bản hiển thị: bóc dấu câu ở đầu/cuối như cleanWord nhưng GIỮ hoa/thường gốc (tiêu đề popup).
 function cleanWordDisplay(raw: string): string {
