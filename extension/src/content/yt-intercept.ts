@@ -35,7 +35,10 @@ type ViState = "ok" | "empty" | "translating" | "failed";
 const LOOKAHEAD_SEC = 90; // khoảng đệm phía trước vị trí đang xem
 const CHECK_INTERVAL_MS = 4000; // chu kỳ kiểm tra "đủ đệm chưa"
 const RELAY_TIMEOUT_CACHE_MS = 3000; // hỏi cache (nhanh)
-const RELAY_TIMEOUT_TRANSLATE_MS = 20000; // gọi dịch (có AI, cần lâu hơn)
+// gọi dịch (có AI) — PHẢI lớn hơn timeout nội bộ backend (translate-batch.ts, 20s) + biên an
+// toàn cho relay/network, nếu không 2 timeout gần bằng nhau dễ đua nhau: extension bỏ cuộc
+// đúng lúc backend sắp trả lời xong.
+const RELAY_TIMEOUT_TRANSLATE_MS = 28000;
 const TRANSLATE_COUNT = 50; // số câu tối đa / lần gọi dịch (khớp TRANSLATE_BATCH_SIZE backend)
 
 let lastBase = "";
@@ -211,7 +214,12 @@ async function handleTimedtext(rawUrl: string, playerBody?: string): Promise<voi
 
     // Video hoàn toàn mới (chưa ai xem) — gọi dịch lô đầu, kèm EN thô để backend ghép câu
     // (chỉ cần gửi 1 lần duy nhất/video, các lần sau backend đã có sẵn).
-    const first = vid ? await askBackendTranslate(vid, 0, TRANSLATE_COUNT, en) : null;
+    // CHỈ xin đúng số câu cần cho khoảng đệm ~90s đầu (không xin cả TRANSLATE_COUNT=50 luôn —
+    // lô quá lớn khiến AI trả lời chậm, dễ vượt timeout mà không cần thiết vì lúc này còn chưa
+    // biết chính xác sẽ ghép ra bao nhiêu câu, chỉ cần ước lượng đủ dùng qua số cụm ASR thô rơi
+    // trong cửa sổ 90s — luôn ≥ số câu ghép ra thật (ghép chỉ GIẢM số lượng, không tăng).
+    const bootstrapCount = Math.min(TRANSLATE_COUNT, Math.max(5, en.filter((c) => c.start <= LOOKAHEAD_SEC).length));
+    const first = vid ? await askBackendTranslate(vid, 0, bootstrapCount, en) : null;
     if (currentVideoId() !== vid) return;
     if (first) {
       groupedEn = first.en;
