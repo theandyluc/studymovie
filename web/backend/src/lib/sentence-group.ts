@@ -1,0 +1,68 @@
+// TIP-101 — Ghép cụm ASR rời rạc (YouTube auto-caption) thành câu hoàn chỉnh.
+// Hàm thuần, không gọi AI, không I/O — có thể tinh chỉnh threshold tự do (backend-only,
+// không cần cập nhật extension qua Chrome Web Store).
+export interface RawCue {
+  start: number;
+  dur: number;
+  text: string;
+}
+
+export interface GroupConfig {
+  gapBreakSec: number; // khoảng lặng giữa 2 cụm >= ngưỡng này -> ngắt câu
+  maxGroupDurSec: number; // trần thời lượng 1 câu ghép (nói liên tục không ngừng)
+  maxGroupChars: number; // trần số ký tự 1 câu ghép
+}
+
+export const DEFAULT_GROUP_CONFIG: GroupConfig = {
+  gapBreakSec: 0.9,
+  maxGroupDurSec: 12,
+  maxGroupChars: 200,
+};
+
+// TIP-101 — số câu tối đa dịch trong 1 lần gọi (khớp `count` tối đa phía extension gửi lên).
+export const TRANSLATE_BATCH_SIZE = 50;
+
+const SENTENCE_END = /[.!?]["')\]]?$/;
+
+export function groupIntoSentences(cues: RawCue[], cfg: GroupConfig = DEFAULT_GROUP_CONFIG): RawCue[] {
+  const out: RawCue[] = [];
+  let bucket: RawCue[] = [];
+
+  const flush = (): void => {
+    if (bucket.length === 0) return;
+    const first = bucket[0];
+    const last = bucket[bucket.length - 1];
+    out.push({
+      start: first.start,
+      dur: last.start + last.dur - first.start,
+      text: bucket.map((c) => c.text).join(" ").replace(/\s+/g, " ").trim(),
+    });
+    bucket = [];
+  };
+
+  for (const cue of cues) {
+    if (bucket.length === 0) {
+      bucket.push(cue);
+      continue;
+    }
+    const first = bucket[0];
+    const prev = bucket[bucket.length - 1];
+    const gap = cue.start - (prev.start + prev.dur);
+    const wouldDur = cue.start + cue.dur - first.start;
+    const wouldChars = bucket.map((c) => c.text).join(" ").length + 1 + cue.text.length;
+    // Cụm TRƯỚC đã kết thúc câu (dấu chấm/hỏi/than) -> ngắt TRƯỚC KHI gộp cụm mới vào,
+    // dù khoảng lặng giữa 2 cụm rất nhỏ (nói liền không nghỉ nhưng đã hết câu).
+    const prevEndsSentence = SENTENCE_END.test(prev.text);
+
+    if (prevEndsSentence || gap >= cfg.gapBreakSec || wouldDur > cfg.maxGroupDurSec || wouldChars > cfg.maxGroupChars) {
+      flush();
+      bucket.push(cue);
+      continue;
+    }
+
+    bucket.push(cue);
+  }
+  flush();
+
+  return out.filter((c) => c.text.length > 0);
+}

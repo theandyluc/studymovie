@@ -54,28 +54,9 @@ export function withParam(url: string, key: string, value: string): string {
   return url + (url.includes("?") ? "&" : "?") + `${key}=${value}`;
 }
 
-// TIP-048 — Ghép VI theo ĐỘ CHỒNG THỜI GIAN (không theo index): track VI (auto-dịch YouTube)
-// phân đoạn khác EN → ghép index trượt dần → tua tới đoạn sau thì VI lệch. Chọn VI cue chồng
-// nhiều nhất với khoảng thời gian của EN cue; không chồng → VI cue chứa mốc giữa EN cue.
-function viByOverlap(vi: RawCue[], start: number, dur: number): string {
-  const enEnd = start + dur;
-  let best = "";
-  let bestOv = 0;
-  for (const v of vi) {
-    const ov = Math.min(enEnd, v.start + v.dur) - Math.max(start, v.start);
-    if (ov > bestOv) {
-      bestOv = ov;
-      best = v.text;
-    }
-  }
-  if (bestOv <= 0) {
-    const mid = start + dur / 2;
-    const hit = vi.find((x) => mid >= x.start && mid < x.start + x.dur);
-    return hit?.text ?? "";
-  }
-  return best;
-}
-
-export function mergeCues(en: RawCue[], vi: RawCue[]): Cue[] {
-  return en.map((c) => ({ start: c.start, dur: c.dur, en: c.text, vi: viByOverlap(vi, c.start, c.dur) }));
+// TIP-101 — en/vi giờ ghép theo INDEX (1:1) vì `en` là câu đã ghép ở backend và `vi` là bản
+// dịch từng câu đúng theo thứ tự đó — không còn cần khớp theo thời gian chồng lấp như trước
+// (đó là kỹ thuật riêng cho track VI rời rạc của YouTube tlang, nay đã bỏ hẳn).
+export function zipCues(en: RawCue[], vi: string[]): Cue[] {
+  return en.map((c, i) => ({ start: c.start, dur: c.dur, en: c.text, vi: vi[i] ?? "" }));
 }

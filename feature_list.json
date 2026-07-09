@@ -752,13 +752,13 @@
     },
     {
       "id": "SUBTITLE-AI-TRANSLATE",
-      "title": "Đảo D-1: dịch phụ đề song ngữ bằng GPT-4o-mini thay vì YouTube tlang (mọi video)",
+      "title": "Đảo D-1: dịch phụ đề song ngữ bằng GPT-4o-mini thay vì YouTube tlang (bám tiến độ xem)",
       "area": "backend+extension",
-      "tip": "TIP-101 (dự kiến, cần viết TIP chi tiết trước khi code)",
-      "status": "todo",
+      "tip": "TIP-101",
+      "status": "done",
       "depends_on": ["EXT-SUBTITLE"],
-      "acceptance": "Phụ đề tiếng Việt hiển thị đúng theo TỪNG CÂU thoại thật (không theo cụm ASR rời rạc), và KHÔNG còn bị YouTube báo 'phụ đề bị hạn chế' cho bất kỳ video nào (roadmap hay ngoài roadmap) — extension không còn phụ thuộc `tlang=vi` của YouTube. Video trong lộ trình soạn sẵn được dịch trước (pre-warm cache) khi admin thêm vào lộ trình; video ngoài lộ trình dịch tại lúc học viên xem (cache-miss). Cache theo video, dùng chung giữa mọi học viên (không dịch lại cho cùng 1 video).",
-      "evidence": ""
+      "acceptance": "Phụ đề tiếng Việt hiển thị đúng theo TỪNG CÂU thoại thật (không theo cụm ASR rời rạc), và KHÔNG còn bị YouTube báo 'phụ đề bị hạn chế' cho bất kỳ video nào — extension không còn phụ thuộc `tlang=vi` của YouTube. Chỉ dịch đoạn ~90s phía trước vị trí đang xem (không dịch trước cả video, tránh tốn phí cho phần không ai xem); tua nhảy tới đâu dịch đúng chỗ đó. Cache rải rác theo video, dùng chung giữa mọi học viên (đoạn đã dịch không dịch lại). Kế hoạch chi tiết: /Users/khoai/.claude/plans/humble-tickling-octopus.md",
+      "evidence": "TỰ TEST 2026-07-09: Backend — mới: src/lib/sentence-group.ts (groupIntoSentences, test/sentence-group.test.ts 5 case PASS gồm 1 bug thật phát hiện qua test: dấu câu kết thúc ở cụm TRƯỚC không kích hoạt ngắt câu cho cụm SAU — đã sửa), src/lib/translate-batch.ts (GPT-4o-mini structured JSON output, kèm ngữ cảnh 1-2 câu trước). src/api/captions.ts viết lại: getViCaption trả {en,vi}; postViCaption XOÁ, thay bằng postCaptionsTranslate (đọc/ghi cache rải rác theo index, dịch đúng đoạn [fromIndex,fromIndex+count) còn thiếu, bỏ qua chỉ số đã dịch, ghi cache qua waitUntil). app.ts route POST /api/captions-translate/:videoId thay /api/captions-vi POST cũ. Migration 20260709000018 (truncate cache cũ + thêm cột en) đã `supabase db push` + verify qua `supabase db query --linked`: schema đúng (cột en/vi/cue_count/created_at), bảng rỗng sau truncate. lint/typecheck/test (26 test) backend PASS.\nExtension — yt-intercept.ts viết lại: xoá toàn bộ logic tlang/anti-bot (fetchVi, VI_BACKOFF, isBlockedHtml, scheduleBgRetry/runBgRetry, hasTlang); thêm ensureBufferAhead() (cửa sổ đệm 90s, setInterval 4s + gọi ngay lập tức lúc mở video + lắng nghe sự kiện 'seeked' để giảm độ trễ tua nhảy), askBackendTranslate relay (timeout 20s). captions.ts: xoá mergeCues/viByOverlap (hết cần vì ghép theo index), thêm zipCues. youtube.ts: handleAskViCache/handleAskTranslate relay khớp API mới, setViNote đổi 3 trạng thái (translating/failed/empty). lint/typecheck/build/build:prod extension PASS.\nCHƯA runtime-verify trên trình duyệt thật (mở YouTube, xem tiến trình dịch/tua nhảy/cache) — cần Homeowner tự test hoặc làm ở phiên sau trước khi chuyển 'verified'."
     }
   ]
 }

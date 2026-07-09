@@ -1,10 +1,11 @@
-// TIP-005/009 — MAIN-world interceptor (Phương án B + chống anti-bot).
-// world:"MAIN", run_at:"document_start". Hook fetch/XHR của PAGE để:
-//   - BẮT body EN mà PLAYER đã tải (json3) → KHÔNG re-fetch EN (giảm burst 3→2 request).
-//   - VI: chờ ~500ms (tránh burst) rồi fetch tlang=vi; gặp trang "Sorry" (anti-bot) → retry 1 lần.
-//   - Phân biệt 3 trạng thái VI: ok / blocked (Sorry) / empty (json3 rỗng hợp lệ).
-// → postMessage { cues, videoId, viState } sang content script (ISOLATED).
-import { parseJson3, mergeCues, withParam, type RawCue } from "../lib/captions";
+// TIP-005/009/101 — MAIN-world interceptor (Phương án B + chống anti-bot cho EN).
+// world:"MAIN", run_at:"document_start". Hook fetch/XHR của PAGE để BẮT body EN mà PLAYER đã
+// tải (json3) → KHÔNG re-fetch EN (giảm request).
+// TIP-101 — Đảo D-1: KHÔNG còn gọi tlang=vi của YouTube. Backend tự ghép cụm ASR thành câu
+// (1 lần/video) + dịch bằng GPT-4o-mini CHỈ đoạn học viên xem tới (bám tiến độ xem, không
+// dịch trước cả video). Extension chỉ giữ 1 khoảng đệm ~90s phía trước vị trí đang xem, dịch
+// tiếp khi gần hết đệm, dịch đúng chỗ khi tua nhảy.
+import { parseJson3, withParam, zipCues, type RawCue } from "../lib/captions";
 export {};
 
 declare global {
@@ -16,155 +17,166 @@ declare global {
   }
 }
 
-const SM_DEBUG = false; // bật để xem log chẩn đoán caption
+const SM_DEBUG = false;
 const dbg = (...a: unknown[]): void => {
   if (SM_DEBUG) console.log("[StudyMovie/intercept]", ...a);
 };
 
 const TT = "/api/timedtext";
 const isTT = (u: unknown): u is string => typeof u === "string" && u.includes(TT);
-const hasTlang = (u: string): boolean => /[?&]tlang=/.test(u);
 // TIP-063b — track player load KHÔNG chắc là EN (vd video có track mặc định khác EN,
 // theo preference tài khoản/kênh) → chỉ tái dùng body player khi ĐÚNG lang=en, không thì bỏ qua
 // và fetch lại bằng enUrl (đã ép lang=en) — tránh hiện nhầm phụ đề ngôn ngữ khác làm "EN gốc".
 const isEnglishLang = (u: string): boolean => /[?&]lang=en(?:-[a-zA-Z]+)?(?:&|$)/.test(u);
 const currentVideoId = (): string => new URLSearchParams(location.search).get("v") ?? "";
-const delay = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
-// Trang chặn anti-bot của Google (HTML "Sorry... automated queries").
-function isBlockedHtml(body: string): boolean {
-  const s = body.trimStart();
-  return s.startsWith("<") || /automated queries|unusual traffic|\/sorry\/?/i.test(body);
-}
+type ViState = "ok" | "empty" | "translating" | "failed";
 
-type ViState = "ok" | "blocked" | "empty";
+const LOOKAHEAD_SEC = 90; // khoảng đệm phía trước vị trí đang xem
+const CHECK_INTERVAL_MS = 4000; // chu kỳ kiểm tra "đủ đệm chưa"
+const RELAY_TIMEOUT_CACHE_MS = 3000; // hỏi cache (nhanh)
+const RELAY_TIMEOUT_TRANSLATE_MS = 20000; // gọi dịch (có AI, cần lâu hơn)
+const TRANSLATE_COUNT = 50; // số câu tối đa / lần gọi dịch (khớp TRANSLATE_BATCH_SIZE backend)
+
 let lastBase = "";
+let curVid = "";
+let groupedEn: RawCue[] = [];
+let viArr: string[] = [];
+let pendingRange: { from: number; to: number } | null = null;
+let bufferTimer: ReturnType<typeof setInterval> | undefined;
+let seekedHandler: (() => void) | undefined;
 
-// TIP-063 — chống anti-bot mềm hơn: backoff GIÃN DẦN (không hammer) + retry NỀN + cache theo video.
-const VI_BACKOFF = [700, 2000, 5000]; // 3 lần thử tiền cảnh, giãn dần
-const BG_RETRY_DELAY = 22_000; // ~22s trước mỗi vòng retry nền
-const BG_RETRY_MAX = 2; // tối đa 2 vòng retry nền / video (tránh gọi vô hạn)
-
-// Cache VI theo videoId (in-memory theo phiên tab) → xem lại/tua/quay lại KHÔNG gọi lại Google.
-const viCache = new Map<string, RawCue[]>();
-
-// Trạng thái retry nền (chỉ 1 video active tại 1 thời điểm).
-let bgTimer: ReturnType<typeof setTimeout> | undefined;
-let bgVid = "";
-let bgRounds = 0;
-
-function cancelBgRetry(): void {
-  if (bgTimer !== undefined) {
-    clearTimeout(bgTimer);
-    bgTimer = undefined;
-  }
+function getVideoEl(): HTMLVideoElement | null {
+  return (
+    (document.querySelector("video.html5-main-video") as HTMLVideoElement | null) ??
+    (document.querySelector("video") as HTMLVideoElement | null)
+  );
 }
 
-// Fetch VI với backoff giãn dần; blocked → chờ delay kế thử lại; ok/empty → dừng.
-async function fetchVi(viUrl: string, delays: number[]): Promise<{ vi: RawCue[]; viState: ViState }> {
-  let vi: RawCue[] = [];
-  let viState: ViState = "empty";
-  for (let i = 0; i < delays.length; i++) {
-    await delay(delays[i]);
-    let viRaw = "";
-    try {
-      viRaw = await (await fetch(viUrl)).text();
-    } catch {
-      viRaw = "";
-    }
-    if (isBlockedHtml(viRaw)) {
-      viState = "blocked"; // vẫn bị chặn → vòng sau (nếu còn)
-      continue;
-    }
-    vi = parseJson3(viRaw);
-    viState = vi.length > 0 ? "ok" : "empty";
-    break;
-  }
-  return { vi, viState };
+function postCues(vid: string, viState: ViState): void {
+  if (currentVideoId() !== vid) return;
+  window.postMessage({ __sm: "SM_CUES", cues: zipCues(groupedEn, viArr), videoId: vid, viState }, "*");
 }
 
-// TIP-078 — Cache VI dùng CHUNG giữa mọi user (qua backend), giảm số request thật tới
-// Google. MAIN world không có chrome.runtime → nhờ content script ISOLATED (youtube.ts)
+// TIP-101 — MAIN world không có chrome.runtime → nhờ content script ISOLATED (youtube.ts)
 // relay qua window.postMessage (ISOLATED có chrome.runtime, gọi backend qua SM_API proxy).
 let askReqSeq = 0;
-function askBackendViCache(videoId: string): Promise<RawCue[] | null> {
+function askBackendViCache(videoId: string): Promise<{ en: RawCue[]; vi: string[] } | null> {
   return new Promise((resolve) => {
     const reqId = `${videoId}-${++askReqSeq}`;
     const timer = setTimeout(() => {
       window.removeEventListener("message", onReply);
-      resolve(null); // ISOLATED không phản hồi kịp (hoặc lỗi) → coi như miss, fetch Google bình thường
-    }, 3000);
+      resolve(null);
+    }, RELAY_TIMEOUT_CACHE_MS);
     function onReply(e: MessageEvent): void {
       if (e.source !== window) return;
-      const d = e.data as { __sm?: string; reqId?: string; vi?: RawCue[] | null } | undefined;
+      const d = e.data as { __sm?: string; reqId?: string; en?: RawCue[]; vi?: string[] } | undefined;
       if (d?.__sm !== "SM_VI_CACHE_RESULT" || d.reqId !== reqId) return;
       clearTimeout(timer);
       window.removeEventListener("message", onReply);
-      resolve(Array.isArray(d.vi) ? d.vi : null);
+      resolve(d.en && d.vi ? { en: d.en, vi: d.vi } : null);
     }
     window.addEventListener("message", onReply);
     window.postMessage({ __sm: "SM_ASK_VI_CACHE", videoId, reqId }, "*");
   });
 }
 
-// Fire-and-forget: gửi VI vừa fetch thành công lên backend cho user sau dùng lại.
-function contributeViCache(videoId: string, vi: RawCue[]): void {
-  window.postMessage({ __sm: "SM_CONTRIBUTE_VI", videoId, vi }, "*");
+let translateReqSeq = 0;
+function askBackendTranslate(
+  videoId: string,
+  fromIndex: number,
+  count: number,
+  rawEn?: RawCue[]
+): Promise<{ en: RawCue[]; vi: string[] } | null> {
+  return new Promise((resolve) => {
+    const reqId = `${videoId}-t${++translateReqSeq}`;
+    const timer = setTimeout(() => {
+      window.removeEventListener("message", onReply);
+      resolve(null);
+    }, RELAY_TIMEOUT_TRANSLATE_MS);
+    function onReply(e: MessageEvent): void {
+      if (e.source !== window) return;
+      const d = e.data as { __sm?: string; reqId?: string; en?: RawCue[] | null; vi?: string[] | null } | undefined;
+      if (d?.__sm !== "SM_TRANSLATE_RESULT" || d.reqId !== reqId) return;
+      clearTimeout(timer);
+      window.removeEventListener("message", onReply);
+      resolve(d.en && d.vi ? { en: d.en, vi: d.vi } : null);
+    }
+    window.addEventListener("message", onReply);
+    window.postMessage({ __sm: "SM_ASK_TRANSLATE", videoId, fromIndex, count, en: rawEn, reqId }, "*");
+  });
 }
 
-function scheduleBgRetry(vid: string, en: RawCue[], viUrl: string): void {
-  if (bgRounds >= BG_RETRY_MAX) {
-    dbg("bg retry: đã đạt cap", BG_RETRY_MAX);
-    return;
+// Câu cuối cùng có start <= t (câu đang phát tại thời điểm t).
+function findIndexAtTime(cues: RawCue[], t: number): number {
+  let idx = 0;
+  for (let i = 0; i < cues.length; i++) {
+    if (cues[i].start <= t) idx = i;
+    else break;
   }
-  cancelBgRetry();
-  bgTimer = setTimeout(() => void runBgRetry(vid, en, viUrl), BG_RETRY_DELAY);
-  dbg(`bg retry: hẹn ${BG_RETRY_DELAY}ms (vòng ${bgRounds + 1}/${BG_RETRY_MAX})`);
+  return idx;
 }
 
-async function runBgRetry(vid: string, en: RawCue[], viUrl: string): Promise<void> {
-  bgTimer = undefined;
-  if (currentVideoId() !== vid) return; // đã đổi video → hủy
-  if (viCache.has(vid)) return; // đã có VN (nguồn khác) → thôi
-  bgRounds++;
-
-  // TIP-078 — Thử cache backend trước (có thể user khác đã fetch xong trong lúc mình chờ).
-  const backendCached = await askBackendViCache(vid);
-  if (currentVideoId() !== vid) return; // đổi video khi đang hỏi cache → bỏ
-  if (backendCached && backendCached.length > 0) {
-    viCache.set(vid, backendCached);
-    dbg(`bg retry: dùng VI cache BACKEND (${backendCached.length})`);
-    window.postMessage({ __sm: "SM_CUES", cues: mergeCues(en, backendCached), videoId: vid, viState: "ok" }, "*");
-    return;
+// TIP-101 — Kiểm tra "đoạn ~90s phía trước vị trí đang xem đã dịch hết chưa", dịch tiếp nếu
+// thiếu. Chạy y hệt dù xem tuần tự hay vừa tua nhảy — không cần code riêng cho 2 trường hợp.
+async function ensureBufferAhead(): Promise<void> {
+  const vid = curVid;
+  if (!vid || groupedEn.length === 0) return;
+  const video = getVideoEl();
+  if (!video) return;
+  const t = video.currentTime;
+  const startIdx = findIndexAtTime(groupedEn, t);
+  const endTime = t + LOOKAHEAD_SEC;
+  let gapIdx = -1;
+  for (let i = startIdx; i < groupedEn.length && groupedEn[i].start <= endTime; i++) {
+    if (viArr[i] === "") {
+      gapIdx = i;
+      break;
+    }
   }
+  if (gapIdx === -1) return; // đủ đệm rồi
+  if (pendingRange && gapIdx >= pendingRange.from && gapIdx < pendingRange.to) return; // đang chờ đúng đoạn này
 
-  const { vi, viState } = await fetchVi(viUrl, [0, 3000]); // thử ngay + 1 backoff
-  if (currentVideoId() !== vid) return; // đổi video khi đang fetch → bỏ
-  if (viState === "ok" && vi.length > 0) {
-    viCache.set(vid, vi);
-    contributeViCache(vid, vi); // TIP-078 — đóng góp lại cho user sau
-    dbg(`bg retry OK: video=${vid} VI=${vi.length} → merge lại`);
-    window.postMessage({ __sm: "SM_CUES", cues: mergeCues(en, vi), videoId: vid, viState: "ok" }, "*");
-    return;
+  const count = Math.min(TRANSLATE_COUNT, groupedEn.length - gapIdx);
+  pendingRange = { from: gapIdx, to: gapIdx + count };
+  const result = await askBackendTranslate(vid, gapIdx, count);
+  if (currentVideoId() !== vid) return; // đã đổi video giữa chừng — bỏ kết quả trễ
+  pendingRange = null;
+  if (result) {
+    groupedEn = result.en;
+    viArr = result.vi;
+    postCues(vid, "ok");
   }
-  if (viState === "blocked") scheduleBgRetry(vid, en, viUrl); // vẫn chặn → vòng nền kế (nếu còn quota)
+}
+
+function stopBuffering(): void {
+  if (bufferTimer !== undefined) {
+    clearInterval(bufferTimer);
+    bufferTimer = undefined;
+  }
+  const video = getVideoEl();
+  if (video && seekedHandler) video.removeEventListener("seeked", seekedHandler);
+  seekedHandler = undefined;
+  pendingRange = null;
+}
+
+function startBuffering(): void {
+  void ensureBufferAhead(); // ngay lập tức, không đợi hết chu kỳ đầu (tránh mất 4s vô ích)
+  bufferTimer = setInterval(() => void ensureBufferAhead(), CHECK_INTERVAL_MS);
+  const video = getVideoEl();
+  if (video) {
+    // TIP-101 — giảm độ trễ khi tua nhảy: kiểm tra NGAY khi vừa tua xong, thay vì chờ
+    // tới lượt setInterval kế tiếp (tệ nhất tới 4s).
+    seekedHandler = () => void ensureBufferAhead();
+    video.addEventListener("seeked", seekedHandler);
+  }
 }
 
 async function handleTimedtext(rawUrl: string, playerBody?: string): Promise<void> {
-  if (hasTlang(rawUrl)) return; // chỉ dùng track gốc (EN, chưa dịch) làm base
-  // TIP-063b — ÉP lang=en: player có thể tự load track mặc định KHÁC EN (vd theo preference
-  // tài khoản/kênh) → nếu dùng thẳng rawUrl sẽ hiện nhầm phụ đề ngôn ngữ khác làm "gốc EN".
   const enUrl = withParam(withParam(rawUrl, "lang", "en"), "fmt", "json3");
   if (enUrl === lastBase) return; // tránh xử lý lặp cùng 1 track
   lastBase = enUrl;
   const vid = currentVideoId();
-
-  // Đổi video → hủy retry nền cũ + reset bộ đếm vòng.
-  if (vid !== bgVid) {
-    cancelBgRetry();
-    bgVid = vid;
-    bgRounds = 0;
-  }
 
   try {
     // EN: ưu tiên body player ĐÃ tải (nếu là json3) → bớt 1 request. CHỈ dùng khi request gốc
@@ -178,38 +190,37 @@ async function handleTimedtext(rawUrl: string, playerBody?: string): Promise<voi
       return;
     }
 
-    const viUrl = withParam(enUrl, "tlang", "vi");
+    stopBuffering();
+    curVid = vid;
 
-    // Cache hit (tab session) → dùng VN đã lưu, KHÔNG gọi Google.
-    const cached = vid ? viCache.get(vid) : undefined;
-    if (cached && cached.length > 0) {
-      dbg(`video=${vid} dùng VI cache (${cached.length})`);
-      window.postMessage({ __sm: "SM_CUES", cues: mergeCues(en, cached), videoId: vid, viState: "ok" }, "*");
+    // Hiện EN ngay (thô, chưa ghép câu) trong lúc chờ cache/dịch — không để màn hình trống.
+    groupedEn = en;
+    viArr = new Array(en.length).fill("") as string[];
+    postCues(vid, "translating");
+
+    const cached = vid ? await askBackendViCache(vid) : null;
+    if (currentVideoId() !== vid) return;
+
+    if (cached) {
+      groupedEn = cached.en;
+      viArr = cached.vi;
+      postCues(vid, groupedEn.length === 0 ? "empty" : "ok");
+      if (groupedEn.length > 0) startBuffering();
       return;
     }
 
-    // TIP-078 — Cache backend (CHIA SẺ giữa mọi user): người khác đã fetch trước cho video
-    // này → dùng luôn, không cần tự gọi Google (giảm tải, đỡ bị anti-bot chặn).
-    const backendCached = vid ? await askBackendViCache(vid) : null;
-    if (backendCached && backendCached.length > 0) {
-      dbg(`video=${vid} dùng VI cache BACKEND (${backendCached.length})`);
-      if (vid) viCache.set(vid, backendCached);
-      window.postMessage({ __sm: "SM_CUES", cues: mergeCues(en, backendCached), videoId: vid, viState: "ok" }, "*");
-      return;
+    // Video hoàn toàn mới (chưa ai xem) — gọi dịch lô đầu, kèm EN thô để backend ghép câu
+    // (chỉ cần gửi 1 lần duy nhất/video, các lần sau backend đã có sẵn).
+    const first = vid ? await askBackendTranslate(vid, 0, TRANSLATE_COUNT, en) : null;
+    if (currentVideoId() !== vid) return;
+    if (first) {
+      groupedEn = first.en;
+      viArr = first.vi;
+      postCues(vid, groupedEn.length === 0 ? "empty" : "ok");
+      if (groupedEn.length > 0) startBuffering();
+    } else {
+      postCues(vid, "failed");
     }
-
-    // VI: backoff giãn dần (tiền cảnh).
-    const { vi, viState } = await fetchVi(viUrl, VI_BACKOFF);
-
-    dbg(`video=${vid} EN=${en.length} VI=${vi.length} state=${viState}`);
-    if (viState === "ok" && vi.length > 0 && vid) {
-      viCache.set(vid, vi);
-      contributeViCache(vid, vi); // TIP-078 — đóng góp lại cho user sau cùng video
-    }
-    window.postMessage({ __sm: "SM_CUES", cues: mergeCues(en, vi), videoId: vid, viState }, "*");
-
-    // Vẫn bị chặn → EN đã hiện (post ở trên); đặt lịch retry NỀN để VN tự xuất hiện sau.
-    if (viState === "blocked") scheduleBgRetry(vid, en, viUrl);
   } catch (e) {
     dbg("handleTimedtext error", e);
     lastBase = "";
@@ -223,7 +234,7 @@ if (!window.__smTTInstalled) {
   window.fetch = function (input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
     const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
     const p = origFetch(input, init);
-    if (isTT(url) && !hasTlang(url)) {
+    if (isTT(url)) {
       // đọc body của response player (clone để không tiêu thụ mất của player)
       p.then((res) => res.clone().text())
         .then((body) => void handleTimedtext(url, body))
@@ -242,7 +253,7 @@ if (!window.__smTTInstalled) {
   const origSend = XMLHttpRequest.prototype.send;
   XMLHttpRequest.prototype.send = function (this: XMLHttpRequest, body?: Document | XMLHttpRequestBodyInit | null) {
     const u = this.__smTTUrl;
-    if (u && !hasTlang(u)) {
+    if (u) {
       this.addEventListener("load", () => {
         let txt = "";
         try {

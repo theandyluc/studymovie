@@ -22,6 +22,29 @@
 
 ## Session log
 
+### Session 42 — TIP-101a + TIP-101: fix tốc độ tra nghĩa + đảo D-1 (dịch phụ đề GPT-4o-mini bám tiến độ xem) (2026-07-09)
+- **Bối cảnh:** tiếp nối Session 41 (chỉ thảo luận, chưa code) — hôm nay làm 2 việc đã note lại: (1) fix nhanh tốc độ `/api/lookup-context`, (2) triển khai đầy đủ pipeline dịch phụ đề bằng AI thay YouTube tlang.
+- **TIP-101a (nhỏ, làm trước):** `lookup-context.ts` — bước ghi cache chuyển từ `await` (chặn response) sang `waitUntil()` (gói `@vercel/functions`, chạy nền sau khi đã trả lời, không như "void promise" thường không đảm bảo chạy hết trên serverless). `vercel.json` thêm `regions:["sin1"]` cho backend (gần Supabase Singapore). Verify: lint/typecheck/test PASS, deploy Ready, curl production xác nhận vẫn hoạt động (401 đúng khi thiếu token). Commit `b54428e`.
+- **TIP-101 (lớn — đảo D-1):** trước khi code, dành nhiều lượt hỏi-đáp với khách để chốt thiết kế qua **Plan mode** (kế hoạch đầy đủ lưu ở `/Users/khoai/.claude/plans/humble-tickling-octopus.md`). Điểm mấu chốt khách tự quyết định qua thảo luận (không phải tôi áp đặt):
+  - **KHÔNG dịch trước cả video** khi vừa mở (sợ tốn tiền cho phần học viên có thể không xem tới) — đổi thành **dịch bám tiến độ xem**: chỉ giữ khoảng đệm ~90 giây phía trước vị trí đang xem, dịch tiếp khi gần hết đệm.
+  - **Tua nhảy tới đâu dịch đúng chỗ đó** (không bắt buộc tuần tự từ đầu) — nên cache lưu RẢI RÁC theo từng câu (không phải 1 điểm mốc "đã dịch tới đâu" duy nhất).
+  - Ghép câu (gộp cụm ASR rời rạc thành câu hoàn chỉnh) làm **1 lần duy nhất/video** (không tốn AI), chỉ có DỊCH mới chia nhỏ theo đoạn đang xem.
+  - 2 cải tiến thêm sau khi khách hỏi sâu về độ trễ: gọi kiểm tra đệm NGAY khi mở video (không đợi hết chu kỳ 4s đầu), và bắt sự kiện `seeked` để kiểm tra ngay khi tua nhảy (giảm độ trễ tua từ ~7-8s tệ nhất xuống ~1-3s).
+  - Gửi kèm 1-2 câu ngữ cảnh (EN+VI) đã dịch trước đó vào prompt AI để giữ mạch hội thoại (đại từ she/it/he) giữa các lượt dịch riêng biệt.
+  - Thuật toán ghép câu đặt ở **BACKEND** (không phải extension) — vì extension vừa bị Chrome Web Store từ chối 2 lần, mỗi lần cập nhật phải qua review chậm; để backend thì tinh chỉnh được ngay không cần nộp lại store.
+- **Đã làm (code):**
+  - Backend mới: `src/lib/sentence-group.ts` (`groupIntoSentences` — ngắt câu theo khoảng lặng ≥0.9s HOẶC dấu câu kết thúc HOẶC vượt trần 12s/200 ký tự; `TRANSLATE_BATCH_SIZE=50`), `src/lib/translate-batch.ts` (gọi GPT-4o-mini, structured JSON output `{translations:string[]}`, kèm ngữ cảnh 1-2 câu trước).
+  - `src/api/captions.ts` viết lại: `getViCaption` trả `{en,vi}` (rải rác); `postViCaption` XOÁ hẳn, thay `postCaptionsTranslate` (đọc/tạo cache, lọc đúng chỉ số còn thiếu trong `[fromIndex,fromIndex+count)`, dịch, ghi cache qua `waitUntil`).
+  - `app.ts`: route `POST /api/captions-vi/:videoId` (cũ) → `POST /api/captions-translate/:videoId`.
+  - Migration `20260709000018` — `truncate` cache cũ (không tương thích format mới, an toàn vì chỉ là cache hiệu năng) + thêm cột `en jsonb`. Đã `supabase db push` + verify `supabase db query --linked` (schema đúng, bảng rỗng).
+  - Extension: `yt-intercept.ts` viết lại gần như hoàn toàn — XOÁ mọi logic tlang/né anti-bot (`fetchVi`, `VI_BACKOFF`, `isBlockedHtml`, `scheduleBgRetry`/`runBgRetry`, `hasTlang`); thêm `ensureBufferAhead()` (cửa sổ 90s, `setInterval` 4s + gọi ngay lúc mở video + lắng nghe `seeked`), `askBackendTranslate` (relay MAIN↔ISOLATED, timeout 20s, khác `askBackendViCache` timeout 3s cho việc hỏi cache thuần).
+  - `lib/captions.ts`: xoá `mergeCues`/`viByOverlap` (hết cần vì ghép EN/VI theo INDEX, không còn theo độ chồng thời gian), thêm `zipCues`.
+  - `youtube.ts`: `handleAskViCache`/`handleAskTranslate` khớp API mới; `setViNote` đổi 3 trạng thái mới (`translating`/`failed`/`empty`, bỏ `blocked` — không còn khái niệm bị Google chặn nữa).
+  - **Phát hiện phụ (bug thật, tìm ra nhờ viết test):** logic ngắt câu ban đầu chỉ kiểm tra dấu câu kết thúc SAU khi đã gộp cụm mới vào — nghĩa là cụm "Okay." rồi "Next one." bị gộp nhầm thành 1 câu dù "Okay." đã có dấu chấm. Sửa: kiểm tra dấu câu kết thúc của cụm TRƯỚC đó ngay khi cân nhắc gộp cụm MỚI, ngắt trước khi gộp. Thêm `test/sentence-group.test.ts` (5 case) bắt được lỗi này.
+- **Verification:** backend lint/typecheck/test (26 test, bao gồm 5 test mới) PASS. Extension lint/typecheck/build/build:prod PASS. Migration verify qua Supabase trực tiếp. **CHƯA runtime-verify trên trình duyệt thật** (chưa mở YouTube thật xem tiến trình dịch/tua nhảy/cache hoạt động đúng) — feature_list.json để `status:"done"` (không phải `"verified"`) đúng quy ước.
+- **Còn dở / chưa verify:** (1) test runtime thật trên YouTube (mở video mới, xem VI xuất hiện dần, tua nhảy, tua lại đoạn cũ dùng cache) — cần Homeowner tự test hoặc làm ở phiên sau; (2) build:prod + zip lại + nộp bản mới lên Chrome Web Store (thay đổi lớn ở content script, cần bản mới); (3) các việc CHỦ ĐỘNG để sau (đã ghi trong plan): khoá chống đua race cache, job retry câu lỗi dịch, tính năng lộ trình soạn sẵn + pre-warm.
+- **Cách resume:** đọc lại plan đầy đủ ở `/Users/khoai/.claude/plans/humble-tickling-octopus.md` để hiểu chi tiết thiết kế trước khi đụng vào code này. Nếu khách báo lỗi runtime, so khớp với đúng luồng đã tả trong plan (bám tiến độ xem, không dịch trước cả video) để chẩn đoán đúng chỗ.
+
 ### Session 41 — Thảo luận (KHÔNG code): dịch phụ đề trả phí GPT-4o-mini (đảo D-1) + fix chậm tra nghĩa từ (2026-07-07)
 - **Bối cảnh:** khách hỏi tư vấn (không phải code) sau khi extension đã publish lên Chrome Web Store: 2 vấn đề UX thật — (1) nhiều video bị YouTube báo "phụ đề Tiếng Việt bị hạn chế" ở chế độ song ngữ (do YouTube/creator kiểm soát `tlang`, không phải lỗi extension), (2) dịch không theo câu thoại (vì phụ đề ASR gốc chia theo cụm rời rạc, không theo câu, nên dịch từng cụm mất ngữ cảnh).
 - **Đã thảo luận + CHỐT hướng đi (khách duyệt), CHƯA CODE:**

@@ -653,41 +653,69 @@ function applySettings(): void {
   if (activeIndex >= 0) renderCue(activeIndex);
 }
 
-// TIP-078 — Cache phụ đề Việt DÙNG CHUNG giữa mọi user (qua backend), giảm số lần phải
-// tự gọi Google (hay bị anti-bot chặn). MAIN world (yt-intercept.ts) không có chrome.runtime
-// → nhờ content script ISOLATED (ở đây) relay: hỏi cache lúc cần, đóng góp lại lúc fetch được.
+// TIP-101 — Cache + dịch phụ đề Việt DÙNG CHUNG giữa mọi user (qua backend), bám tiến độ
+// xem (không dịch trước cả video). MAIN world (yt-intercept.ts) không có chrome.runtime
+// → nhờ content script ISOLATED (ở đây) relay: hỏi cache, gọi dịch đoạn cần.
 interface RawCueLike {
   start: number;
   dur: number;
   text: string;
 }
 function handleAskViCache(videoId: string, reqId: string): void {
-  callApi<{ found: boolean; vi?: RawCueLike[] }>("GET", `/api/captions-vi/${videoId}`)
+  callApi<{ found: boolean; en?: RawCueLike[]; vi?: string[] }>("GET", `/api/captions-vi/${videoId}`)
     .then((r) => {
-      window.postMessage({ __sm: "SM_VI_CACHE_RESULT", reqId, vi: r.found ? (r.vi ?? null) : null }, "*");
+      window.postMessage(
+        { __sm: "SM_VI_CACHE_RESULT", reqId, en: r.found ? r.en : null, vi: r.found ? r.vi : null },
+        "*"
+      );
     })
     .catch(() => {
-      window.postMessage({ __sm: "SM_VI_CACHE_RESULT", reqId, vi: null }, "*"); // lỗi mạng/chưa login → coi như miss
+      window.postMessage({ __sm: "SM_VI_CACHE_RESULT", reqId, en: null, vi: null }, "*"); // lỗi mạng/chưa login → coi như miss
     });
 }
-function handleContributeViCache(videoId: string, vi: RawCueLike[]): void {
-  callApi("POST", `/api/captions-vi/${videoId}`, { vi }).catch(() => {
-    /* lỗi thì thôi — không ảnh hưởng người dùng hiện tại, lần sau vẫn có thể đóng góp lại */
-  });
+function handleAskTranslate(
+  videoId: string,
+  fromIndex: number,
+  count: number,
+  en: RawCueLike[] | undefined,
+  reqId: string
+): void {
+  callApi<{ en: RawCueLike[]; vi: string[] }>("POST", `/api/captions-translate/${videoId}`, { fromIndex, count, en })
+    .then((r) => {
+      window.postMessage({ __sm: "SM_TRANSLATE_RESULT", reqId, en: r.en, vi: r.vi }, "*");
+    })
+    .catch(() => {
+      window.postMessage({ __sm: "SM_TRANSLATE_RESULT", reqId, en: null, vi: null }, "*");
+    });
 }
 
 // ---- Nhận cue từ interceptor (MAIN world) ----
 function onMessage(e: MessageEvent): void {
   if (e.source !== window) return;
   const raw = e.data as
-    | { __sm?: string; cues?: Cue[]; videoId?: string; viState?: string; reqId?: string; vi?: RawCueLike[] }
+    | {
+        __sm?: string;
+        cues?: Cue[];
+        videoId?: string;
+        viState?: string;
+        reqId?: string;
+        fromIndex?: number;
+        count?: number;
+        en?: RawCueLike[];
+      }
     | null;
   if (raw?.__sm === "SM_ASK_VI_CACHE" && raw.videoId && raw.reqId) {
     handleAskViCache(raw.videoId, raw.reqId);
     return;
   }
-  if (raw?.__sm === "SM_CONTRIBUTE_VI" && raw.videoId && Array.isArray(raw.vi)) {
-    handleContributeViCache(raw.videoId, raw.vi);
+  if (
+    raw?.__sm === "SM_ASK_TRANSLATE" &&
+    raw.videoId &&
+    raw.reqId &&
+    typeof raw.fromIndex === "number" &&
+    typeof raw.count === "number"
+  ) {
+    handleAskTranslate(raw.videoId, raw.fromIndex, raw.count, raw.en, raw.reqId);
     return;
   }
   const d = raw;
@@ -702,9 +730,10 @@ function onMessage(e: MessageEvent): void {
     // TIP-028: Tắt StudyMovie → vẫn lưu cues (để bật lại dựng ngay) nhưng KHÔNG build overlay.
     buildOverlay();
     setAccessNote(false);
-    // Nhãn khi không có VI: phân biệt bị-chặn (Sorry) vs video thật sự không có VI.
+    // Nhãn khi không có VI: phân biệt đang dịch / lỗi dịch / video thật sự không có VI.
     const hasVi = cues.some((c) => c.vi);
-    if (!hasVi && d.viState === "blocked") setViNote("⚠️ Phụ đề Việt tạm bị giới hạn, thử lại sau");
+    if (!hasVi && d.viState === "translating") setViNote("Đang dịch phụ đề Việt…");
+    else if (!hasVi && d.viState === "failed") setViNote("⚠️ Không dịch được phụ đề Việt lúc này");
     else if (!hasVi && d.viState === "empty") setViNote("Video này không có phụ đề Việt");
     else setViNote(null);
   } else if (!hasAccess && cues.length) {
