@@ -19,8 +19,10 @@ export const DEFAULT_GROUP_CONFIG: GroupConfig = {
   maxGroupChars: 200,
 };
 
-// TIP-101 — số câu tối đa dịch trong 1 lần gọi (khớp `count` tối đa phía extension gửi lên).
-export const TRANSLATE_BATCH_SIZE = 50;
+// TIP-101 — số câu tối đa dịch trong 1 lần gọi. Trần AN TOÀN cuối cùng phía backend (extension
+// tự giới hạn nhỏ hơn — CHUNK_COUNT=15 — nhưng vẫn chặn ở đây phòng client cũ/lỗi gửi count lớn).
+// Từng thử 50: log Vercel cho thấy lô 30-50 câu hay khiến OpenAI trả lời vượt timeout.
+export const TRANSLATE_BATCH_SIZE = 20;
 
 const SENTENCE_END = /[.!?]["')\]]?$/;
 

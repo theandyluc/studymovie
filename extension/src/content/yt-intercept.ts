@@ -39,10 +39,11 @@ const RELAY_TIMEOUT_CACHE_MS = 3000; // hỏi cache (nhanh)
 // toàn cho relay/network, nếu không 2 timeout gần bằng nhau dễ đua nhau: extension bỏ cuộc
 // đúng lúc backend sắp trả lời xong.
 const RELAY_TIMEOUT_TRANSLATE_MS = 28000;
-const TRANSLATE_COUNT = 50; // số câu tối đa / lần gọi dịch (khớp TRANSLATE_BATCH_SIZE backend)
-// Lô dịch NGAY LÚC MỞ VIDEO MỚI — cố tình NHỎ (không dùng TRANSLATE_COUNT/độ dài cửa sổ 90s)
-// để có phụ đề Việt hiện ra nhanh; phần còn lại của cửa sổ 90s tự lấp dần qua các lượt sau.
-const BOOTSTRAP_COUNT = 15;
+// Số câu tối đa MỖI LẦN GỌI dịch — cố tình NHỎ (không phải cả cửa sổ 90s trong 1 lần gọi).
+// Lô lớn (thử 50) khiến AI trả lời chậm, hay vượt timeout (đo thực tế qua log: lô ~30-50 câu
+// nhiều lần bị "aborted"). Lô nhỏ → nhiều lượt gọi nối tiếp nhanh, đáng tin cậy hơn hẳn — áp
+// dụng ĐỀU cho cả lô mở màn (video mới) lẫn lô lấp đệm khi tua nhảy/xem tiếp (ensureBufferAhead).
+const CHUNK_COUNT = 15;
 
 let lastBase = "";
 let curVid = "";
@@ -143,7 +144,7 @@ async function ensureBufferAhead(): Promise<void> {
   if (gapIdx === -1) return; // đủ đệm rồi
   if (pendingRange && gapIdx >= pendingRange.from && gapIdx < pendingRange.to) return; // đang chờ đúng đoạn này
 
-  const count = Math.min(TRANSLATE_COUNT, groupedEn.length - gapIdx);
+  const count = Math.min(CHUNK_COUNT, groupedEn.length - gapIdx);
   pendingRange = { from: gapIdx, to: gapIdx + count };
   const result = await askBackendTranslate(vid, gapIdx, count);
   if (currentVideoId() !== vid) return; // đã đổi video giữa chừng — bỏ kết quả trễ
@@ -221,7 +222,7 @@ async function handleTimedtext(rawUrl: string, playerBody?: string): Promise<voi
     // 1 lần gọi (lô lớn khiến AI trả lời chậm, dễ vượt timeout). Phần còn lại của 90s được lấp
     // dần bằng các lượt `ensureBufferAhead` kế tiếp (startBuffering gọi ngay sau đây) — nhiều lô
     // nhỏ nối tiếp nhanh hơn hẳn 1 lô to duy nhất, vẫn giữ nguyên độ an toàn của cửa sổ 90s.
-    const first = vid ? await askBackendTranslate(vid, 0, BOOTSTRAP_COUNT, en) : null;
+    const first = vid ? await askBackendTranslate(vid, 0, CHUNK_COUNT, en) : null;
     if (currentVideoId() !== vid) return;
     if (first) {
       groupedEn = first.en;
