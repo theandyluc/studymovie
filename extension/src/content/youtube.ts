@@ -95,8 +95,15 @@ function ensureHideNativeStyle(): void {
   s.toggleAttribute("disabled", !(settings.enabled && hasAccess && cues.length > 0));
 }
 
+// \p{L} = mọi chữ cái Unicode (bắt cả dấu câu lạ trong caption tự động: ’ – — … v.v.,
+// không chỉ ASCII). Giữ ' và - vì nằm giữa từ (well-known, don't).
+const WORD_EDGE_PUNCT = /^[^\p{L}'-]+|[^\p{L}'-]+$/gu;
 function cleanWord(raw: string): string {
-  return raw.replace(/^[^A-Za-z'-]+|[^A-Za-z'-]+$/g, "").toLowerCase();
+  return raw.replace(WORD_EDGE_PUNCT, "").toLowerCase();
+}
+// Bản hiển thị: bóc dấu câu ở đầu/cuối như cleanWord nhưng GIỮ hoa/thường gốc (tiêu đề popup).
+function cleanWordDisplay(raw: string): string {
+  return raw.replace(WORD_EDGE_PUNCT, "");
 }
 
 // ---- Overlay ----
@@ -476,7 +483,7 @@ function onWordClick(word: string, surface: string, sentence: string): void {
     letterSpacing: "-0.03em",
     color: "#1f1f1f",
   } as Partial<CSSStyleDeclaration>);
-  head.textContent = surface.trim() || word; // hiện NGAY, không cần request
+  head.textContent = cleanWordDisplay(surface.trim()) || word; // hiện NGAY, không cần request (bỏ dấu câu dính từ)
   const speakerBtn = document.createElement("button");
   speakerBtn.type = "button";
   Object.assign(speakerBtn.style, {

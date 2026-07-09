@@ -30,7 +30,7 @@ type FdResult =
   | { ok: false; status: "not_found" | "error"; message?: string };
 
 // TIP-039 — chỉ 1 phiên âm sạch (bỏ "/" thừa, lấy cái đầu nếu chuỗi có nhiều biến thể ",/;").
-function firstIpa(ipa: string | null): string | null {
+export function firstIpa(ipa: string | null): string | null {
   if (!ipa) return null;
   const first = ipa.replace(/\//g, "").split(/[,;]/)[0].trim();
   return first || null;
@@ -51,12 +51,8 @@ async function freeDictLookup(word: string): Promise<FdResult> {
     const arr = (await res.json()) as FdEntry[];
     if (!Array.isArray(arr) || arr.length === 0) return { ok: false, status: "not_found" };
 
-    const phonetics: FdPhonetic[] = [];
-    let plainPhonetic: string | null = null;
     const meanings: Sense[] = [];
     for (const entry of arr) {
-      if (!plainPhonetic && entry.phonetic) plainPhonetic = entry.phonetic;
-      for (const p of entry.phonetics ?? []) phonetics.push(p);
       for (const m of entry.meanings ?? []) {
         for (const d of m.definitions ?? []) {
           if (!d.definition) continue;
@@ -70,6 +66,14 @@ async function freeDictLookup(word: string): Promise<FdResult> {
       }
     }
     if (meanings.length === 0) return { ok: false, status: "not_found" };
+
+    // Từ đồng âm khác nghĩa/từ loại (vd "lead", "content", "read") có NHIỀU entry với phiên âm
+    // khác nhau. Gộp phonetics từ mọi entry lại rồi lấy "cái đầu tiên" (cách cũ) có thể lấy
+    // nhầm phiên âm của một entry/nghĩa khác. dictionaryapi.dev xếp entry theo độ phổ biến →
+    // chỉ lấy phonetics của ENTRY ĐẦU TIÊN có dữ liệu, không trộn với các entry sau.
+    const primaryEntry = arr.find((e) => (e.phonetics && e.phonetics.length > 0) || e.phonetic) ?? arr[0];
+    const phonetics = primaryEntry.phonetics ?? [];
+    const plainPhonetic = primaryEntry.phonetic ?? null;
 
     // TIP-039 — ưu tiên bản UK (audio url chứa -uk/_uk); IPA + audio lấy từ mục UK nếu có.
     const isUk = (p: FdPhonetic) => !!p.audio && /[-_/]uk/i.test(p.audio);
@@ -90,23 +94,52 @@ const ttsUrl = (w: string): string =>
   `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=${encodeURIComponent(w)}`;
 
 // TIP-068 — sinh ứng viên dạng gốc (heuristic EN): raw TRƯỚC, rồi các dạng gốc để lấy IPA.
-function lemmaCandidates(w: string): string[] {
-  const c = new Set<string>([w]);
-  if (w.length > 4 && w.endsWith("ies")) c.add(w.slice(0, -3) + "y"); // studies→study
-  if (w.length > 3 && w.endsWith("es")) c.add(w.slice(0, -2)); // boxes→box
-  if (w.length > 3 && w.endsWith("s") && !w.endsWith("ss")) c.add(w.slice(0, -1)); // moments→moment
-  if (w.length > 4 && w.endsWith("ied")) c.add(w.slice(0, -3) + "y"); // carried→carry (trước -ed để vào top 3)
-  if (w.length > 4 && w.endsWith("ed")) {
-    c.add(w.slice(0, -2)); // walked→walk
-    c.add(w.slice(0, -1)); // faked→fake
+// Mỗi nhóm đuôi dùng else-if (loại nhánh chồng chéo, vd "studies" vừa khớp "ies" vừa khớp
+// "es"/"s" → tránh sinh ứng viên rác như "studi"/"studie"). Trong nhóm "-ing", ưu tiên dạng
+// phụ âm đôi rút gọn (getting→get, running→run) lên TRƯỚC base/base+e vì đây là quy tắc rõ
+// ràng, phổ biến nhất — trước đây nó bị đẩy xuống cuối danh sách và bị cắt mất bởi giới hạn
+// số ứng viên thử, khiến chọn nhầm sang candidate sai ("gett") và tra phải phiên âm khác.
+export function lemmaCandidates(w: string): string[] {
+  const c: string[] = [w];
+  const add = (x: string): void => {
+    if (x && !c.includes(x)) c.push(x);
+  };
+
+  if (w.length > 4 && w.endsWith("ies")) {
+    add(w.slice(0, -3) + "y"); // studies→study
+  } else if (w.length > 3 && w.endsWith("es")) {
+    add(w.slice(0, -2)); // boxes→box
+  } else if (w.length > 3 && w.endsWith("s") && !w.endsWith("ss")) {
+    add(w.slice(0, -1)); // moments→moment
   }
+
+  if (w.length > 4 && w.endsWith("ied")) {
+    add(w.slice(0, -3) + "y"); // carried→carry
+  } else if (w.length > 4 && w.endsWith("ed")) {
+    add(w.slice(0, -1)); // faked→fake
+    add(w.slice(0, -2)); // walked→walk
+  }
+
   if (w.length > 5 && w.endsWith("ing")) {
     const base = w.slice(0, -3);
-    c.add(base); // making→mak…
-    c.add(base + "e"); // making→make
-    if (base.length > 1 && base[base.length - 1] === base[base.length - 2]) c.add(base.slice(0, -1)); // running→run
+    if (base.length > 1 && base[base.length - 1] === base[base.length - 2]) {
+      add(base.slice(0, -1)); // getting→get, running→run — ưu tiên cao nhất
+    }
+    add(base + "e"); // making→make
+    add(base); // fill→fill
   }
-  return [...c];
+
+  return c;
+}
+
+// TIP-XXX — FVDP là data cộng đồng import 1 lần (GPL, 103k mục, xem Blueprint), một số dòng
+// bị lỗi khi import khiến IPA bị cắt cụt bất thường (vd "communication" → chỉ còn "co").
+// Heuristic: IPA (sau khi làm sạch) ngắn bất thường so với độ dài từ → nghi bị cắt cụt.
+// Bỏ qua từ ngắn (<5 ký tự) vì IPA ngắn với từ ngắn là bình thường, dễ báo nhầm.
+export function isLikelyTruncatedIpa(ipa: string | null, word: string): boolean {
+  if (!ipa || word.length < 5) return false;
+  const clean = firstIpa(ipa) ?? "";
+  return clean.length < Math.max(3, word.length * 0.35);
 }
 
 // Gắn audio TTS nếu thiếu audio từ điển; giữ shape { word, result, source }.
@@ -125,9 +158,10 @@ export async function getLookup(c: Context) {
 
   const sb = getServiceClient();
 
-  // TIP-068 — thử lần lượt raw + dạng gốc (~3 ứng viên đầu để tránh gọi free-dict quá nhiều).
+  // TIP-068 — thử lần lượt raw + dạng gốc (tối đa 4 ứng viên: đủ cho mọi nhóm đuôi kể cả
+  // "-ing" phụ âm đôi, xem lemmaCandidates — để tránh gọi free-dict quá nhiều).
   // Chọn kết quả ĐẦU TIÊN CÓ IPA; nếu không có → kết quả đầu tiên tìm được (có meaning); hết → not_found.
-  const cands = lemmaCandidates(word).slice(0, 3);
+  const cands = lemmaCandidates(word).slice(0, 4);
   let firstFound: { result: LookupResult; source: string } | null = null;
   let lastFail: { status: "not_found" | "error"; message?: string } | null = null;
 
@@ -139,7 +173,21 @@ export async function getLookup(c: Context) {
     let found: { result: LookupResult; source: string } | null = null;
     if (data && (data as { meanings?: unknown }).meanings) {
       const r = data as LookupResult;
-      found = { result: r, source: r.source ?? "fvdp" };
+      if (isLikelyTruncatedIpa(r.ipa, cand)) {
+        // IPA FVDP nghi bị cắt cụt → thử vá bằng Free Dictionary (giữ nguyên nghĩa VI của FVDP,
+        // chỉ thay ipa/audio nếu bản vá trông hợp lệ hơn) rồi ghi đè lại cache cho lần sau.
+        const fb = await freeDictLookup(cand);
+        if (fb.ok && fb.ipa && !isLikelyTruncatedIpa(fb.ipa, cand)) {
+          const fixed: LookupResult = { ...r, ipa: fb.ipa, audio_url: r.audio_url || fb.audio_url };
+          const { error: fixErr } = await sb.from("dictionary").update({ ipa: fixed.ipa, audio_url: fixed.audio_url }).eq("lemma", r.lemma);
+          if (fixErr) console.warn("[lookup] vá ipa lỗi:", fixErr.message);
+          found = { result: fixed, source: r.source ?? "fvdp" };
+        } else {
+          found = { result: r, source: r.source ?? "fvdp" }; // không vá được → vẫn trả bản cũ (dù nghi)
+        }
+      } else {
+        found = { result: r, source: r.source ?? "fvdp" };
+      }
     } else {
       // 2) Fallback Free Dictionary API cho ứng viên này.
       const fb = await freeDictLookup(cand);
